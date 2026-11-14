@@ -17,4 +17,5 @@ __pycache__/
 # Front-end
 web/node_modules/
 web/dist/
+web/.vite/
 *.tsbuildinfo
