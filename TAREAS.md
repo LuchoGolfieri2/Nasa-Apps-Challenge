@@ -8,7 +8,7 @@ Lista única de tareas de la app. Sale de `docs/specs/front-back-connection-spec
 2. **Si alguien ya la tomó, no la toques.** Si necesitás algo de esa tarea, hablalo con quien la tiene.
 3. **Una rama por tarea:** `front/<id>-<nombre-corto>`, por ejemplo `front/F07-power`. Tocá solo los archivos de tu tarea; si necesitás cambiar algo compartido (`web/src/ui/`, `web/src/data/types.ts`, tokens), avisá en el grupo antes.
 4. **Al terminar, tachá la tarea en el mismo PR:** cambiá `- [ ]` por `- [x]`, envolvé el título en `~~ ~~` y cambiá tu marca por `✅ TuNombre`. Al mergear el PR a `main`, la tarea queda tachada para todos.
-5. **Antes de mergear:** `git pull origin main`, resolvé conflictos (en este archivo, conservá las marcas de los demás) y probá que la app levanta.
+5. **Antes de mergear:** `git pull origin main`, resolvé conflictos (en este archivo, conservá las marcas de los demás) y probá que la app levanta. Si el pull trajo cambios en `web/package.json` (por ejemplo deck.gl, que usa el globo), corré `npm install` en `web/` primero. Eso es solo para el equipo: los jueces abren el sitio publicado y no instalan nada.
 6. **Si largás una tarea sin terminar**, volvé a poner `Libre` y escribí en una línea debajo qué quedó hecho.
 7. **Tareas nuevas** van al final de su sección con el próximo número libre.
 

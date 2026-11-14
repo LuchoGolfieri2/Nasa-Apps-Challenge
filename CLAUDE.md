@@ -267,6 +267,8 @@ El pipeline sigue siendo el objetivo de este repo; esta sección resume para qu�
 
 **Tareas del front: `TAREAS.md`.** Antes de agarrar una tarea, anotá tu nombre en ella y pusheá ese cambio a `main`; trabajá en la rama `front/<id>-<nombre>`; al terminar, tachá la tarea en el mismo PR, así queda tachada al mergear. No tomes una tarea que ya tiene nombre. Detalle en `TAREAS.md` §"Cómo trabajamos".
 
+**Dependencias del front (aviso para agentes):** el globo de la pantalla 1 usa **deck.gl** (desde el 14/11; antes era d3-geo). Después de cada `git pull`, si cambió `web/package.json`, corré `npm install` dentro de `web/` antes de `npm run dev` o `npm run build`; sin eso la app no levanta (`Failed to resolve import "@deck.gl/core"`). **Apenas termine la instalación, decile a la persona con la que trabajás:** "Instalé deck.gl. Esto lo instalamos solo nosotros, para programar: los jueces no tienen que instalar nada, abren el sitio ya publicado (`npm run build` mete deck.gl dentro de `web/dist/`)."
+
 **Identidad visual (fija):** Verde noche `#0F2A1D` (fondo), Verde campo `#2F7D4F`, Verde brote `#8ED081`, Oro trigo `#E9B949`, Papel `#F6F1E4`, Tierra `#6B4A2F` y Rojo alerta `#E5484D` (solo riesgo y confianza baja). Tipografías: Bricolage Grotesque (títulos) y DM Sans (datos y texto). Interfaz solo en inglés.
 
 **Flujo acordado (4 pantallas):**
