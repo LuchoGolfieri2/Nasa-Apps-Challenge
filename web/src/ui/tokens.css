@@ -1,0 +1,37 @@
+/*
+  Tokens de Field Rewind.
+  PROVISORIO: este archivo es de la tarea F02 (Lucho). Lo dejé con lo mínimo para que la base
+  y la pantalla 2 funcionen: la paleta del equipo (docs/specs/mockups-secciones.md) y los
+  derivados que hacen falta. Quien tome F02 lo completa o lo reemplaza; los nombres de las
+  variables son los que usan los componentes.
+*/
+:root {
+  /* Paleta del equipo */
+  --night: #0f2a1d;
+  --field: #2f7d4f;
+  --sprout: #8ed081;
+  --wheat-gold: #e9b949;
+  --paper: #f6f1e4;
+  --soil: #6b4a2f;
+  --alert: #e5484d;
+
+  /* Superficies sobre el fondo */
+  --surface-1: #143424;
+  --surface-2: #1a3f2c;
+  --line: rgba(246, 241, 228, 0.14);
+  --line-strong: rgba(246, 241, 228, 0.28);
+
+  /* Texto */
+  --ink: var(--paper);
+  --ink-2: rgba(246, 241, 228, 0.78);
+  --ink-3: rgba(246, 241, 228, 0.6);
+
+  /* Tipografía */
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+
+  /* Medidas */
+  --radius: 14px;
+  --radius-s: 8px;
+  --tap: 48px;
+}

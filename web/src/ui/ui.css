@@ -1,0 +1,58 @@
+.missing {
+  display: block;
+  padding: 10px 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-s);
+  background: repeating-linear-gradient(135deg, rgba(246, 241, 228, 0.06) 0 6px, transparent 6px 12px);
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.35;
+}
+.missing b {
+  color: var(--ink);
+  font-weight: 700;
+}
+.missing--inline {
+  display: inline-block;
+  padding: 3px 8px;
+}
+
+.stamp {
+  display: inline-block;
+  font: 700 11px var(--font-body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--night);
+  background: var(--wheat-gold);
+  border-radius: 5px;
+  padding: 3px 7px;
+}
+
+.source-chip {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--ink-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+.source-chip b {
+  color: var(--ink-2);
+  font-weight: 700;
+}
+
+.logo {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  font: 800 24px/1 var(--font-display);
+  letter-spacing: -0.02em;
+}
+.logo__field {
+  font-weight: 500;
+}

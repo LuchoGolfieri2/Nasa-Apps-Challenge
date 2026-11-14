@@ -13,3 +13,8 @@ modelos/
 # Entorno virtual local
 .venv/
 __pycache__/
+
+# Front-end
+web/node_modules/
+web/dist/
+*.tsbuildinfo
