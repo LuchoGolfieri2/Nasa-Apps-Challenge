@@ -119,6 +119,7 @@ export function Timeline({ years, year, playing, loaded, total, marks, onYear, o
               <path d="M7 4.5v15l13-7.5z" fill="currentColor" />
             )}
           </svg>
+          <span className="timeline__play-label">{playing ? "Pause" : "Play"}</span>
         </button>
       </div>
 

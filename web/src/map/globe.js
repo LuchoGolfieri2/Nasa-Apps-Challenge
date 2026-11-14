@@ -149,7 +149,7 @@ function resize() {
   H = canvas.clientHeight;
   canvas.width = Math.round(W * dpr);
   canvas.height = Math.round(H * dpr);
-  R0 = Math.min(W, H) * 0.37;
+  R0 = Math.min(W, H) * 0.43;
 }
 window.addEventListener('resize', resize);
 
@@ -195,7 +195,7 @@ function selectState(fips, fly = true) {
   syncUI();
 }
 
-function selectCounty(fips, fly = true) {
+function selectCounty(fips, fly = true, dur = 1500) {
   const c = countyById[fips];
   if (!c) return;
   selState = stateById[c.properties.state];
@@ -206,7 +206,7 @@ function selectCounty(fips, fly = true) {
     // el condado queda un poco a la izquierda para dejarle lugar al panel
     const k = Math.min(zoomFor(c, 0.3), 60);
     const shift = W > 900 ? ((W * 0.12) / (R0 * k)) * (180 / Math.PI) : 0;
-    flyTo({lon: c.centroid[0] + shift / Math.cos((c.centroid[1] * Math.PI) / 180), lat: c.centroid[1], k}, 1500);
+    flyTo({lon: c.centroid[0] + shift / Math.cos((c.centroid[1] * Math.PI) / 180), lat: c.centroid[1], k}, dur);
   }
   emit('county', {fips, name: c.properties.name, state: selState.properties.name, hasHistory: !!FEATURED[fips]});
   syncUI();
@@ -265,7 +265,7 @@ function leaveLanding() {
   document.body.classList.remove('landing');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   Object.assign(view, {lon: HOME.lon + 55, lat: 8, k: 0.55});
-  flyTo(HOME, reduce ? 600 : 3000);
+  flyTo(HOME, reduce ? 600 : 1900);
 }
 
 function applyHash() {
@@ -783,10 +783,11 @@ $('enter').addEventListener('click', () => {
 });
 // "Rewind Sumner County, KS": vuela a Sumner y abre su historia con el play andando (F12)
 $('cta').addEventListener('click', () => {
-  selectCounty(DEMO_COUNTY);
+  // vuelo corto: lo que importa es llegar rápido a la línea de tiempo
+  selectCounty(DEMO_COUNTY, true, 900);
   window.setTimeout(() => {
     location.hash = `#/county/${DEMO_COUNTY}?play=1`;
-  }, 1700);
+  }, 1000);
 });
 $('p-open').addEventListener('click', () => {
   if (selCounty) {

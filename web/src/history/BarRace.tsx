@@ -4,7 +4,7 @@ import { CROPS, CROP_COLOR, CROP_LABEL, CROP_NOTE, type CropId } from "../ui/cro
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 
-const ROW = 44;
+const ROW = 42;
 const fmt = new Intl.NumberFormat("en-US");
 
 interface Props {
@@ -12,6 +12,9 @@ interface Props {
   current: CountyYear;
   highlight: CropId | null;
   onHighlight: (crop: CropId | null) => void;
+  /** Cultivo que quedó fijo con un clic (sigue resaltado sin el cursor encima). */
+  pinned: CropId | null;
+  onPin: (crop: CropId) => void;
   source: string;
 }
 
@@ -19,7 +22,7 @@ interface Props {
  * Carrera de barras: superficie por cultivo del año, ordenada de mayor a menor (F18).
  * La escala es fija para todo el período, así el largo de una barra se compara entre años.
  */
-export function BarRace({ years, current, highlight, onHighlight, source }: Props) {
+export function BarRace({ years, current, highlight, onHighlight, pinned, onPin, source }: Props) {
   // Entran los cultivos que alguna vez pasaron el 2 % de la superficie con cultivo.
   const { crops, maxAc } = useMemo(() => {
     const shown = CROPS.filter((c) => years.some((y) => (y.crops_pct?.[c] ?? 0) >= 2));
@@ -49,10 +52,16 @@ export function BarRace({ years, current, highlight, onHighlight, source }: Prop
               key={c}
               className={dim ? "race__row race__row--dim" : "race__row"}
               style={{ transform: `translateY(${r * ROW}px)` }}
-              aria-label={`${r + 1}. ${CROP_LABEL[c]}: ${fmt.format(area[c].ac)} acres, ${Math.round(pct[c])}% of cropland`}
-              title={CROP_NOTE[c]}
               onPointerEnter={() => onHighlight(c)}
             >
+              <button
+                type="button"
+                className="race__hit"
+                aria-pressed={pinned === c}
+                aria-label={`${r + 1}. ${CROP_LABEL[c]}: ${fmt.format(area[c].ac)} acres, ${Math.round(pct[c])}% of cropland. Keep it lit on the map.`}
+                title={CROP_NOTE[c]}
+                onClick={() => onPin(c)}
+              >
               <span className="race__label">{CROP_LABEL[c]}</span>
               <span className="race__track" aria-hidden="true">
                 <span
@@ -66,11 +75,12 @@ export function BarRace({ years, current, highlight, onHighlight, source }: Prop
               <span className="race__pct" aria-hidden="true">
                 {Math.round(pct[c])}%
               </span>
+              </button>
             </li>
           );
         })}
       </ol>
-      <p className="race__note">% of the county's cropland. Point at a crop to find it on the map.</p>
+      <p className="race__note">% of the county's cropland. Tap a crop to keep it lit on the map; tap it again to show all.</p>
     </section>
   );
 }

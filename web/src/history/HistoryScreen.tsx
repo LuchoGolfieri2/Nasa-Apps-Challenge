@@ -28,6 +28,8 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
   const [year, setYear] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const [highlight, setHighlight] = useState<CropId | null>(null);
+  const [pinned, setPinned] = useState<CropId | null>(null);
+  const togglePlay = useRef<() => void>(() => {});
   const autoplay = useRef(query.get("play") === "1");
   const stepMs = useMemo(() => {
     const s = Number(query.get("speed"));
@@ -82,6 +84,17 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
     return () => window.clearTimeout(t);
   }, [playing, year, years, stepMs, goTo]);
 
+  // Barra espaciadora: play o pausa, salvo que el foco esté en un control.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || (e.target as HTMLElement).closest("button, a, input, summary, [role=slider]")) return;
+      e.preventDefault();
+      togglePlay.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   if (failed) {
     return (
       <main className="history history--empty">
@@ -112,6 +125,8 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
     if (year === years[years.length - 1]) goTo(years[0]);
     setPlaying(true);
   };
+  togglePlay.current = canPlay ? play : () => {};
+  const lit = highlight ?? pinned;
   const rewind = () => {
     goTo(years[0]);
     setPlaying(true);
@@ -151,8 +166,10 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
           <BarRace
             years={county.years}
             current={current}
-            highlight={highlight}
+            highlight={lit}
             onHighlight={setHighlight}
+            pinned={pinned}
+            onPin={(c) => setPinned((p) => (p === c ? null : c))}
             source={county.raster?.source ?? "USDA CDL"}
           />
 
@@ -166,7 +183,7 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
               year={year}
               classes={rasters.get(year)}
               status={rasters.status[year]}
-              highlight={highlight}
+              highlight={lit}
               countyName={county.name}
               prevYear={prevYear}
               prevClasses={prevYear === null ? null : rasters.get(prevYear)}
@@ -174,6 +191,37 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
           ) : (
             <Missing what="the crop map (USDA CDL) is not loaded for this county" />
           )}
+          <details className="guide" open>
+            <summary>How to read this</summary>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4z" fill="currentColor" opacity=".45" />
+                  <path d="M13 13h7v7h-7z" fill="currentColor" />
+                </svg>
+                <span>
+                  <b>Each square is 30 meters of land</b>, colored by the crop the USDA satellite map found there that year.
+                </span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 6l10-2 6 4-1 11-12 1z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                </svg>
+                <span>
+                  <b>Numbers are for the whole county</b>, not for a single field.
+                </span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 13l5 5L20 6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>
+                  <b>The map is right about 9 times in 10</b> for corn and soybeans, and less often for minor crops.
+                </span>
+              </li>
+            </ul>
+            <p>Scroll or double-click the map to zoom in. Point at a year below to peek at it. Press space to play.</p>
+          </details>
         </div>
       </div>
 
@@ -225,14 +273,9 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
           )}
         </div>
         <div>
-          <h2>How to read this</h2>
-          <p>Results are for the whole county, not for a single field.</p>
+          <h2>See another county</h2>
           <p className="history__small">
-            The map shows what the USDA satellite crop map found on each 30 meter square. It is right about 9 times
-            out of 10 for corn and soybeans, and less often for minor crops.
-          </p>
-          <p className="history__small">
-            Other counties with a full history:{" "}
+            Counties with a full history:{" "}
             {DEMO.filter((d) => d.fips !== county.fips).map((d, i) => (
               <span key={d.fips}>
                 {i ? " · " : ""}

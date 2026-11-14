@@ -19,7 +19,7 @@ Cada vista escribe su hash, así funcionan el "atrás" del navegador, las migas 
 Grabación: `?take=a` y `?take=c`.
 
 ## Transición portada → globo
-La portada se desvanece con un leve zoom y desenfoque; el globo aparece desde lejos y vuela a EE.UU. en 3 s.
+La portada se desvanece con un leve zoom y desenfoque; el globo aparece desde lejos y vuela a EE.UU. en 1,9 s.
 Con `prefers-reduced-motion` se acorta a casi nada.
 
 ## Datos de prueba
