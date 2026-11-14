@@ -273,7 +273,7 @@ El pipeline sigue siendo el objetivo de este repo; esta sección resume para qu�
 **Reglas que afectan a los datos:**
 
 - La unidad es el condado. La interfaz no muestra nada por lote.
-- Se compara, no se recomienda.
+- La app sugiere una opción según las prioridades del productor, siempre con razones con fuente, rango (p10/mediana/p90) y confianza. Nada de "porcentaje de éxito".
 - No se muestra "porcentaje de éxito": se cuentan años contra lo habitual del condado. Qué es "lo habitual" lo define el equipo de ML (ver 6.2: no sacar la tendencia en el pipeline).
 - No se afirma qué rotación rindió más: el rendimiento existe solo por condado. Se muestran las rotaciones más comunes y, como aproximación, el verdor.
 - Un faltante se muestra escrito como "Missing data". Por eso los faltantes van como celda vacía, nunca 0 (sección 4).

@@ -26,7 +26,7 @@ Los pasos 1 y 2 son la misma pantalla en dos niveles de zoom: la app tiene cuatr
 ## Decisiones tomadas
 
 - **La unidad es el condado, no el lote.** Todos los datos son por condado y se dice en pantalla.
-- **Se compara, no se recomienda.** El botón lleva a "opciones para la próxima campaña"; no hay insignia de mejor opción.
+- **Sugiere, con razones.** (Cambio del 14/11, ver [[front-back-connection-spec]].) Una opción lleva "Suggested for your priorities" con dos razones con fuente, su rango y su confianza; las demás siguen visibles.
 - **No se habla de "porcentaje de éxito".** Se cuentan años: "en 11 de los últimos 18 el maíz rindió por encima de lo habitual".
 - **No se dice qué rotación rindió más.** El rendimiento existe solo por condado. Se puede decir cuáles son las más comunes y, como aproximación, comparar el verdor; eso es vigor, no rendimiento.
 - **Gemelos son condados, no terrenos.** Suelo y clima parecidos que sí sembraron el cultivo. Con menos de tres gemelos, confianza baja.

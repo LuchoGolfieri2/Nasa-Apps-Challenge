@@ -45,4 +45,4 @@ Sitio estático (Vite + React o HTML simple) que lee los JSON de `data/ml/` y `d
 - Un dashboard con 20 gráficos.
 - Jerga técnica.
 - Precisión falsa ("rinde 187,34 bu/acre").
-- Que la app "recomiende" en vez de comparar.
+- Que la app sugiera sin razones, sin fuente, sin rango o sin confianza.

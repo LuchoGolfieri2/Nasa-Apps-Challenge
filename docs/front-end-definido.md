@@ -136,7 +136,7 @@ Paso 4 · Pantalla Próxima campaña
 
 ## Opciones para la próxima campaña
 
-Objetivo: comparar la rotación actual con dos alternativas y mostrar la evidencia de cada una. La herramienta compara; no recomienda.
+Objetivo: comparar la rotación actual con dos alternativas y mostrar la evidencia de cada una. La herramienta sugiere una opción según las prioridades, con razones, rango y confianza (cambio del 14/11).
 
 ### Antes de comparar: dos preguntas
 
@@ -180,7 +180,7 @@ Objetivo: comparar la rotación actual con dos alternativas y mostrar la evidenc
 - Todo resultado es un rango: año malo, año típico, año bueno (p10, mediana, p90). Nunca un número solo.
 - Confianza alta, media o baja, con el motivo en una frase.
 - Cada afirmación lleva su fuente y dice si sale del modelo o de una regla agronómica.
-- Sin insignia de "mejor opción". El orden es fijo: primero la actual.
+- Una opción lleva "Suggested for your priorities" con dos razones con fuente; la actual va primero.
 - El ingreso por acre solo se muestra si hay precios y costos; si no, "Missing data".
 
 **Cómo se presenta un gemelo**"Counties like yours that grew oats: 4. Similar soil and weather doesn't guarantee the same result."
