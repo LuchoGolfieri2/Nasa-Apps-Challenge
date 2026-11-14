@@ -19,3 +19,6 @@ web/node_modules/
 web/dist/
 web/.vite/
 *.tsbuildinfo
+
+# Bocetos locales, no se suben
+docs/mockups/
