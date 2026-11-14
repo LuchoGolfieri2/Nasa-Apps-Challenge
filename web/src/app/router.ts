@@ -2,14 +2,17 @@ import { useEffect, useState } from "react";
 
 /*
   Rutas por hash, para poder abrir cualquier pantalla (y cualquier toma del video) directo:
-    #/                         globo
+    #/                         portada (logo + Start)
+    #/map                      globo
     #/state/KS                 mapa del estado
+    #/map/20191                condado elegido en el mapa (panel)
     #/county/20191?year=2021   historia del condado
     #/county/20191/next        próxima campaña
     #/sources                  fuentes y límites
 */
 export type Route =
-  | { name: "globe" }
+  | { name: "home" }
+  | { name: "map"; fips: string | null }
   | { name: "state"; state: string }
   | { name: "county"; fips: string }
   | { name: "next"; fips: string }
@@ -27,7 +30,9 @@ export function parseHash(hash: string): Location {
   const parts = path.split("/").filter(Boolean);
   const query = new URLSearchParams(search);
   let route: Route = { name: "notfound" };
-  if (parts.length === 0) route = { name: "globe" };
+  if (parts.length === 0) route = { name: "home" };
+  else if (parts[0] === "map" && parts.length === 1) route = { name: "map", fips: null };
+  else if (parts[0] === "map" && /^\d{5}$/.test(parts[1] ?? "") && parts.length === 2) route = { name: "map", fips: parts[1] };
   else if (parts[0] === "state" && parts[1] && parts.length === 2) route = { name: "state", state: parts[1].toUpperCase() };
   else if (parts[0] === "county" && /^\d{5}$/.test(parts[1] ?? "")) {
     if (parts.length === 2) route = { name: "county", fips: parts[1] };
