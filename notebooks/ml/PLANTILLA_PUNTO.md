@@ -6,13 +6,13 @@ Ejemplo completo: PUNTO2.md. Reglas generales: CLAUDE.md de esta carpeta.
 Escribí para alguien del equipo que no sabe ML: frases cortas, sin jerga sin explicar.
 -->
 
-Notebook: [`puntoN_<tema>.ipynb`](puntoN_<tema>.ipynb). Corresponde al uso #N del issue #6.
+Notebook: [`puntoN_<tema>.ipynb`](puntoN_<tema>.ipynb). Corresponde al uso #N del issue #6. <Si entrena un modelo: aclarar si es el modelo A (pronóstico en temporada) o B (escenarios), sección 4 del CLAUDE.md.>
 
 ## Qué le muestra al productor
 
 > "<La frase que vería el productor en la app.>"
 
-<Una o dos frases sobre para qué le sirve.>
+<Una o dos frases sobre para qué le sirve. Nombrá la pantalla del `INFO.md` donde aparece.>
 
 ## Cómo funciona, en simple
 
@@ -53,8 +53,10 @@ Notebook: [`puntoN_<tema>.ipynb`](puntoN_<tema>.ipynb). Corresponde al uso #N de
 
 **Sale:**
 
-- `data/ml/puntoN_<tema>.csv`: <columnas, en orden>. Lo usa <el front / el punto M>.
-- `modelos/puntoN_<tema>.joblib`: <si aplica>. No se sube a Git.
+| Archivo | Columnas | Para quién |
+|---|---|---|
+| `data/ml/<archivo>.csv` | <columnas, claves primero> | <el front (`INFO.md` sección X) / el punto M> |
+| `modelos/puntoN_<tema>.joblib` | <si aplica> | <quién lo carga>. No va a Git |
 
 ## Depende de / lo usan
 
@@ -63,13 +65,18 @@ Notebook: [`puntoN_<tema>.ipynb`](puntoN_<tema>.ipynb). Corresponde al uso #N de
 
 ## Cómo se valida
 
+- <Cómo se separan los datos: por año, nunca filas al azar. Qué queda como prueba final (`MIRAR_PRUEBA`).>
 - <Baseline o regla simple a superar.>
-- <Métrica y por qué esa.>
+- <Métrica y por qué esa, por estado y por año.>
 - <Chequeos de sentido común o agronómicos.>
 
 ## Supuestos
 
 - <Cada decisión que no viene de los datos: umbrales, cantidad de grupos, cultivos candidatos, etc., con el motivo.>
+
+## Probado
+
+- <Con qué datos se corrió (reales o inventados para probar código) y qué salió. Nunca presentar resultados de datos inventados como reales.>
 
 ## Qué falta
 

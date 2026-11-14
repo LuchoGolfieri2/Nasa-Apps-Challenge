@@ -26,7 +26,7 @@ Ejemplo:
 
 ## Base
 
-- [ ] **F01** Scaffold Vite + React + TypeScript en `web/`, rutas por hash (`#/`, `#/state/KS`, `#/county/20191?year=2021`, `#/county/20191/next`, `#/sources`) · Libre
+- [x] ~~**F01** Scaffold Vite + React + TypeScript en `web/`, rutas por hash (`#/`, `#/state/KS`, `#/county/20191?year=2021`, `#/county/20191/next`, `#/sources`)~~ · ✅ Walicki
   - Archivos: `web/package.json`, `web/src/app/` · Bloquea a casi todo: hacerla primero.
 - [ ] **F02** Tokens de color y tipografía como variables CSS (paleta del equipo, Bricolage Grotesque + DM Sans, colores de cultivo aptos para daltonismo sobre fondo oscuro) · 🔨 Lucho
   - Archivos: `web/src/ui/tokens.css` · Base: los tokens de `web/prototype/globo/index.html`.
@@ -37,8 +37,8 @@ Ejemplo:
 
 ## Datos para el front
 
-- [ ] **F05** `scripts/build_front_data.py`: del zip del CDL arma `county/<fips>.json` (`crops_pct`, `area_by_crop`, `common_rotations`) para Story, McLean y Sumner; lo demás en `null` · Libre
-- [ ] **F06** PNG del CDL por año (2015–2025) recortado a cada condado de demo, con la paleta de cultivos · Libre
+- [x] ~~**F05** `scripts/build_front_data.py`: del zip del CDL arma `county/<fips>.json` (`crops_pct`, `area_by_crop`, `common_rotations`) para Story, McLean y Sumner; lo demás en `null`~~ · ✅ Walicki
+- [x] ~~**F06** PNG del CDL por año (2015–2025) recortado a cada condado de demo, con la paleta de cultivos~~ · ✅ Walicki
   - Archivos: `web/public/data/cdl/<fips>/<anio>.png`
 - [ ] **F07** NASA POWER en los centroides de IA, IL y KS: lluvia y temperatura por año, marcas de año seco/húmedo y titular que arranca con el dato NASA · Libre
   - Verificar: la línea de tiempo de Sumner muestra años secos y el titular dice "(NASA POWER)".
@@ -56,13 +56,13 @@ Ejemplo:
 
 ## Pantalla 2 · Historia del condado
 
-- [ ] **F15** Línea de tiempo ⏪/▶ 2015–2025, autoplay a ≈1,6 s por año, marcas de año seco/húmedo · Libre
+- [x] ~~**F15** Línea de tiempo ⏪/▶ 2015–2025, autoplay a ≈1,6 s por año, marcas de año seco/húmedo~~ · ✅ Walicki
   - Archivos: `web/src/history/Timeline*`
-- [ ] **F16** Precarga de los 11 rasters: ▶ deshabilitado con "Loading 7/11 years"; año que falla = "Missing data" sin frenar el play · Libre · Bloquea: F06
-- [ ] **F17** Condado pintado lote a lote con el CDL del año, sincronizado con la línea de tiempo · Libre · Bloquea: F06, F15
-- [ ] **F18** Bar chart race de superficie por cultivo, sincronizado con la línea de tiempo · Libre · Bloquea: F05, F15
-- [ ] **F19** Titular por año ("2023 — Dry July (NASA POWER). Corn after soy on 46% of fields (USDA CDL).") · Libre · Bloquea: F05, F07
-- [ ] **F20** Bloque inferior: rinde vs. lo habitual en palabras, verdor (como vigor), clima, agua en el suelo, con chips de fuente · Libre
+- [x] ~~**F16** Precarga de los 11 rasters: ▶ deshabilitado con "Loading 7/11 years"; año que falla = "Missing data" sin frenar el play~~ · ✅ Walicki · Bloquea: F06
+- [x] ~~**F17** Condado pintado lote a lote con el CDL del año, sincronizado con la línea de tiempo~~ · ✅ Walicki · Bloquea: F06, F15
+- [x] ~~**F18** Bar chart race de superficie por cultivo, sincronizado con la línea de tiempo~~ · ✅ Walicki · Bloquea: F05, F15
+- [x] ~~**F19** Titular por año ("2023 — Dry July (NASA POWER). Corn after soy on 46% of fields (USDA CDL).")~~ · ✅ Walicki · Bloquea: F05, F07
+- [x] ~~**F20** Bloque inferior: rinde vs. lo habitual en palabras, verdor (como vigor), clima, agua en el suelo, con chips de fuente~~ · ✅ Walicki
 
 ## Pantalla 3 · Próxima campaña
 

@@ -1,8 +1,24 @@
 # Credenciales (ver CLAUDE.md)
 .env
 
+# Entregas de datos para ML: solo lectura, llegan aparte (notebooks/ml/CLAUDE.md)
+data/fieldshift_datos_*/
+
 # Modelos entrenados: se regeneran con las notebooks
 modelos/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Entorno virtual local
+.venv/
+__pycache__/
+
+# Front-end
+web/node_modules/
+web/dist/
+web/.vite/
+*.tsbuildinfo
+
+# Bocetos locales, no se suben
+docs/mockups/
