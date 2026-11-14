@@ -256,3 +256,38 @@ Si no encuentran algo, lo dicen. No completan con valores supuestos.
 3. Mientras AppEEARS procesa: `clima`, NASS de `cultivos` y `suelo_terreno`.
 4. CDL → máscaras agrícola, de maíz y de soja → reprocesar vegetación con las máscaras. CSB al final de `cultivos`.
 5. Validación, data cards y `merge.py`.
+
+---
+
+## 10. Front-end (qué va a consumir estos datos)
+
+El pipeline sigue siendo el objetivo de este repo; esta sección resume para qué se usan los CSV, así cada paquete sabe qué no puede faltar. Detalle en `docs/design.md` y en el documento de flujo enlazado ahí. Al diseñar o programar la interfaz, usar la skill `field-shift-frontend`.
+
+**Flujo acordado (4 pantallas):**
+
+1. **Mapa.** Globo 3D enfocado en EE. UU. con los estados de `config.yaml` encendidos y un buscador. Al tocar un estado, la cámara baja y aparecen sus condados pintados según una variable. Se elige el condado.
+2. **Historia del condado.** Línea de tiempo 2008–2025 que el usuario recorre: qué se sembró, rendimiento, verdor (NDVI), clima (POWER) y agua en el suelo (SMAP, desde 2015), más las rotaciones más comunes.
+3. **Próxima campaña.** La rotación actual frente a dos alternativas, con rangos p10 / mediana / p90, confianza y dato faltante. Cada alternativa muestra **condados gemelos**: condados con suelo y clima parecidos que sí sembraron ese cultivo.
+4. **Fuentes y límites.**
+
+**Reglas que afectan a los datos:**
+
+- La unidad es el condado. La interfaz no muestra nada por lote.
+- Se compara, no se recomienda.
+- No se muestra "porcentaje de éxito": se cuentan años contra lo habitual del condado. Qué es "lo habitual" lo define el equipo de ML (ver 6.2: no sacar la tendencia en el pipeline).
+- No se afirma qué rotación rindió más: el rendimiento existe solo por condado. Se muestran las rotaciones más comunes y, como aproximación, el verdor.
+- Un faltante se muestra escrito como "Missing data". Por eso los faltantes van como celda vacía, nunca 0 (sección 4).
+- No se le pregunta maquinaria al productor. El suelo sale de `suelo_terreno_estatico.csv` y el usuario solo lo confirma.
+- La app lee JSON estáticos derivados de `data/processed/` y de `data/ml/`. No llama a APIs en vivo.
+
+**Qué archivo usa cada pantalla:**
+
+| Pantalla | Archivos |
+|---|---|
+| Mapa | `data/reference/condados.gpkg`, `condados.csv`, `vegetacion/fenologia_anual.csv` |
+| Historia del condado | `cultivos/rotacion_anual.csv`, `rotacion_secuencia.csv`, `produccion_anual.csv`, `vegetacion/vegetacion_16d.csv`, `clima/clima_anual.csv`, `clima_mensual.csv`, `agua/agua_mensual.csv` |
+| Próxima campaña y gemelos | `suelo_terreno/suelo_terreno_estatico.csv`, `clima/clima_anual.csv`, `cultivos/rotacion_anual.csv`, `produccion_anual.csv`, `practicas_censo.csv`, salidas del modelo en `data/ml/` |
+
+**Pendiente para el equipo de datos:** comparar el verdor del maíz según el cultivo anterior (maíz tras soja frente a maíz tras maíz) necesita cruzar el NDVI con las transiciones por píxel del CDL. Ese cálculo no está en el contrato de la sección 4; agregarlo cambia el esquema, así que se consulta antes (regla 6).
+
+**Sin definir:** dirección visual, qué variable pinta el mapa de estado, y qué variables definen que dos condados se parezcan.
