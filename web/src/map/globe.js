@@ -78,11 +78,47 @@ const isLanding = () => document.body.classList.contains('landing');
 
 const sky = $('globe-sky'), hud = $('globe-hud');
 const sctx = sky.getContext('2d'), hctx = hud.getContext('2d');
-const STARS = Array.from({length: 520}, (_, i) => {
-  const r = (n) => { const v = Math.sin(i * 127.1 + n * 311.7) * 43758.5453; return v - Math.floor(v); };
-  const b = r(5);
-  return {x: r(1), y: r(2), s: 0.3 + Math.pow(r(3), 3) * 1.4, p: r(4) * 6.28, b: 0.25 + b * b * 0.75};
-});
+// ---- cielo: estrellas fijas en una esfera celeste que gira igual que la Tierra (como en Google Earth).
+// Cada estrella es una dirección 3D; se proyecta desde la orientación del cielo (skyLon, skyLat).
+// ~2800 estrellas en toda la esfera dejan ~520 en pantalla, la misma densidad que antes.
+// La Vía Láctea es una franja tenue: estrellas chicas apiñadas cerca de un gran círculo y un brillo suave.
+const hash = (i, n) => { const v = Math.sin(i * 127.1 + n * 311.7) * 43758.5453; return v - Math.floor(v); };
+const N_FIELD = 2800, N_BAND = 1500, N_STAR = N_FIELD + N_BAND, N_GLOW = 96;
+const SX = new Float32Array(N_STAR), SY = new Float32Array(N_STAR), SZ = new Float32Array(N_STAR);
+const SS = new Float32Array(N_STAR), SB = new Float32Array(N_STAR), SP = new Float32Array(N_STAR);
+const GX = new Float32Array(N_GLOW), GY = new Float32Array(N_GLOW), GZ = new Float32Array(N_GLOW);
+// plano de la franja: inclinado respecto del ecuador, como la Vía Láctea real (~60°)
+const BN = [0.42, -0.36, 0.83], BU = [0.89, 0.37, -0.27];
+const BV = [BN[1] * BU[2] - BN[2] * BU[1], BN[2] * BU[0] - BN[0] * BU[2], BN[0] * BU[1] - BN[1] * BU[0]];
+function bandDir(th, off, out, i) {
+  const c = Math.cos(th), s = Math.sin(th), co = Math.cos(off), so = Math.sin(off);
+  for (let j = 0; j < 3; j++) out[j][i] = (BU[j] * c + BV[j] * s) * co + BN[j] * so;
+}
+for (let i = 0; i < N_FIELD; i++) {
+  const z = 2 * hash(i, 1) - 1, ph = 6.2832 * hash(i, 2), q = Math.sqrt(1 - z * z), b = hash(i, 5);
+  SX[i] = q * Math.cos(ph); SY[i] = q * Math.sin(ph); SZ[i] = z;
+  SS[i] = 0.3 + Math.pow(hash(i, 3), 3) * 1.4; SP[i] = hash(i, 4) * 6.28; SB[i] = 0.25 + b * b * 0.75;
+}
+for (let k = 0; k < N_BAND; k++) {
+  const i = N_FIELD + k, g = hash(i, 1) + hash(i, 2) + hash(i, 3) - 1.5; // suma de 3 uniformes ≈ campana
+  bandDir(6.2832 * hash(i, 4), g * 0.16, [SX, SY, SZ], i);
+  SS[i] = 0.25 + hash(i, 5) * 0.35; SP[i] = hash(i, 6) * 6.28; SB[i] = 0.12 + hash(i, 7) * 0.28;
+}
+for (let k = 0; k < N_GLOW; k++) bandDir((6.2832 * k) / N_GLOW, (hash(k, 9) - 0.5) * 0.08, [GX, GY, GZ], k);
+const GLOW_SPRITE = (() => { // mancha suave pre-dibujada una vez: después solo se copia (sin objetos por cuadro)
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const x = cv.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(205,218,255,1)'); g.addColorStop(1, 'rgba(205,218,255,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  return cv;
+})();
+// orientación del cielo: acompaña cada cambio de la cámara fuera de la portada; en la portada queda quieto
+let skyLon = R.lon, skyLat = R.lat, prevLon = R.lon, prevLat = R.lat;
+function followCamera() {
+  let d = R.lon - prevLon; d = (((d + 180) % 360) + 360) % 360 - 180;
+  if (!isLanding()) { skyLon += d; skyLat += R.lat - prevLat; }
+  prevLon = R.lon; prevLat = R.lat;
+}
 
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -316,20 +352,46 @@ function globeRadiusPx() {
   return best;
 }
 
+// Proyección: la cara de la esfera celeste que mira a la cámara, en perspectiva con ~120° de diagonal.
+// Se usa la misma convención que la superficie de la Tierra (este a la derecha), así el cielo se mueve
+// en el mismo sentido y al mismo ritmo angular que el globo. El zoom abre el campo hasta un 15 %.
+function drawStars(c, t, u, r) {
+  const cx = W / 2, cy = H / 2, lam = skyLon * rad, phi = skyLat * rad;
+  const cl = Math.cos(lam), sl = Math.sin(lam), cp = Math.cos(phi), sp = Math.sin(phi);
+  const px = cp * cl, py = cp * sl, pz = sp, ex = -sl, ey = cl, nx = -sp * cl, ny = -sp * sl, nz = cp;
+  const f = (Math.hypot(W, H) / 2 / Math.tan(60 * rad)) * (1 + 0.15 * clamp01((R.k - 1) / 3.5));
+  const r2 = r * r * 0.99, gs = f * 0.34;
+  // brillo de la franja
+  c.globalAlpha = u * 0.05;
+  for (let i = 0; i < N_GLOW; i++) {
+    const dp = GX[i] * px + GY[i] * py + GZ[i] * pz; if (dp < 0.2) continue;
+    const x = cx + (f * (GX[i] * ex + GY[i] * ey)) / dp, y = cy - (f * (GX[i] * nx + GY[i] * ny + GZ[i] * nz)) / dp;
+    if (x < -gs || x > W + gs || y < -gs || y > H + gs) continue;
+    c.drawImage(GLOW_SPRITE, x - gs, y - gs, gs * 2, gs * 2);
+  }
+  c.fillStyle = '#FFFFFF';
+  for (let i = 0; i < N_STAR; i++) {
+    const dp = SX[i] * px + SY[i] * py + SZ[i] * pz; if (dp < 0.2) continue;
+    const x = cx + (f * (SX[i] * ex + SY[i] * ey)) / dp;
+    if (x < -2 || x > W + 2) continue;
+    const y = cy - (f * (SX[i] * nx + SY[i] * ny + SZ[i] * nz)) / dp;
+    if (y < -2 || y > H + 2) continue;
+    const dx = x - cx, dy = y - cy; if (dx * dx + dy * dy < r2) continue; // detrás del disco de la Tierra
+    c.globalAlpha = u * SB[i] * (0.7 + 0.3 * Math.sin(t * 0.9 + SP[i]));
+    const s = SS[i];
+    if (s < 0.8) c.fillRect(x - s, y - s, s * 2, s * 2);
+    else { c.beginPath(); c.arc(x, y, s, 0, 6.2832); c.fill(); }
+  }
+  c.globalAlpha = 1;
+}
+
 function drawSky(t, u, r) {
   const c = sctx, cx = W / 2, cy = H / 2;
   c.setTransform(DPR, 0, 0, DPR, 0, 0);
   const g = c.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.8);
   g.addColorStop(0, '#03070D'); g.addColorStop(1, '#000000');
   c.fillStyle = g; c.fillRect(0, 0, W, H);
-  if (u > 0.02) {
-    c.fillStyle = '#FFFFFF';
-    for (const s of STARS) {
-      c.globalAlpha = u * s.b * (0.7 + 0.3 * Math.sin(t * 0.9 + s.p));
-      c.beginPath(); c.arc(s.x * W, s.y * H, s.s, 0, 6.2832); c.fill();
-    }
-    c.globalAlpha = 1;
-  }
+  if (u > 0.02) drawStars(c, t, u, r);
   if (r < Math.max(W, H) * 1.2) { // borde fino de atmósfera
     const a = c.createRadialGradient(cx, cy, r * 0.985, cx, cy, r * 1.11);
     a.addColorStop(0, 'rgba(150,205,255,0.55)'); a.addColorStop(0.3, 'rgba(90,160,255,0.18)'); a.addColorStop(1, 'rgba(60,130,255,0)');
@@ -429,6 +491,7 @@ function step(now) {
     spinV += ((idle ? SPIN_SPEED : 0) - spinV) * (1 - Math.exp(-dt / (idle ? 1.2 : 0.25)));
     if (spinV > 0.001) R.lon = ((((R.lon - spinV * dt + 180) % 360) + 360) % 360) - 180;
   }
+  followCamera();
   const a = Math.round(clamp01((R.k - COUNTY_K) / 2) * 50) / 50;
   const u = clamp01(1.6 - R.k * 0.35);
   deckgl.setProps({viewState: viewState(), layers: buildLayers(a), controller: take || isLanding() ? false : CONTROLLER});
