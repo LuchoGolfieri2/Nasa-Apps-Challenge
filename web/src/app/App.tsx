@@ -1,5 +1,7 @@
 import { Logo } from "../ui/Logo";
 import { HistoryScreen } from "../history/HistoryScreen";
+import { MapLayer } from "../map/MapLayer";
+import { NextScreen } from "../next/NextScreen";
 import { useLocation } from "./router";
 import "./app.css";
 
@@ -21,34 +23,33 @@ function Pending({ title, task, children }: { title: string; task: string; child
 
 export function App() {
   const { route, query } = useLocation();
+  // Pantalla 1 (portada, globo, estado y condado en el mapa) la dibuja MapLayer, que queda siempre montada.
+  const onMap = route.name === "home" || route.name === "map" || route.name === "state";
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <Logo />
-        <nav className="topbar__nav" aria-label="Main">
-          <a href="#/">Map</a>
-          <a href="#/sources">Sources &amp; limits</a>
-        </nav>
-      </header>
+    <>
+      <MapLayer active={onMap} />
+      {onMap ? null : (
+        <div className="app">
+          <header className="topbar">
+            <Logo />
+            <nav className="topbar__nav" aria-label="Main">
+              <a href="#/map">Map</a>
+              <a href="#/sources">Sources &amp; limits</a>
+            </nav>
+          </header>
 
-      {route.name === "county" ? (
-        <HistoryScreen key={route.fips} fips={route.fips} query={query} />
-      ) : route.name === "globe" ? (
-        <Pending title="Pick your county" task="map screen, tasks F11–F14" />
-      ) : route.name === "state" ? (
-        <Pending title={`Counties in ${route.state}`} task="map screen, tasks F11–F14" />
-      ) : route.name === "next" ? (
-        <Pending title="Options for next season" task="next season screen, tasks F21–F24">
-          <p>
-            <a href={`#/county/${route.fips}`}>← Back to the county history</a>
-          </p>
-        </Pending>
-      ) : route.name === "sources" ? (
-        <Pending title="Sources & limits" task="task F25" />
-      ) : (
-        <Pending title="Page not found" task="check the address" />
+          {route.name === "county" ? (
+            <HistoryScreen key={route.fips} fips={route.fips} query={query} />
+          ) : route.name === "next" ? (
+            <NextScreen key={route.fips} fips={route.fips} />
+          ) : route.name === "sources" ? (
+            <Pending title="Sources & limits" task="task F25" />
+          ) : (
+            <Pending title="Page not found" task="check the address" />
+          )}
+        </div>
       )}
-    </div>
+    </>
   );
 }

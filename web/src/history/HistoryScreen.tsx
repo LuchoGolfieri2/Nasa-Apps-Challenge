@@ -104,6 +104,7 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
   }
 
   const current = county.years.find((y) => y.year === year)!;
+  const prevYear = years[years.indexOf(year) - 1] ?? null;
   const marks = Object.fromEntries(county.years.filter((y) => y.weather?.tags.length).map((y) => [y.year, y.weather!.tags]));
 
   const play = () => {
@@ -125,6 +126,8 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
       <div className="history__stage">
         <div className="history__story">
           <p className="history__eyebrow">
+            <a href={`#/map/${county.fips}`}>← Map</a>
+            <span aria-hidden="true"> · </span>
             <a href={`#/state/${county.state}`}>{county.state_name}</a>
             <span aria-hidden="true"> › </span>
             {county.name} County
@@ -165,6 +168,8 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
               status={rasters.status[year]}
               highlight={highlight}
               countyName={county.name}
+              prevYear={prevYear}
+              prevClasses={prevYear === null ? null : rasters.get(prevYear)}
             />
           ) : (
             <Missing what="the crop map (USDA CDL) is not loaded for this county" />
@@ -180,6 +185,8 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
           loaded={county.raster ? rasters.settled : 1}
           total={county.raster ? rasters.total : 1}
           marks={marks}
+          data={county.years}
+          stepMs={stepMs}
           onYear={pickYear}
           onPlay={play}
           onRewind={rewind}
