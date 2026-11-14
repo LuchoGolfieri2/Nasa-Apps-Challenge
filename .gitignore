@@ -1,0 +1,8 @@
+# Credenciales (ver CLAUDE.md)
+.env
+
+# Modelos entrenados: se regeneran con las notebooks
+modelos/
+
+# Jupyter
+.ipynb_checkpoints/
