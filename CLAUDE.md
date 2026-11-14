@@ -265,6 +265,8 @@ El pipeline sigue siendo el objetivo de este repo; esta sección resume para qu�
 
 **Documentos del front, en orden de prioridad** (si chocan, manda el primero): `docs/specs/front-back-connection-spec.md` (spec vigente) → `docs/specs/mockups-secciones.md` (identidad y secciones) → `docs/front-end-plan.md` (arquitectura, contrato JSON, tomas del video) → `docs/design.md`. Índice en `Field Rewind.md`. Al diseñar o programar la interfaz, usar la skill `field-shift-frontend` para los principios generales; sus "4 pantallas" están desactualizadas y valen las de abajo.
 
+**Tareas del front: `TAREAS.md`.** Antes de agarrar una tarea, anotá tu nombre en ella y pusheá ese cambio a `main`; trabajá en la rama `front/<id>-<nombre>`; al terminar, tachá la tarea en el mismo PR, así queda tachada al mergear. No tomes una tarea que ya tiene nombre. Detalle en `TAREAS.md` §"Cómo trabajamos".
+
 **Identidad visual (fija):** Verde noche `#0F2A1D` (fondo), Verde campo `#2F7D4F`, Verde brote `#8ED081`, Oro trigo `#E9B949`, Papel `#F6F1E4`, Tierra `#6B4A2F` y Rojo alerta `#E5484D` (solo riesgo y confianza baja). Tipografías: Bricolage Grotesque (títulos) y DM Sans (datos y texto). Interfaz solo en inglés.
 
 **Flujo acordado (4 pantallas):**

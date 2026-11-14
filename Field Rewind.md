@@ -9,6 +9,7 @@ actualizado: 2026-11-14
 
 ## Empezá por acá
 
+0. [[TAREAS]] — **lista de tareas del front**: anotá tu nombre antes de empezar, tachala al mergear.
 1. [[front-back-connection-spec]] — **spec vigente** (entrevista del 14/11). Manda sobre todo lo demás.
 2. [[front-end-plan]] — arquitectura, contrato de JSON, tomas del video y orden de construcción.
 3. [[mockups-secciones]] — **secciones a mockear** y paleta elegida (esperando aprobación).
