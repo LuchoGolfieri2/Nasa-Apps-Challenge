@@ -126,6 +126,8 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
       <div className="history__stage">
         <div className="history__story">
           <p className="history__eyebrow">
+            <a href={`#/map/${county.fips}`}>← Map</a>
+            <span aria-hidden="true"> · </span>
             <a href={`#/state/${county.state}`}>{county.state_name}</a>
             <span aria-hidden="true"> › </span>
             {county.name} County
