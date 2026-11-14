@@ -56,13 +56,13 @@ Ejemplo:
 
 ## Pantalla 2 · Historia del condado
 
-- [ ] **F15** Línea de tiempo ⏪/▶ 2015–2025, autoplay a ≈1,6 s por año, marcas de año seco/húmedo · Libre
+- [ ] **F15** Línea de tiempo ⏪/▶ 2015–2025, autoplay a ≈1,6 s por año, marcas de año seco/húmedo · 🔨 Walicki (14/11 16:06)
   - Archivos: `web/src/history/Timeline*`
-- [ ] **F16** Precarga de los 11 rasters: ▶ deshabilitado con "Loading 7/11 years"; año que falla = "Missing data" sin frenar el play · Libre · Bloquea: F06
-- [ ] **F17** Condado pintado lote a lote con el CDL del año, sincronizado con la línea de tiempo · Libre · Bloquea: F06, F15
-- [ ] **F18** Bar chart race de superficie por cultivo, sincronizado con la línea de tiempo · Libre · Bloquea: F05, F15
-- [ ] **F19** Titular por año ("2023 — Dry July (NASA POWER). Corn after soy on 46% of fields (USDA CDL).") · Libre · Bloquea: F05, F07
-- [ ] **F20** Bloque inferior: rinde vs. lo habitual en palabras, verdor (como vigor), clima, agua en el suelo, con chips de fuente · Libre
+- [ ] **F16** Precarga de los 11 rasters: ▶ deshabilitado con "Loading 7/11 years"; año que falla = "Missing data" sin frenar el play · 🔨 Walicki (14/11 16:06) · Bloquea: F06
+- [ ] **F17** Condado pintado lote a lote con el CDL del año, sincronizado con la línea de tiempo · 🔨 Walicki (14/11 16:06) · Bloquea: F06, F15
+- [ ] **F18** Bar chart race de superficie por cultivo, sincronizado con la línea de tiempo · 🔨 Walicki (14/11 16:06) · Bloquea: F05, F15
+- [ ] **F19** Titular por año ("2023 — Dry July (NASA POWER). Corn after soy on 46% of fields (USDA CDL).") · 🔨 Walicki (14/11 16:06) · Bloquea: F05, F07
+- [ ] **F20** Bloque inferior: rinde vs. lo habitual en palabras, verdor (como vigor), clima, agua en el suelo, con chips de fuente · 🔨 Walicki (14/11 16:06)
 
 ## Pantalla 3 · Próxima campaña
 
