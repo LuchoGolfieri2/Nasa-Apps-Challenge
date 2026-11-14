@@ -52,8 +52,11 @@ Ejemplo:
   - Archivos: `web/src/map/globe.js` (deck.gl + Blue Marble de GIBS)
   - Sin latido: el resaltado es fijo, porque un latido parece un dato en vivo y no lo es. Gira solo a 3°/s tras 3 s sin tocarlo.
 - [x] ~~**F12** Portada = globo con botón "Rewind Sumner County, KS" (vuelo → Sumner → play) y "Pick your county"~~ · ✅ Naim · Bloquea: F11
-- [ ] **F13** Vuelo al estado, condados pintados por la variable, rayado "Missing data", tooltip y botón "See its history" · 🔨 Naim (14/11 15:58) · Bloquea: F08, F11
-- [ ] **F14** Buscador de condado, lista accesible de estados, aviso fuera de cobertura y mapa plano si no hay WebGL · 🔨 Naim (14/11 15:58)
+- [x] ~~**F13** Vuelo al estado, condados pintados por la variable, rayado "Missing data", tooltip y botón "See its history"~~ · ✅ Naim · Bloquea: F08, F11
+  - El rayado sale en los condados con el valor vacío: hoy ninguno (los valores son de prueba); aparece cuando F08 traiga huecos. Tooltip: "Butler County, KS · Corn 34%" o "Missing data".
+- [x] ~~**F14** Buscador de condado, lista accesible de estados, aviso fuera de cobertura y mapa plano si no hay WebGL~~ · ✅ Naim
+  - Buscador en la barra de arriba (estados y condados; fuera de cobertura dice "Not covered yet"). Lista de estados oculta para lectores de pantalla.
+  - Sin mapa plano: el globo necesita WebGL (decisión del 14/11).
 
 ## Pantalla 2 · Historia del condado
 
