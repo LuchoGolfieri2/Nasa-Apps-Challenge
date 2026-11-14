@@ -9,3 +9,11 @@ modelos/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Entorno de Python local
+.venv/
+
+# Front-end
+web/node_modules/
+web/dist/
+*.tsbuildinfo
