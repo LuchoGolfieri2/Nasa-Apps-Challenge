@@ -313,7 +313,7 @@ notebooks/ml/              # esta carpeta: notebooks, sus PUNTON.md y este CLAUD
 | 1 | `punto1_sectores.ipynb` | Su lote dividido en sectores, con vigor **relativo** por año (no rinde) | k-means sobre HLS/Landsat, NASADEM y SSURGO |
 | 2 | [`punto2_rotaciones.ipynb`](punto2_rotaciones.ipynb) | Rango de rinde del condado por rotación y clima (modelo B) | Ridge / LightGBM sobre anomalías (clima y suelo) + efectos fijos (rotación) + escenarios |
 | 3 | `punto3_explicaciones.ipynb` | El "por qué" de los números | SHAP del modelo del punto 2 (clima y suelo) + `efecto_rotacion.csv` (rotación), con frases de plantillas fijas. Arranque: `PUNTO2.md`, sección "Para el punto 3" |
-| 4 | `punto4_anomalias.ipynb` | Años que rindieron distinto de lo esperado | Real contra esperado por el modelo del punto 2 |
+| 4 | [`punto4_anomalias.ipynb`](punto4_anomalias.ipynb) | Años que rindieron distinto de lo esperado | Real contra un año normal según el modelo del punto 2; causa por grupos de clima (SHAP) |
 | 5 | `punto5_vecinos.ipynb` | Condados o lotes parecidos que sí hicieron esa rotación | kNN por suelo, clima e historial |
 
 Prioridad (comentario de Lucho en el issue #6): #1 imprescindible; #2 y #3 muy recomendables; #4 y

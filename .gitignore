@@ -10,8 +10,9 @@ modelos/
 # Jupyter
 .ipynb_checkpoints/
 
-# Entorno de Python local
+# Entorno virtual local
 .venv/
+__pycache__/
 
 # Front-end
 web/node_modules/
