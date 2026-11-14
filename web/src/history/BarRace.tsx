@@ -1,10 +1,20 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CountyYear } from "../data/types";
 import { CROPS, CROP_COLOR, CROP_LABEL, CROP_NOTE, type CropId } from "../ui/crops";
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 
-const ROW = 44;
+/** Alto de cada fila: más bajo en pantallas de poca altura (notebooks), para que la carrera entre entera. */
+function useRowHeight() {
+  const pick = () => (window.innerHeight < 900 ? 36 : 44);
+  const [row, setRow] = useState(pick);
+  useEffect(() => {
+    const onResize = () => setRow(pick());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return row;
+}
 const fmt = new Intl.NumberFormat("en-US");
 
 interface Props {
@@ -20,6 +30,7 @@ interface Props {
  * La escala es fija para todo el período, así el largo de una barra se compara entre años.
  */
 export function BarRace({ years, current, highlight, onHighlight, source }: Props) {
+  const ROW = useRowHeight();
   // Entran los cultivos que alguna vez pasaron el 2 % de la superficie con cultivo.
   const { crops, maxAc } = useMemo(() => {
     const shown = CROPS.filter((c) => years.some((y) => (y.crops_pct?.[c] ?? 0) >= 2));
@@ -48,7 +59,7 @@ export function BarRace({ years, current, highlight, onHighlight, source }: Prop
             <li
               key={c}
               className={dim ? "race__row race__row--dim" : "race__row"}
-              style={{ transform: `translateY(${r * ROW}px)` }}
+              style={{ transform: `translateY(${r * ROW}px)`, height: ROW }}
               aria-label={`${r + 1}. ${CROP_LABEL[c]}: ${fmt.format(area[c].ac)} acres, ${Math.round(pct[c])}% of cropland`}
               title={CROP_NOTE[c]}
               onPointerEnter={() => onHighlight(c)}

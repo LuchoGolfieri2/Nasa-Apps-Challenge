@@ -13,8 +13,8 @@ import { useRasters } from "./useRasters";
 import { YearFacts } from "./YearFacts";
 import "./history.css";
 
-/** Segundos por año en el play automático. Se puede cambiar con ?speed=0.8 (tomas del video). */
-const DEFAULT_STEP_S = 1.6;
+/** Segundos por año en el play automático: 11 años ≈ 9 s. Se puede cambiar con ?speed=1.2 (tomas del video). */
+const DEFAULT_STEP_S = 0.8;
 
 const DEMO = [
   { fips: "20191", label: "Sumner, KS" },
@@ -155,7 +155,6 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
             source={county.raster?.source ?? "USDA CDL"}
           />
 
-          <YearFacts county={county} y={current} />
         </div>
 
         <div className="history__map">
@@ -171,6 +170,7 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
           ) : (
             <Missing what="the crop map (USDA CDL) is not loaded for this county" />
           )}
+          <YearFacts county={county} y={current} />
         </div>
       </div>
 

@@ -726,7 +726,7 @@ function syncUI() {
     $('p-status').textContent = has ? 'Full history available · 2015–2025' : 'History not loaded for this county yet';
     $('p-status').className = has ? 'ok' : 'missing';
     $('p-open').disabled = !has;
-    $('p-open').textContent = has ? 'Open county history →' : 'Missing data';
+    $('p-open').textContent = has ? '▶ Rewind 2015–2025' : 'Missing data';
     $('p-stats').innerHTML =
       `<span class="stamp">Prototype data</span>` +
       `<div><b>${pct(m.corn)}</b><small>Corn share of cropland</small></div>` +
@@ -781,17 +781,12 @@ $('p-twinlist').addEventListener('click', (e) => {
 $('enter').addEventListener('click', () => {
   location.hash = '#/map';
 });
-// "Rewind Sumner County, KS": vuela a Sumner y abre su historia con el play andando (F12)
-$('cta').addEventListener('click', () => {
-  selectCounty(DEMO_COUNTY);
-  window.setTimeout(() => {
-    location.hash = `#/county/${DEMO_COUNTY}?play=1`;
-  }, 1700);
-});
+// Botón de entrada: vuela directo al condado de demo y abre su panel en el mapa
+$('cta').addEventListener('click', () => selectCounty(DEMO_COUNTY));
 $('p-open').addEventListener('click', () => {
   if (selCounty) {
     emit('open', {fips: selCounty.id});
-    location.hash = `#/county/${selCounty.id}`;
+    location.hash = `#/county/${selCounty.id}?play=1`; // la historia arranca reproduciéndose
   } else if (selState) {
     selectCounty(Object.keys(FEATURED).find((id) => id.startsWith(selState.id)));
   }

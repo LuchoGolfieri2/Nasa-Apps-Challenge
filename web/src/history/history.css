@@ -25,8 +25,8 @@
 /* Primera vista: relato a la izquierda, mapa a la derecha. Entra entera en 1920×1080. */
 .history__stage {
   display: grid;
-  grid-template-columns: minmax(0, 760px) minmax(0, 1fr);
-  gap: 40px;
+  grid-template-columns: minmax(0, min(760px, 44%)) minmax(0, 1fr);
+  gap: 36px;
   padding: 4px 32px 16px;
   height: calc(100vh - 76px - 96px);
   min-height: 600px;
@@ -53,7 +53,7 @@
   line-height: 0.9;
 }
 .headline__year {
-  font: 800 clamp(64px, 6.4vw, 124px) / 0.9 var(--font-display);
+  font: 800 clamp(56px, min(6.4vw, 10vh), 124px) / 0.9 var(--font-display);
   letter-spacing: -0.04em;
   color: var(--wheat-gold);
   font-variant-numeric: tabular-nums;
@@ -95,7 +95,6 @@
 .race__row {
   position: absolute;
   inset: 0 0 auto 0;
-  height: 44px;
   display: grid;
   grid-template-columns: 158px minmax(0, 1fr) 112px 44px;
   align-items: center;
@@ -192,17 +191,21 @@
   background: var(--surface-2);
 }
 
-/* Mapa del CDL */
+/* Mapa del CDL, con los datos del año debajo: el mapa ocupa lo que queda, así entra todo en pantalla */
 .history__map {
   min-width: 0;
   min-height: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+}
+.history__map > .facts {
+  flex: none;
 }
 .cdl {
   margin: 0;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -447,8 +450,15 @@
     gap: 24px;
     padding: 4px 16px 24px;
   }
+  /* en una columna: mapa, titular y barras, y los datos del año al final */
   .history__map {
+    display: contents;
+  }
+  .history__map > .cdl {
     order: -1;
+  }
+  .history__map > .facts {
+    order: 2;
   }
   .cdl__frame {
     height: auto;
