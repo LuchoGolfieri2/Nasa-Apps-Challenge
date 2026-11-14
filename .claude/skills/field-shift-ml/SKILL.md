@@ -7,7 +7,7 @@ description: "Modelado de ML para Field Shift: entrenar y validar modelos de ren
 
 El modelo no decide qué rotación usar. Estima cómo el clima, el suelo y el cultivo antecesor afectan el rendimiento y el riesgo, para que la comparación de rotaciones tenga evidencia y rangos de incertidumbre.
 
-**Entrada:** `data/processed/tabla_anual.csv` (y `tabla_mensual.csv`), una fila por condado × año en el Corn Belt. Con Iowa, Illinois e Indiana son unos 290 condados, así que hay miles de filas por cultivo, pero solo unos 25 años: lo que limita es la cantidad de años, no de filas. Todo lo de abajo está pensado para eso.
+**Entrada:** `data/processed/tabla_anual.csv` (y `tabla_mensual.csv`), una fila por condado × año en Iowa, Illinois y Kansas. Son unos 306 condados, así que hay miles de filas por cultivo, pero solo unos 25 años: lo que limita es la cantidad de años, no de filas. Todo lo de abajo está pensado para eso.
 
 ## 1. Antes de modelar
 

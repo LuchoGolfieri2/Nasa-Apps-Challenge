@@ -2,7 +2,7 @@
 
 Qué ve y qué hace el productor en cada paso, de dónde sale cada dato y qué falta decidir. Es la referencia para construir la app.
 
-NASA Space Apps Challenge 2026 · Corn Belt: Iowa, Illinois e Indiana · Versión del 14 de noviembre de 2026
+NASA Space Apps Challenge 2026 · Iowa, Illinois y Kansas · Versión del 14 de noviembre de 2026
 
 ## El recorrido
 
@@ -25,7 +25,7 @@ Objetivo: que en tres segundos se entienda dónde funciona la herramienta y que 
 ### Qué se ve
 
 - Globo 3D que gira despacio y se detiene sobre Estados Unidos.
-- Iowa, Illinois e Indiana encendidos, con un brillo que late suave. El resto del mundo, apagado.
+- Iowa, Illinois y Kansas encendidos, con un brillo que late suave. El resto del mundo, apagado.
 - Lupa de búsqueda arriba.
 - Una línea de texto: qué es Field Shift, en una frase.
 
@@ -35,7 +35,7 @@ Objetivo: que en tres segundos se entienda dónde funciona la herramienta y que 
 - Tocar un estado encendido: la cámara vuela hacia adentro (paso 2).
 - Buscar un lugar. Si está en los tres estados, vuela directo al condado. Si está afuera, vuela hasta ahí y avisa que todavía no está disponible.
 
-**Texto fuera de cobertura**"Field Shift doesn't cover this area yet. It works in Iowa, Illinois and Indiana."
+**Texto fuera de cobertura**"Field Rewind doesn't cover this area yet. It works in Iowa, Illinois and Kansas."
 
 ### Datos
 

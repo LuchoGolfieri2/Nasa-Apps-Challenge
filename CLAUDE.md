@@ -1,8 +1,8 @@
-# CLAUDE.md — Field Shift: pipeline de datos
+# CLAUDE.md — Field Rewind: pipeline de datos
 
-Proyecto del equipo para NASA Space Apps Challenge 2026, desafío **"Field Shift: Adapting Farms with NASA Data"**. La herramienta final ayuda a productores a comparar rotaciones de cultivos usando datos de la NASA.
+Proyecto del equipo **Pepers** para NASA Space Apps Challenge 2026, desafío **"Field Shift: Adapting Farms with NASA Data"**. La app se llama **Field Rewind** (*"Rewind your land before you decide."*): ayuda a productores a comparar rotaciones de cultivos con datos de la NASA y el USDA y sugiere una según sus prioridades. "Field Shift" es el nombre del desafío, no de la app.
 
-**Zona de estudio: Corn Belt de Estados Unidos.** Reemplaza a la zona núcleo argentina de versiones anteriores. Si encontrás instrucciones, nombres o fuentes argentinas (MAGyP, INTA, IGN, INDEC, `id_depto`, `campania`), están desactualizadas: avisá al humano.
+**Zona de estudio: Iowa, Illinois y Kansas (Estados Unidos).** Reemplaza a la zona núcleo argentina de versiones anteriores. Si encontrás instrucciones, nombres o fuentes argentinas (MAGyP, INTA, IGN, INDEC, `id_depto`, `campania`), están desactualizadas: avisá al humano.
 
 **Este repo NO entrena modelos.** Su único objetivo es bajar, limpiar y estructurar datos en CSV listos para que otro equipo arme el modelo de machine learning.
 
@@ -25,9 +25,9 @@ Referencia de variables: planilla "Catálogo de variables – Field Shift" (IDs 
 
 ## 2. Parámetros del proyecto (`config/config.yaml`)
 
-Valores por defecto. **Los estados y condados exactos están pendientes de confirmación por el equipo.**
+Valores por defecto. **Estados confirmados por el equipo el 14/11/2026** (Kansas reemplaza a Indiana).
 
-- **Zona:** Corn Belt. Para arrancar: Iowa (`IA`, FIPS 19), Illinois (`IL`, 17) e Indiana (`IN`, 18), todos sus condados (≈ 290). Si sobra tiempo: Ohio, Nebraska y Minnesota.
+- **Zona:** Iowa (`IA`, FIPS 19), Illinois (`IL`, 17) y Kansas (`KS`, 20), todos sus condados (≈ 306: 99 + 102 + 105). Iowa e Illinois son Corn Belt núcleo; Kansas suma el trigo de invierno. Condados de demo con historia completa: Story IA `19169`, McLean IL `17113` y Sumner KS `20191`. Escalable a más estados a medida que haya datos.
 - **Unidad espacial:** condado (county).
 - **Unidad temporal:** año. `anio` es el año calendario de la cosecha. Los archivos mensuales llevan el mes real; las ventanas de cada año se definen en la sección 4.
 - **Período:** 2000 a 2025. Rotaciones desde 2008 (desde ese año el Cropland Data Layer cubre todo el país). POWER puede ir desde 1981 para climatologías y SPI.
@@ -261,21 +261,26 @@ Si no encuentran algo, lo dicen. No completan con valores supuestos.
 
 ## 10. Front-end (qué va a consumir estos datos)
 
-El pipeline sigue siendo el objetivo de este repo; esta sección resume para qué se usan los CSV, así cada paquete sabe qué no puede faltar. Detalle en `docs/design.md` y en el documento de flujo enlazado ahí. Al diseñar o programar la interfaz, usar la skill `field-shift-frontend`.
+El pipeline sigue siendo el objetivo de este repo; esta sección resume para qué se usan los CSV, así cada paquete sabe qué no puede faltar.
+
+**Documentos del front, en orden de prioridad** (si chocan, manda el primero): `docs/specs/front-back-connection-spec.md` (spec vigente) → `docs/specs/mockups-secciones.md` (identidad y secciones) → `docs/front-end-plan.md` (arquitectura, contrato JSON, tomas del video) → `docs/design.md`. Índice en `Field Rewind.md`. Al diseñar o programar la interfaz, usar la skill `field-shift-frontend` para los principios generales; sus "4 pantallas" están desactualizadas y valen las de abajo.
+
+**Identidad visual (fija):** Verde noche `#0F2A1D` (fondo), Verde campo `#2F7D4F`, Verde brote `#8ED081`, Oro trigo `#E9B949`, Papel `#F6F1E4`, Tierra `#6B4A2F` y Rojo alerta `#E5484D` (solo riesgo y confianza baja). Tipografías: Bricolage Grotesque (títulos) y DM Sans (datos y texto). Interfaz solo en inglés.
 
 **Flujo acordado (4 pantallas):**
 
-1. **Mapa.** Globo 3D enfocado en EE. UU. con los estados de `config.yaml` encendidos y un buscador. Al tocar un estado, la cámara baja y aparecen sus condados pintados según una variable. Se elige el condado.
-2. **Historia del condado.** Línea de tiempo 2008–2025 que el usuario recorre: qué se sembró, rendimiento, verdor (NDVI), clima (POWER) y agua en el suelo (SMAP, desde 2015), más las rotaciones más comunes.
-3. **Próxima campaña.** La rotación actual frente a dos alternativas, con rangos p10 / mediana / p90, confianza y dato faltante. Cada alternativa muestra **condados gemelos**: condados con suelo y clima parecidos que sí sembraron ese cultivo.
+1. **Mapa.** Globo 3D enfocado en EE. UU. con Iowa, Illinois y Kansas encendidos y un buscador. Al tocar un estado, la cámara baja y aparecen sus condados pintados según una variable. Se elige el condado.
+2. **Historia del condado (rewind).** Línea de tiempo 2015–2025 con play: el condado pintado lote a lote con el CDL de cada año, carrera de barras de superficie por cultivo y un titular por año. Debajo: rendimiento, verdor (NDVI), clima (POWER), agua en el suelo (SMAP) y las rotaciones más comunes.
+3. **Próxima campaña.** La rotación actual frente a dos alternativas, con rango de rinde en bu/acre (p10 / mediana / p90), confianza con su motivo y dato faltante. Según las prioridades del productor (menos riesgo, más ingreso, salud del suelo, ahorro de agua), una opción se marca **"Suggested for your priorities"** con dos razones con fuente. Cada opción muestra **condados gemelos**: condados con suelo y clima parecidos que sí sembraron ese cultivo.
 4. **Fuentes y límites.**
 
 **Reglas que afectan a los datos:**
 
-- La unidad es el condado. La interfaz no muestra nada por lote.
-- La app sugiere una opción según las prioridades del productor, siempre con razones con fuente, rango (p10/mediana/p90) y confianza. Nada de "porcentaje de éxito".
+- La unidad es el condado. Las cifras son siempre del condado (el mapa del CDL se ve lote a lote, pero no da resultados por lote).
+- La app sugiere una opción según las prioridades del productor, siempre con razones con fuente, rango (p10/mediana/p90) y confianza (cambio del 14/11; antes "se compara, no se recomienda").
 - No se muestra "porcentaje de éxito": se cuentan años contra lo habitual del condado. Qué es "lo habitual" lo define el equipo de ML (ver 6.2: no sacar la tendencia en el pipeline).
-- No se afirma qué rotación rindió más: el rendimiento existe solo por condado. Se muestran las rotaciones más comunes y, como aproximación, el verdor.
+- El rango de rinde por opción sale del modelo de ML. El verdor se presenta como vigor, no como rinde.
+- Un dato de prueba se muestra con el sello "Prototype data"; nunca se mezcla con datos reales sin marca.
 - Un faltante se muestra escrito como "Missing data". Por eso los faltantes van como celda vacía, nunca 0 (sección 4).
 - No se le pregunta maquinaria al productor. El suelo sale de `suelo_terreno_estatico.csv` y el usuario solo lo confirma.
 - La app lee JSON estáticos derivados de `data/processed/` y de `data/ml/`. No llama a APIs en vivo.
@@ -290,4 +295,4 @@ El pipeline sigue siendo el objetivo de este repo; esta sección resume para qu�
 
 **Pendiente para el equipo de datos:** comparar el verdor del maíz según el cultivo anterior (maíz tras soja frente a maíz tras maíz) necesita cruzar el NDVI con las transiciones por píxel del CDL. Ese cálculo no está en el contrato de la sección 4; agregarlo cambia el esquema, así que se consulta antes (regla 6).
 
-**Sin definir:** dirección visual, qué variable pinta el mapa de estado, y qué variables definen que dos condados se parezcan.
+**Sin definir:** qué variable pinta el mapa de estado (propuesta: % de maíz de NASS), qué variables definen que dos condados se parezcan, cómo se muestran los gemelos (arcos o botón) y quién genera los JSON del front.

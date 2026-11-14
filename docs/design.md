@@ -15,9 +15,9 @@ El primer prototipo eran cuatro pantallas tipo formulario, sobrias y pensadas pa
 
 | Paso | Pantalla | Qué pasa |
 |---|---|---|
-| 1 | Mapa | Globo 3D enfocado en EE. UU., con Iowa, Illinois e Indiana encendidos y una lupa de búsqueda. Tocar un estado dispara el vuelo de entrada. |
+| 1 | Mapa | Globo 3D enfocado en EE. UU., con Iowa, Illinois y Kansas encendidos y una lupa de búsqueda. Tocar un estado dispara el vuelo de entrada. |
 | 2 | Mapa | El estado con sus condados pintados según una variable. Se elige el condado. |
-| 3 | Historia del condado | Línea de tiempo 2008–2025 que el usuario recorre: qué se sembró, cuánto rindió, verdor (NDVI), clima (POWER) y agua en el suelo (SMAP, desde 2015). Rotaciones más comunes. |
+| 3 | Historia del condado | Línea de tiempo 2015–2025 que el usuario recorre: qué se sembró, cuánto rindió, verdor (NDVI), clima (POWER) y agua en el suelo (SMAP, desde 2015). Rotaciones más comunes. |
 | 4 | Próxima campaña | Dos preguntas (rotación actual y prioridades), y después la rotación actual frente a dos alternativas, con condados gemelos como evidencia. |
 | 5 | Fuentes y límites | Accesible desde cualquier paso. |
 
@@ -70,7 +70,7 @@ Están dibujados en el lienzo anterior y siguen sirviendo, con la estética que 
 
 ## Sin definir
 
-- **Dirección visual:** paleta, tipografía y tema. El primer intento usó Atkinson Hyperlegible Next sobre blanco, sin color de acento; no convenció.
+- ~~**Dirección visual:** paleta, tipografía y tema.~~ **Paleta y tipografías definidas el 14/11** en `docs/specs/mockups-secciones.md`: Verde noche `#0F2A1D`, Verde campo `#2F7D4F`, Verde brote `#8ED081`, Oro trigo `#E9B949`, Papel `#F6F1E4`, Tierra `#6B4A2F`, Rojo alerta `#E5484D`; Bricolage Grotesque + DM Sans. Falta la composición (mockups).
 - **Estilo del globo:** estilizado oscuro o imagen satelital.
 - **Tema de los paneles:** claro (se lee mejor al sol) o todo oscuro como el globo.
 - **Capa del mapa de estado:** meses de suelo desnudo, agua en el suelo o rendimiento de maíz.

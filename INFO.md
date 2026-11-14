@@ -17,7 +17,7 @@ la versión del contrato coincida con la del `manifest.json`."*
 ## 1. Qué es el producto
 
 Proyecto para NASA Space Apps Challenge 2026, desafío **"Field Shift: Adapting Farms with NASA Data"**.
-La herramienta ayuda a productores del **Corn Belt de EE.UU.** (Iowa, Illinois e Indiana) a comparar
+La herramienta ayuda a productores de **EE.UU.** (Iowa, Illinois y Kansas) a comparar
 rotaciones de cultivos con datos de la NASA, para cuidar el suelo y aguantar mejor los años secos y
 húmedos.
 
@@ -134,9 +134,9 @@ Un `FeatureCollection` con un `Feature` por lote (geometría `Polygon` o `MultiP
 | Propiedad | Tipo | Qué es | Estado |
 |---|---|---|---|
 | `id_lote` | texto | `<fips>_<id del Crop Sequence Boundaries>` | FIRME |
-| `fips` | texto | 5 dígitos (19 Iowa, 17 Illinois, 18 Indiana) | FIRME |
+| `fips` | texto | 5 dígitos (19 Iowa, 17 Illinois, 20 Kansas) | FIRME |
 | `condado` | texto | Nombre del condado | FIRME |
-| `estado` | texto | `IA`, `IL` o `IN` | FIRME |
+| `estado` | texto | `IA`, `IL` o `KS` | FIRME |
 | `area_ha` y `area_ac` | número | Superficie | FIRME |
 | `cultivos` | objeto | Año → cultivo, por ejemplo `{"2024": "maiz", "2025": "soja"}` | FIRME |
 | `estado_sectores` | texto | `con_sectores`, `lote_parejo` o `sin_datos` | FIRME |

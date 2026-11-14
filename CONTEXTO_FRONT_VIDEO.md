@@ -52,14 +52,16 @@ La guía oficial 2026 pide que la demo **muestre el software funcionando**. Por 
 
 ### Toma B — pantalla completa de 0:10 a 0:20 (10 s útiles)
 
-La voz dice: *"Elegís tu condado y rebobinás 18 años: qué se sembró, cómo rindió y qué clima hubo, con datos de la NASA. Después comparás tu rotación con otras, según cómo funcionaron en el pasado."*
+La voz dice: *"Elegís tu condado y rebobinás una década: qué se sembró, cómo rindió y qué clima hubo, con datos de la NASA. Después comparás tu rotación con otras y la app te sugiere una según tus prioridades, con lo que pasó en el pasado."*
+
+> Actualizado el 14/11: el CDL limpio cubre 2015–2025, así que la voz dice "una década" (en inglés, "a decade"), no "18 años". El condado de la toma B es **Sumner, KS**.
 
 | Seg. aprox. | Acción en pantalla |
 |---|---|
 | 0–2 | Estado con los condados pintados. Toque en un condado: queda resaltado |
 | 2–3 | Botón para ver su historia |
-| 3–7 | Pantalla de historia: **el deslizador corre de 2008 a 2025** y la ficha del año cambia (cultivo, rinde, verdor, clima). Es el momento "rewind" del video |
-| 7–10 | Botón de opciones para la próxima campaña: **rotación actual frente a 2 alternativas**, con sus rangos |
+| 3–7 | Pantalla de historia: **el deslizador corre de 2015 a 2025**, el condado se pinta lote a lote y las barras de cultivos se reordenan. Es el momento "rewind" del video |
+| 7–10 | Botón de opciones para la próxima campaña: **rotación actual frente a 2 alternativas**, con sus rangos y una marcada "Suggested for your priorities" |
 
 - Si pueden, que el deslizador tenga una animación de "play" o arrastre suave. Un ícono ⏪ en la línea de tiempo conecta con el nombre.
 - Usen un condado con historia interesante: años con cambios visibles y algún año seco marcado.
@@ -76,14 +78,20 @@ No busquen un lugar de Argentina en la app: saldría el cartel de zona sin cober
 
 ## 4. Identidad visual (para que la app y las animaciones combinen)
 
-| Uso | Color |
-|---|---|
-| Verde oscuro (fondo del logo) | `#12281C` |
-| Verde claro (acento, "REWIND") | `#96DC6E` |
-| Verde cultivo | `#3C8C2D` |
-| Rojo de "pérdida" (solo en la animación del problema) | `#D71E1E` |
+Paleta del equipo (actualizada el 14/11, reemplaza a `#12281C`, `#96DC6E`, `#3C8C2D` y `#D71E1E`). La usan la app, el logo y las animaciones, para que todo parezca la misma pieza.
 
-- Logo de texto: **FIELD** (blanco) / **REWIND** (verde claro) + ícono ⏪, en tipografía sans en negrita.
+| Rol | Color | Uso |
+|---|---|---|
+| Verde noche | `#0F2A1D` | Fondo principal (fondo del logo, globo, paneles oscuros) |
+| Verde campo | `#2F7D4F` | Botones primarios, acentos sobre claro |
+| Verde brote | `#8ED081` | Acento sobre oscuro ("REWIND" del logo, glow de los estados, "Suggested") |
+| Oro trigo | `#E9B949` | Segundo acento: ícono ⏪/▶, año activo, resaltados |
+| Papel | `#F6F1E4` | Texto sobre oscuro ("FIELD" del logo); fondo de paneles claros |
+| Tierra | `#6B4A2F` | Suelo desnudo, barbecho, datos de suelo |
+| Rojo alerta | `#E5484D` | Solo riesgo, pérdida y confianza baja. Nunca como "malo" decorativo |
+
+- Tipografías: **Bricolage Grotesque** (títulos y logo) y **DM Sans** (datos y texto).
+- Logo de texto: **FIELD** (papel) / **REWIND** (verde brote) + ícono ⏪ (verde brote y oro trigo), en Bricolage Grotesque en negrita.
 - **No usen el logo de la NASA**, insignias de misiones ni nada que los imite. Lo prohíben las reglas. Mencionar "NASA SMAP", "NASA POWER" como fuente está bien.
 - Si alguna imagen de la interfaz se generó con IA, necesita una marca de agua visible ("AI-generated").
 
@@ -91,18 +99,16 @@ No busquen un lugar de Argentina en la app: saldría el cartel de zona sin cober
 
 ## 5. Decisiones abiertas
 
-1. **Tercer estado:** el documento del front dice Iowa, Illinois e **Indiana**, pero los datos del CDL que ya están limpios son Story (IA), McLean (IL) y **Sumner (Kansas)**.
-   - Si se quedan con Indiana, aviso y bajo un condado de Indiana en unos minutos (el script ya está).
-   - Sumner tiene el mejor dato para el pitch: el trigo bajó de 122.000 a 84.000 ha entre 2015 y 2025, mientras el maíz se duplicó.
-2. **Textos que mencionan "Field Shift"** (por ejemplo, *"Field Shift doesn't cover this area yet"*): pasan a *"Field Rewind doesn't cover this area yet. It works in …"*.
+1. ~~**Tercer estado**~~ → **Resuelto (14/11): Kansas.** Estados: Iowa, Illinois y Kansas. Condados con historia completa: Story (IA), McLean (IL) y Sumner (KS). Sumner tiene el mejor dato para el pitch: el trigo bajó de 122.000 a 84.000 ha entre 2015 y 2025, mientras el maíz se duplicó.
+2. ~~**Textos que mencionan "Field Shift"**~~ → **Resuelto:** pasan a *"Field Rewind doesn't cover this area yet. It works in Iowa, Illinois and Kansas."*
 
 ---
 
 ## 6. Reglas de contenido (ya están en su documento; las repito porque se ven en el video)
 
 - La unidad es el **condado**: *"Results are for the whole county, not for a single field."*
-- La app **compara, no recomienda**. Nada de "porcentaje de éxito".
-- Rinde ≠ verdor: **no decir "esta rotación rindió más"**. Sí: "el maíz después de soja estuvo más verde que el maíz después de maíz (vigor, no rinde)".
+- La app **sugiere** una opción según las prioridades del productor (cambio del 14/11), siempre con razones, fuente, rango (año malo / típico / bueno) y nivel de confianza. Nada de "porcentaje de éxito" ni precisión falsa.
+- Rinde ≠ verdor: el rango de cada opción es de rinde (bu/acre) y sale del modelo. Si se habla de verdor, se aclara que es vigor, no rinde.
 - Datos faltantes como *"Missing data"*, nunca como cero.
 - **Toda la interfaz en inglés:** lo exige Space Apps para todo lo que ven los jueces.
 
@@ -116,7 +122,7 @@ No busquen un lugar de Argentina en la app: saldría el cartel de zona sin cober
 
 ## 8. Qué necesito, en orden
 
-- [ ] Confirmación del tercer estado (lo antes posible)
+- [x] Confirmación del tercer estado: Kansas
 - [ ] Toma B en borrador, aunque sea con datos falsos (sábado a la noche)
 - [ ] URL pública desplegada (sábado a la noche o domingo temprano)
 - [ ] Tomas A, B y C finales con datos reales (domingo antes de las 18:00)

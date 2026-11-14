@@ -67,7 +67,7 @@ Cambio de regla: antes era "se compara, no se recomienda". **Ahora la app sugier
 
 ## 5. Dirección visual — pendiente
 
-Se define con **mockups de 5 variaciones de color/tema** generados con kie.ai (skill `imagegen`; el usuario la llamó `/kie-image`). Cada mockup muestra la misma pantalla (Historia de Sumner a 1920×1080) para comparar solo color y tema. Restricciones: compatible con la marca (`#12281C`, `#96DC6E`, `#3C8C2D`), colores de cultivo aptos para daltonismo, contraste AA. Las imágenes generadas con IA llevan marca "AI-generated" si se usan en algo público.
+Se define con **mockups de 5 variaciones de color/tema** generados con kie.ai (skill `imagegen`; el usuario la llamó `/kie-image`). Cada mockup muestra la misma pantalla (Historia de Sumner a 1920×1080) para comparar solo color y tema. Restricciones: paleta del equipo de `docs/specs/mockups-secciones.md` (Verde noche `#0F2A1D`, Verde campo `#2F7D4F`, Verde brote `#8ED081`, Oro trigo `#E9B949`, Papel `#F6F1E4`, Tierra `#6B4A2F`, Rojo alerta `#E5484D`), colores de cultivo aptos para daltonismo, contraste AA. Las imágenes generadas con IA llevan marca "AI-generated" si se usan en algo público.
 
 ## 6. Video
 
