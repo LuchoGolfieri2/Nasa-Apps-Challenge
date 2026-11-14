@@ -48,9 +48,10 @@ Ejemplo:
 
 ## Pantalla 1 · Mapa
 
-- [ ] **F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar · 🔨 Naim (14/11 15:58)
-  - Archivos: `web/prototype/globo/` → `web/src/map/Globe*`
-- [ ] **F12** Portada = globo con botón "Rewind Sumner County, KS" (vuelo → Sumner → play) y "Pick your county" · 🔨 Naim (14/11 15:58) · Bloquea: F11
+- [x] ~~**F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar~~ · ✅ Naim
+  - Archivos: `web/src/map/globe.js` (deck.gl + Blue Marble de GIBS)
+  - Sin latido: el resaltado es fijo, porque un latido parece un dato en vivo y no lo es. Gira solo a 3°/s tras 3 s sin tocarlo.
+- [x] ~~**F12** Portada = globo con botón "Rewind Sumner County, KS" (vuelo → Sumner → play) y "Pick your county"~~ · ✅ Naim · Bloquea: F11
 - [ ] **F13** Vuelo al estado, condados pintados por la variable, rayado "Missing data", tooltip y botón "See its history" · 🔨 Naim (14/11 15:58) · Bloquea: F08, F11
 - [ ] **F14** Buscador de condado, lista accesible de estados, aviso fuera de cobertura y mapa plano si no hay WebGL · 🔨 Naim (14/11 15:58)
 
