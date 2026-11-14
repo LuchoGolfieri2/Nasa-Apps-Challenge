@@ -43,8 +43,10 @@ bajo húmedo, zona media). Cada sector sale de agrupar los píxeles de 30 m del 
    campo que "por ahora viene" en un archivo.
 4. **Todo lo PROVISORIO, aislado:** detrás de una función o un componente propio, para cambiarlo en un
    solo lugar.
-5. **El modelo no recomienda.** Nada de "recommended", "best option" ni "deberías". Se compara y se
-   muestra el rango.
+5. **La app sugiere; los textos del modelo no.** Desde el 14/11 la app marca una opción como
+   "Suggested for your priorities" según los `scores` y las prioridades del productor, siempre con
+   rango y confianza. Los textos que vienen de ML (razones, titulares) siguen sin decir
+   "recommended", "best option" ni "you should": dicen "tends to".
 6. **Skills:** usá `field-shift-frontend` para las pantallas y `dataviz` para cualquier gráfico.
 7. **La skill `field-shift-frontend` tiene restos de una versión argentina.** Para este proyecto:
    - donde dice "departamento", es **condado** (`fips`);
@@ -119,7 +121,7 @@ No hay API en vivo.
 
 | Campo | Tipo | Qué es |
 |---|---|---|
-| `version_contrato` | texto | Por ejemplo `"0.1"` |
+| `version_contrato` | texto | Por ejemplo `"0.2"` |
 | `generado` | texto | Fecha y hora en que ML generó los archivos (ISO 8601) |
 | `es_prueba` | booleano | `true` = datos de prueba. El front muestra la franja "TEST DATA" |
 | `lotes` | lista de texto | Los `id_lote` disponibles |
@@ -162,7 +164,7 @@ Ejemplo de **forma**. Los valores son inventados, solo para mostrar la estructur
 
 ```json
 {
-  "version_contrato": "0.1",
+  "version_contrato": "0.2",
   "id_lote": "19169_000000",
   "estado_sectores": "con_sectores",
   "anios_usados": [2013, 2014, 2015],
@@ -343,6 +345,7 @@ visible sale de `textos.json`.
 | Versión | Fecha | Cambio |
 |---|---|---|
 | 0.2 | 2026-11-14 | La interfaz va en inglés (firme). `textos.json` solo en inglés. |
+| 0.2 | 2026-11-14 | Nuevo `data/ml/front/anomalias.json` (punto 4: rinde contra un año normal, causa y titular por año). Regla 5: la app sugiere según prioridades; los textos de ML no recomiendan. |
 | 0.1 | 2026-11-14 | Primera versión: lotes, sectores, fuentes y datos de prueba. Ficha del sector, escenarios y clima, provisorios. |
 
 ### Pedidos del front

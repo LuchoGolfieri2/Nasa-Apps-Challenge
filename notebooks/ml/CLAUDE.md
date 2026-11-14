@@ -11,7 +11,9 @@ no entrena modelos") no aplica a esta carpeta.
 
 El modelo no decide qué rotación usar. Estima cómo el clima, el suelo y el cultivo antecesor
 afectan el rendimiento y el riesgo, para que la comparación de rotaciones tenga evidencia y rangos
-de incertidumbre. El productor decide.
+de incertidumbre. Desde el 14/11 la app marca una opción como "Suggested for your priorities"
+según las prioridades del productor (con los `scores` que arma el front), pero el productor decide
+y nuestras frases nunca dicen "recommended" ni "you should".
 
 Basado en el CLAUDE.md de ML del equipo, con las rutas adaptadas a este repo (sección 7).
 **La notebook modelo es [`punto2_rotaciones.ipynb`](punto2_rotaciones.ipynb), explicada en

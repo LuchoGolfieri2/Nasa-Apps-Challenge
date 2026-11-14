@@ -237,14 +237,14 @@ Para la rotación, la frase sale de `efecto_rotacion.csv` (`continuo_vs_rotado_p
 
 - **En inglés**, con palabras simples ("water the soil can hold", no "AWS").
 - **Asociación, no causa:** "tends to", nunca "because".
-- **No recomendar:** nada de "recommended", "best option" ni "you should".
+- **Los textos no recomiendan:** nada de "recommended", "best option" ni "you should". Desde el 14/11 la **app** sí marca una opción como "Suggested for your priorities", pero eso lo decide el front con los `scores`; nuestras frases solo dan razones.
 - **Plantillas fijas**, sin IA generativa: así no se inventa nada y no hay texto generado que declarar en Space Apps.
 - Cada frase lleva su **fuente** (`fuentes.json`) y su marca: "From NASA data + model" para SHAP y efectos fijos; "Agronomic rule" solo para lo que sale de reglas (nitrógeno, carbono, erosión).
 - **Precisión honesta:** bu/ac y % sin decimales.
 
 ### Qué falta definir con el front
 
-- Dónde van las explicaciones por condado. `INFO.md` no tiene un archivo para eso todavía: proponer uno (por ejemplo `explicaciones/<fips>.json`) en la sección 9 del contrato.
+- ~~Dónde van las explicaciones por condado.~~ Resuelto: `data/ml/front/explicaciones.json` (punto 3), que lee el script del front.
 - Cuántos grupos mostrar por condado (2 o 3, como los "rasgos" de los sectores).
 
 ## Cómo se valida
