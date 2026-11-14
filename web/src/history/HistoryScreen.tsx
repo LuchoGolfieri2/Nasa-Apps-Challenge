@@ -14,7 +14,7 @@ import { YearFacts } from "./YearFacts";
 import "./history.css";
 
 /** Segundos por año en el play automático. Se puede cambiar con ?speed=0.8 (tomas del video). */
-const DEFAULT_STEP_S = 1.6;
+const DEFAULT_STEP_S = 0.8; // 11 años ≈ 9 s (antes 1,6)
 
 const DEMO = [
   { fips: "20191", label: "Sumner, KS" },

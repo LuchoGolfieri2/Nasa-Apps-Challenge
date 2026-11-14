@@ -433,7 +433,7 @@ function updateUI() {
     $('p-status').textContent = full ? 'Full history · 2015–2025' : 'Missing data: history not loaded for this county yet';
     $('p-status').className = full ? 'ok' : 'missing';
     $('p-open').disabled = !full;
-    $('p-open').textContent = 'Open county history →';
+    $('p-open').textContent = full ? '▶ Rewind 2015–2025' : 'Open county history →';
     const hasNext = NEXT_AVAILABLE.includes(selCounty.id);
     $('p-next').disabled = !hasNext;
     $('p-next').textContent = hasNext ? 'Next season: what to plant →' : 'Next season: Missing data';
@@ -469,15 +469,12 @@ $('home').addEventListener('click', goHome);
 $('p-twins').addEventListener('click', () => showTwins(!twinMode));
 $('p-twinlist').addEventListener('click', (e) => { const b = e.target.closest('button[data-fips]'); if (b) flyToCounty(b.dataset.fips); });
 $('enter').addEventListener('click', () => { location.hash = '#/map'; });
-// "Rewind Sumner County, KS": vuelo corto a Sumner y abre su historia con el play andando (F12)
-$('cta').addEventListener('click', () => {
-  flyToCounty(START, true, 900);
-  window.setTimeout(() => { location.hash = `#/county/${START}?play=1`; }, 1000);
-});
+// Botón de entrada: vuela directo al condado de demo y abre su panel en el mapa
+$('cta').addEventListener('click', () => flyToCounty(START));
 $('p-open').addEventListener('click', () => {
   if (selCounty) {
     emit('open', {fips: selCounty.id});
-    location.hash = `#/county/${selCounty.id}`;
+    location.hash = `#/county/${selCounty.id}?play=1`; // la historia arranca reproduciéndose
   } else if (selState) flyToCounty(Object.keys(DEMO).find((id) => id.startsWith(selState.id)));
 });
 $('p-next').addEventListener('click', () => {
