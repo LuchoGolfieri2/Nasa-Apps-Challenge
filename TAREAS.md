@@ -26,7 +26,7 @@ Ejemplo:
 
 ## Base
 
-- [ ] **F01** Scaffold Vite + React + TypeScript en `web/`, rutas por hash (`#/`, `#/state/KS`, `#/county/20191?year=2021`, `#/county/20191/next`, `#/sources`) · Libre
+- [ ] **F01** Scaffold Vite + React + TypeScript en `web/`, rutas por hash (`#/`, `#/state/KS`, `#/county/20191?year=2021`, `#/county/20191/next`, `#/sources`) · 🔨 Walicki (14/11 16:08)
   - Archivos: `web/package.json`, `web/src/app/` · Bloquea a casi todo: hacerla primero.
 - [ ] **F02** Tokens de color y tipografía como variables CSS (paleta del equipo, Bricolage Grotesque + DM Sans, colores de cultivo aptos para daltonismo sobre fondo oscuro) · 🔨 Lucho
   - Archivos: `web/src/ui/tokens.css` · Base: los tokens de `web/prototype/globo/index.html`.
@@ -37,8 +37,8 @@ Ejemplo:
 
 ## Datos para el front
 
-- [ ] **F05** `scripts/build_front_data.py`: del zip del CDL arma `county/<fips>.json` (`crops_pct`, `area_by_crop`, `common_rotations`) para Story, McLean y Sumner; lo demás en `null` · Libre
-- [ ] **F06** PNG del CDL por año (2015–2025) recortado a cada condado de demo, con la paleta de cultivos · Libre
+- [ ] **F05** `scripts/build_front_data.py`: del zip del CDL arma `county/<fips>.json` (`crops_pct`, `area_by_crop`, `common_rotations`) para Story, McLean y Sumner; lo demás en `null` · 🔨 Walicki (14/11 16:08)
+- [ ] **F06** PNG del CDL por año (2015–2025) recortado a cada condado de demo, con la paleta de cultivos · 🔨 Walicki (14/11 16:08)
   - Archivos: `web/public/data/cdl/<fips>/<anio>.png`
 - [ ] **F07** NASA POWER en los centroides de IA, IL y KS: lluvia y temperatura por año, marcas de año seco/húmedo y titular que arranca con el dato NASA · Libre
   - Verificar: la línea de tiempo de Sumner muestra años secos y el titular dice "(NASA POWER)".
