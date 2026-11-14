@@ -48,11 +48,11 @@ Ejemplo:
 
 ## Pantalla 1 · Mapa
 
-- [ ] **F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar · 🔨 Lucho
+- [ ] **F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar · 🔨 Naim (14/11 15:58)
   - Archivos: `web/prototype/globo/` → `web/src/map/Globe*`
-- [ ] **F12** Portada = globo con botón "Rewind Sumner County, KS" (vuelo → Sumner → play) y "Pick your county" · Libre · Bloquea: F11
-- [ ] **F13** Vuelo al estado, condados pintados por la variable, rayado "Missing data", tooltip y botón "See its history" · Libre · Bloquea: F08, F11
-- [ ] **F14** Buscador de condado, lista accesible de estados, aviso fuera de cobertura y mapa plano si no hay WebGL · Libre
+- [ ] **F12** Portada = globo con botón "Rewind Sumner County, KS" (vuelo → Sumner → play) y "Pick your county" · 🔨 Naim (14/11 15:58) · Bloquea: F11
+- [ ] **F13** Vuelo al estado, condados pintados por la variable, rayado "Missing data", tooltip y botón "See its history" · 🔨 Naim (14/11 15:58) · Bloquea: F08, F11
+- [ ] **F14** Buscador de condado, lista accesible de estados, aviso fuera de cobertura y mapa plano si no hay WebGL · 🔨 Naim (14/11 15:58)
 
 ## Pantalla 2 · Historia del condado
 
