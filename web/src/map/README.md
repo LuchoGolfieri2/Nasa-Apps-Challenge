@@ -1,8 +1,9 @@
 # Pantalla 1 · Mapa (portada → globo → estado → condado)
 
 - `MapLayer.tsx`: monta el mapa una sola vez y lo oculta cuando se ve otra pantalla.
-- `globe.js`: el globo (Canvas 2D + d3-geo). `markup.ts`: su HTML. `map.css`: estilos, todos dentro de `.maplayer`.
-- `geo.json`: límites de US Census / Natural Earth (world-atlas + us-atlas).
+- `globe.js`: el globo en deck.gl (`_GlobeView`) con la imagen Blue Marble de la NASA (GIBS, teselas WMTS). `markup.ts`: su HTML. `map.css`: estilos, todos dentro de `.maplayer`.
+- `globe-data.json`: límites de estados y condados (US Census) y los valores de prueba.
+- Cuando nadie toca el mapa, el globo gira solo a 3°/s después de 3 s (en la portada, enseguida). Con `prefers-reduced-motion` no gira.
 
 ## Rutas
 | Hash | Qué se ve |
@@ -19,12 +20,12 @@ Cada vista escribe su hash, así funcionan el "atrás" del navegador, las migas 
 Grabación: `?take=a` y `?take=c`.
 
 ## Transición portada → globo
-La portada se desvanece con un leve zoom y desenfoque; el globo aparece desde lejos y vuela a EE.UU. en 1,9 s.
+La portada es un velo sobre el globo, que gira chico y lejos. Al tocar Start el velo se desvanece y la cámara vuela a EE. UU. en 1,9 s.
 Con `prefers-reduced-motion` se acorta a casi nada.
 
 ## Datos de prueba
 El color de los condados (% de maíz), las cifras del panel y los gemelos son **inventados** y llevan el sello
-"Prototype data". Están en el bloque `DATOS DE PRUEBA` de `globe.js`; reemplazar por F08/F09 cuando estén.
+"Prototype data". Están en `globe-data.json`; reemplazar por F08/F09 cuando estén.
 
-## Ojo: se pisa con F11–F14 (Naim)
-Esta pantalla cubre lo mismo que las tareas de Naim. Coordinar antes de mergear.
+## Imagen satelital
+Las teselas de Blue Marble se piden en vivo a GIBS (`gibs.earthdata.nasa.gov`). Sin conexión se ve el océano liso con los estados encima.

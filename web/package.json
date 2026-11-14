@@ -9,7 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "d3-geo": "^3.1.2",
+    "@deck.gl/core": "~9.1.15",
+    "@deck.gl/extensions": "~9.1.15",
+    "@deck.gl/geo-layers": "~9.1.15",
+    "@deck.gl/layers": "~9.1.15",
+    "@deck.gl/mesh-layers": "~9.1.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

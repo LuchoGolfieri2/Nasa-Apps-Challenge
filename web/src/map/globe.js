@@ -1,247 +1,146 @@
-/**
- * Field Rewind — globo interactivo (pantalla 1: portada → globo → estado → condado)
- *
- * Canvas 2D + d3-geo (proyección ortográfica), sin WebGL ni tiles.
- * Lo monta src/map/MapLayer.tsx: initGlobe() una sola vez y setMapActive() al cambiar de pantalla.
- *
- * Rutas que maneja (las mismas del router de la app):
- *   #/            portada (logo + Start)
- *   #/map         globo
- *   #/state/KS    estado
- *   #/map/20191   condado elegido en el mapa (panel)
- * y manda a:  #/county/20191 (Historia, pantalla 2)  ·  #/county/20191/next (Next season, pantalla 3)
- * Grabación:  ?take=a (globo → Kansas → Sumner)   ?take=c (Kansas → la Pampa)
- *
- * DATOS DE PRUEBA: el color de los condados, las cifras del panel y los gemelos son inventados
- * (bloque "DATOS DE PRUEBA" más abajo) y se muestran con el sello "Prototype data".
- */
-import {geoOrthographic, geoPath, geoGraticule10, geoCentroid, geoBounds, geoContains, geoDistance} from 'd3-geo';
-import GEO from './geo.json';
+// Pantalla 1 · Mapa: globo 3D en deck.gl (GlobeView) con la imagen Blue Marble de la NASA (GIBS).
+// Portada → globo → estado → condado → gemelos. Maneja sus propias rutas (ver README.md).
+// Los valores marcados "Prototype data" (color de los condados, cifras del panel, gemelos) son
+// inventados y vienen de globe-data.json; reemplazar por F08/F09 cuando estén.
+import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
+import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer, ArcLayer, ScatterplotLayer} from '@deck.gl/layers';
+import {TileLayer} from '@deck.gl/geo-layers';
+import D from './globe-data.json';
 
-let inited = false;
-let active = true; // false mientras se ve otra pantalla (Historia, Next season…)
-
+let active = true;
+/** MapLayer avisa si el mapa está a la vista; oculto no dibuja */
 export function setMapActive(on) {
   active = on;
-  document.body.classList.toggle('map-active', on);
 }
 
 export function initGlobe() {
-  if (inited) return;
-  inited = true;
-  document.body.dataset.level = 'globe';
-  document.body.classList.add('landing'); // arranca en la portada; applyHash() decide después
-
-// ---------- Paleta de la app ----------
-const C = {
-  night: '#12281C',
-  leaf: '#3C8C2D',
-  glow: '#96DC6E',
-  cream: '#F6F1E4',
-};
-
-// ---------- Configuración ----------
-const FEATURED = {'19169': 'Story', '17113': 'McLean', '20191': 'Sumner'}; // condados con historia completa
-const DEMO_COUNTY = '20191';
-const NEXT_AVAILABLE = ['20191']; // condados con data/next/<fips>.json
-const POSTAL = {'19': 'IA', '17': 'IL', '20': 'KS'};
+const COL = {night: '#0F2A1D', leaf: '#2F7D4F', glow: '#8ED081', cream: '#F6F1E4'}; // identidad
+const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream);
+const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
+const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
+const NEXT_AVAILABLE = ['20191']; // condados con pantalla Next season
+const POSTAL = {19: 'IA', 17: 'IL', 20: 'KS'};
 const FIPS_OF = {IA: '19', IL: '17', KS: '20'};
-const HOME = {lon: -93.5, lat: 36, k: 1};
-const COUNTY_ZOOM_START = 3.2; // desde qué zoom se ven los condados
 
-const states = GEO.states;
-const counties = GEO.counties;
-const stateById = Object.fromEntries(states.map((s) => [s.id, s]));
-const countyById = Object.fromEntries(counties.map((c) => [c.id, c]));
-for (const f of [...states, ...counties]) {
-  f.centroid = geoCentroid(f);
-  f.bounds = geoBounds(f);
-}
-const graticule = geoGraticule10();
-
-// ---------- DATOS DE PRUEBA (inventados) ----------
-// Todo lo que sale de acá se muestra con el sello "Prototype data".
-// Reemplazar por los JSON reales: county.mock = {corn, rain, soil} y county.twins = [fips…].
-const rnd = (seed) => {
-  const x = Math.sin(seed * 12.9898) * 43758.5453;
-  return x - Math.floor(x);
-};
-const clamp01 = (v) => Math.max(0, Math.min(1, v));
-for (const c of counties) {
-  const [lon, lat] = c.centroid;
-  const id = +c.id;
-  const west = Math.max(0, -89 - lon); // más al oeste = más seco = menos maíz
-  c.mock = {
-    corn: clamp01(0.6 - west * 0.036 - Math.max(0, 40 - lat) * 0.035 + (rnd(id) - 0.5) * 0.18), // % de superficie con maíz
-    rain: Math.round(1010 - west * 42 + (rnd(id + 7) - 0.5) * 90), // mm por año
-    soil: clamp01(0.45 + (rnd(id + 13) - 0.5) * 0.7), // índice de suelo 0..1
-  };
-  c.mock.top = c.mock.corn > 0.42 ? 'Corn' : c.mock.corn > 0.27 ? 'Soybeans' : 'Wheat';
-}
-const TRAITS = ['soil type', 'July rainfall', 'growing season', 'soil moisture'];
-for (const c of counties) {
-  // gemelos de prueba: el más parecido de cada estado (lejos del condado) + el siguiente mejor
-  const ranked = counties
-    .filter((o) => o !== c && geoDistance(o.centroid, c.centroid) > 0.035)
-    .map((o) => ({o, d: Math.abs(o.mock.soil - c.mock.soil) + Math.abs(o.mock.rain - c.mock.rain) / 2500 + rnd(+o.id + +c.id) * 0.02}))
-    .sort((x, y) => x.d - y.d);
-  const picks = ['19', '17', '20'].map((st) => ranked.find((r) => r.o.properties.state === st).o);
-  picks.push(ranked.find((r) => !picks.includes(r.o) && picks.every((q) => geoDistance(q.centroid, r.o.centroid) > 0.03)).o);
-  c.twins = picks.map((o, i) => ({f: o, similar: [TRAITS[(+c.id + i) % 4], TRAITS[(+c.id + i + 1) % 4]]}));
-}
-
-// Escala de color del mapa (clara → oscura, apta para daltonismo): % de maíz
-const RAMP = [
-  // amarillo → naranja → marrón: contrasta con el azul del mapa y no se confunde con el verde de la marca
-  [0.0, [255, 247, 188]],
-  [0.25, [254, 217, 118]],
-  [0.5, [254, 153, 41]],
-  [0.75, [204, 76, 2]],
-  [1.0, [102, 37, 6]],
-];
-const CORN_MAX = 0.7;
-function ramp(v) {
-  const t = clamp01(v / CORN_MAX);
-  for (let i = 1; i < RAMP.length; i++) {
-    if (t <= RAMP[i][0]) {
-      const [t0, a] = RAMP[i - 1];
-      const [t1, b] = RAMP[i];
-      const u = (t - t0) / (t1 - t0);
-      return a.map((n, j) => Math.round(n + (b[j] - n) * u));
-    }
+const rad = Math.PI / 180, clamp01 = (x) => Math.max(0, Math.min(1, x));
+const toFeature = (o) => ({type: 'Feature', id: o.id, properties: {name: o.name, state: o.state},
+  geometry: o.geometry, centroid: o.centroid, bounds: o.bounds, mock: o.mock, _twins: o.twins});
+const STATES = D.states.map(toFeature), COUNTIES = D.counties.map(toFeature);
+const stateById = Object.fromEntries(STATES.map((f) => [f.id, f]));
+const countyById = Object.fromEntries(COUNTIES.map((f) => [f.id, f]));
+// Rampa del % de maíz: viridis (apta para daltonismo), de 0 % a 70 %+
+const RAMP = [[0, [68, 1, 84]], [0.25, [59, 82, 139]], [0.5, [33, 145, 140]], [0.75, [94, 201, 98]], [1, [253, 231, 37]]];
+function rampColor(v) {
+  const t = clamp01(v / 0.7);
+  for (let i = 1; i < RAMP.length; i++) if (t <= RAMP[i][0]) {
+    const [a, ca] = RAMP[i - 1], [b, cb] = RAMP[i], u = (t - a) / (b - a);
+    return ca.map((x, j) => Math.round(x + (cb[j] - x) * u));
   }
   return RAMP[RAMP.length - 1][1];
 }
-for (const c of counties) c.rgb = ramp(c.mock.corn).join(',');
+for (const c of COUNTIES) c.rgb = rampColor(c.mock.corn);
+for (const c of COUNTIES) c.twins = c._twins.map((t) => ({f: countyById[t.id], similar: t.similar}));
+const DEMO = D.demo, START = D.start, HOME = D.home;
+const ARGENTINA = [{type: 'Feature', properties: {}, geometry: D.argentina}];
+const COUNTY_K = 3.2;
+const FAR = {lat: 8, k: 0.55}; // portada: el globo chico y lejos, girando detrás del velo
 
-// ---------- Canvas ----------
-const canvas = document.getElementById('globe');
-const ctx = canvas.getContext('2d');
-const projection = geoOrthographic().clipAngle(90).precision(0.3);
-const path = geoPath(projection, ctx);
-let W = 0;
-let H = 0;
-let R0 = 0; // radio del globo con k = 1
-let dpr = 1;
+function angDist([a, b], [c, d]) { // distancia sobre la esfera, en radianes
+  const s = Math.sin(((d - b) * rad) / 2) ** 2 + Math.cos(b * rad) * Math.cos(d * rad) * Math.sin(((c - a) * rad) / 2) ** 2;
+  return 2 * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+function dest([lon, lat], brg, d) {
+  const p1 = lat * rad, l1 = lon * rad, t = brg * rad;
+  const p2 = Math.asin(Math.sin(p1) * Math.cos(d) + Math.cos(p1) * Math.sin(d) * Math.cos(t));
+  const l2 = l1 + Math.atan2(Math.sin(t) * Math.sin(d) * Math.cos(p1), Math.cos(d) - Math.sin(p1) * Math.sin(p2));
+  return [l2 / rad, p2 / rad];
+}
 
-const view = {...HOME, lon: -30}; // lon/lat del centro + zoom k
-let anim = null;
-let level = 'globe'; // globe | state | county
-let selState = null;
-let selCounty = null;
-let hover = null; // {type:'state'|'county', f}
-let userMoved = false;
-let recording = null;
-let twinsOn = false; // arcos hacia condados gemelos
-const t0 = performance.now();
+// ---- vista: R = {lon, lat, k}; k = 1 es el globo de inicio (radio = 43 % del lado corto)
+const R0 = 512 / (2 * Math.PI);
+let W = 0, H = 0, DPR = 1, base = 1;
+const R = {lon: HOME.lon + 55, ...FAR};
+const zoomOfK = (k) => Math.log2((base * k) / R0);
+const kOfZoom = (z) => (R0 * 2 ** z) / base;
+const K_MIN = 0.5, K_MAX = 70;
 
-const stars = Array.from({length: 240}, (_, i) => {
-  const r = (n) => {
-    const x = Math.sin(i * 127.1 + n * 311.7) * 43758.5453;
-    return x - Math.floor(x);
-  };
-  return {x: r(1), y: r(2), s: 0.4 + r(3) * 1.3, p: r(4) * 6.28};
+let V = null, level = 'globe', selState = null, selCounty = null, hover = null, twinMode = false, take = null;
+let lastInput = performance.now(), spinV = 0, lastT = 0;
+const SPIN_SPEED = 3; // grados por segundo cuando nadie toca el mapa
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const T0 = performance.now();
+const $ = (id) => document.getElementById(id);
+const isLanding = () => document.body.classList.contains('landing');
+
+const sky = $('globe-sky'), hud = $('globe-hud');
+const sctx = sky.getContext('2d'), hctx = hud.getContext('2d');
+const STARS = Array.from({length: 520}, (_, i) => {
+  const r = (n) => { const v = Math.sin(i * 127.1 + n * 311.7) * 43758.5453; return v - Math.floor(v); };
+  const b = r(5);
+  return {x: r(1), y: r(2), s: 0.3 + Math.pow(r(3), 3) * 1.4, p: r(4) * 6.28, b: 0.25 + b * b * 0.75};
 });
 
 function resize() {
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
-  W = canvas.clientWidth;
-  H = canvas.clientHeight;
-  canvas.width = Math.round(W * dpr);
-  canvas.height = Math.round(H * dpr);
-  R0 = Math.min(W, H) * 0.43;
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight; base = Math.min(W, H) * 0.43;
+  for (const c of [sky, hud]) { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); }
 }
 window.addEventListener('resize', resize);
 
-// ---------- Cámara ----------
-const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-
-function flyTo(target, dur = 1500) {
-  let dLon = target.lon - view.lon;
-  dLon = ((((dLon + 180) % 360) + 360) % 360) - 180; // camino más corto
-  anim = {from: {...view}, to: {lon: view.lon + dLon, lat: target.lat, k: target.k}, start: performance.now(), dur};
+const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+function flyTo(to, dur = 1500) {
+  let d = to.lon - R.lon; d = (((d + 180) % 360) + 360) % 360 - 180;
+  V = {from: {...R}, to: {lon: R.lon + d, lat: to.lat, k: to.k}, start: performance.now(), dur};
 }
-
-/** Zoom para que una forma entre en pantalla ocupando `fill` del lado menor */
-function zoomFor(f, fill) {
-  const [[w, s], [e, n]] = f.bounds;
-  const lat = (s + n) / 2;
-  const dx = (Math.abs(e - w) * Math.cos((lat * Math.PI) / 180) * Math.PI) / 180;
-  const dy = (Math.abs(n - s) * Math.PI) / 180;
-  return (Math.min(W, H) * fill) / (Math.max(dx, dy) * R0);
+const PANEL_HALF = 186; // medio panel lateral: el destino queda centrado en la parte visible del mapa
+const panelOffset = (k, lat) => (W > 900 ? PANEL_HALF / (base * k) / rad / Math.cos(lat * rad) : 0);
+// en el celular la hoja tapa la parte de abajo: subir el destino al centro de lo que queda visible
+// (se mide la hoja ya llena, por eso updateUI() va antes del vuelo)
+const sheetLift = (k) => (W <= 760 ? Math.max(0, $('panel').offsetHeight - 56) / 2 / (base * k) / rad : 0);
+function fitK(f, t) {
+  const [[x0, y0], [x1, y1]] = f.bounds, lat = (y0 + y1) / 2;
+  const u = Math.abs(x1 - x0) * Math.cos(lat * rad) * rad, v = Math.abs(y1 - y0) * rad;
+  return (Math.min(W, H) * t) / (Math.max(u, v) * base);
 }
+const emit = (name, detail) => window.dispatchEvent(new CustomEvent(`fieldrewind:${name}`, {detail}));
 
-function applyProjection() {
-  projection
-    .translate([W / 2, H / 2 + (level === 'globe' && view.k < 1.6 ? H * 0.02 : 0)])
-    .scale(R0 * view.k)
-    .rotate([-view.lon, -view.lat]);
+function flyToState(id, move = true) {
+  const s = stateById[id]; if (!s) return;
+  selState = s; selCounty = null; twinMode = false; level = 'state';
+  updateUI();
+  if (move) { const k = fitK(s, W > 900 ? 0.62 : 0.7); flyTo({lon: s.centroid[0] + panelOffset(k, s.centroid[1]), lat: s.centroid[1] - sheetLift(k), k}, 1500); }
+  emit('state', {fips: id, name: s.properties.name});
 }
-
-// ---------- Navegación ----------
-function emit(name, detail) {
-  window.dispatchEvent(new CustomEvent(`fieldrewind:${name}`, {detail}));
-}
-
-function selectState(fips, fly = true) {
-  const s = stateById[fips];
-  if (!s) return;
-  selState = s;
-  selCounty = null;
-  twinsOn = false;
-  level = 'state';
-  if (fly) flyTo({lon: s.centroid[0], lat: s.centroid[1], k: zoomFor(s, 0.7)}, 1500);
-  emit('state', {fips, name: s.properties.name});
-  syncUI();
-}
-
-function selectCounty(fips, fly = true, dur = 1500) {
-  const c = countyById[fips];
-  if (!c) return;
-  selState = stateById[c.properties.state];
-  selCounty = c;
-  twinsOn = false;
-  level = 'county';
-  if (fly) {
-    // el condado queda un poco a la izquierda para dejarle lugar al panel
-    const k = Math.min(zoomFor(c, 0.3), 60);
-    const shift = W > 900 ? ((W * 0.12) / (R0 * k)) * (180 / Math.PI) : 0;
-    flyTo({lon: c.centroid[0] + shift / Math.cos((c.centroid[1] * Math.PI) / 180), lat: c.centroid[1], k}, dur);
+function flyToCounty(id, move = true, dur = 1500) {
+  const c = countyById[id]; if (!c) return;
+  selState = stateById[c.properties.state]; selCounty = c; twinMode = false; level = 'county';
+  updateUI();
+  if (move) {
+    const k = Math.min(fitK(c, 0.3), 60);
+    flyTo({lon: c.centroid[0] + panelOffset(k, c.centroid[1]), lat: c.centroid[1] - sheetLift(k), k}, dur);
   }
-  emit('county', {fips, name: c.properties.name, state: selState.properties.name, hasHistory: !!FEATURED[fips]});
-  syncUI();
+  emit('county', {fips: id, name: c.properties.name, state: selState.properties.name, hasHistory: !!DEMO[id]});
 }
-
-function reset() {
-  selState = null;
-  selCounty = null;
-  twinsOn = false;
-  level = 'globe';
-  flyTo(HOME, 1400);
-  syncUI();
-}
-
+function reset() { selState = null; selCounty = null; twinMode = false; level = 'globe'; flyTo(HOME, 1400); updateUI(); }
 function showTwins(on) {
   if (!selCounty) return;
-  twinsOn = on;
-  if (on) {
-    // alejar la cámara para que entren los 3 estados
-    const k = (Math.min(W, H) * 0.8) / (((15.5 * Math.PI) / 180) * R0);
-    flyTo({lon: -94.4 + (W > 900 ? 2.2 : 0), lat: 39.9, k}, 1500);
-  } else {
-    selectCounty(selCounty.id);
-  }
-  syncUI();
+  twinMode = on;
+  if (on) flyTo({lon: -94.4 + (W > 900 ? 2.2 : 0), lat: 39.9, k: (Math.min(W, H) * 0.8) / (15.5 * rad * base)}, 1500);
+  else flyToCounty(selCounty.id);
+  updateUI();
 }
-
 /** Vuelve a la portada (logo + Start) */
-function goHome() {
-  location.hash = '#/';
+const goHome = () => { location.hash = '#/'; };
+function goBack() {
+  if (twinMode) showTwins(false);
+  else if (level === 'county') flyToState(selState.id);
+  else if (level === 'state') reset();
+  else goHome();
 }
 
-// ---------- Rutas ----------
+// ---- rutas: el mapa escribe en la URL dónde está, así el "atrás" del navegador funciona
 let applyingHash = false;
-
 function routeOf(hash) {
   const h = hash.replace(/^#/, '').split('?')[0] || '/';
   let m;
@@ -251,593 +150,371 @@ function routeOf(hash) {
   if ((m = h.match(/^\/state\/([A-Za-z]{2})$/))) return {kind: 'state', fips: FIPS_OF[m[1].toUpperCase()]};
   return {kind: 'other'};
 }
-
-/** El mapa escribe en la URL dónde está, así "atrás" del navegador funciona */
 function writeHash() {
-  if (recording || applyingHash || !active || document.body.classList.contains('landing')) return;
+  if (take || applyingHash || !active || isLanding()) return;
   const target = level === 'globe' ? '#/map' : level === 'state' ? `#/state/${POSTAL[selState.id]}` : `#/map/${selCounty.id}`;
   if (location.hash !== target) location.hash = target;
 }
-
-/** Transición suave portada → globo: la portada se desvanece y el globo llega desde lejos */
+/** Portada → globo: el velo se desvanece y la cámara vuela a EE. UU. */
 function leaveLanding() {
-  if (!document.body.classList.contains('landing')) return;
+  if (!isLanding()) return;
   document.body.classList.remove('landing');
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  Object.assign(view, {lon: HOME.lon + 55, lat: 8, k: 0.55});
-  flyTo(HOME, reduce ? 600 : 1900);
+  flyTo(HOME, reduceMotion.matches ? 600 : 1900);
 }
-
 function applyHash() {
-  if (recording) return;
+  if (take) return;
   const r = routeOf(location.hash);
   if (r.kind === 'other') return; // otra pantalla: el mapa queda oculto
   applyingHash = true;
   if (r.kind === 'home') {
-    if (!document.body.classList.contains('landing')) {
+    if (!isLanding()) {
       document.body.classList.add('landing');
-      selState = null;
-      selCounty = null;
-      twinsOn = false;
-      level = 'globe';
-      syncUI();
+      selState = null; selCounty = null; twinMode = false; level = 'globe';
+      flyTo({lon: R.lon + 40, ...FAR}, reduceMotion.matches ? 600 : 1400);
+      updateUI();
     }
   } else {
     leaveLanding();
     if (r.kind === 'globe') {
       if (level !== 'globe') reset();
     } else if (r.kind === 'state' && stateById[r.fips]) {
-      if (!(level === 'state' && selState.id === r.fips)) selectState(r.fips);
+      if (!(level === 'state' && selState.id === r.fips)) flyToState(r.fips);
     } else if (r.kind === 'county' && countyById[r.fips]) {
-      if (!(level === 'county' && selCounty.id === r.fips && !twinsOn)) selectCounty(r.fips);
+      if (!(level === 'county' && selCounty.id === r.fips && !twinMode)) flyToCounty(r.fips);
     }
   }
   applyingHash = false;
 }
 window.addEventListener('hashchange', applyHash);
 
-function back() {
-  if (twinsOn) showTwins(false);
-  else if (level === 'county') selectState(selState.id);
-  else if (level === 'state') reset();
-  else goHome();
-}
+// ---- deck.gl
+const markInput = () => { lastInput = performance.now(); spinV = 0; };
+['pointerdown', 'wheel', 'keydown', 'touchstart'].forEach((e) =>
+  window.addEventListener(e, markInput, {capture: true, passive: true}));
+window.addEventListener('pointermove', (e) => { if (e.buttons) lastInput = performance.now(); }, {capture: true, passive: true});
 
-// ---------- Dibujo ----------
-function draw(now) {
-  if (!active) {
-    requestAnimationFrame(draw);
-    return;
-  }
-  const t = (now - t0) / 1000;
+const viewState = () => ({longitude: R.lon, latitude: R.lat, zoom: zoomOfK(R.k),
+  minZoom: zoomOfK(K_MIN), maxZoom: zoomOfK(K_MAX)});
+const CONTROLLER = {inertia: 400, scrollZoom: {speed: 0.01, smooth: true}, keyboard: false, dragRotate: false};
 
-  if (anim) {
-    const p = Math.min(1, (now - anim.start) / anim.dur);
-    const e = ease(p);
-    view.lon = anim.from.lon + (anim.to.lon - anim.from.lon) * e;
-    view.lat = anim.from.lat + (anim.to.lat - anim.from.lat) * e;
-    view.k = Math.exp(Math.log(anim.from.k) + (Math.log(anim.to.k) - Math.log(anim.from.k)) * e);
-    if (p >= 1) anim = null;
-  } else if (level === 'globe' && !userMoved && !recording) {
-    view.lon = HOME.lon + Math.sin(t * 0.22) * 16; // vaivén lento: los 3 estados nunca se pierden de vista
-  }
-  applyProjection();
-
-  const R = R0 * view.k;
-  const [cx, cy] = projection.translate();
-  const pulse = 0.5 + 0.5 * Math.sin(t * 2.4);
-  const countyAlpha = Math.max(0, Math.min(1, (view.k - COUNTY_ZOOM_START) / 2));
-  const far = Math.max(0, Math.min(1, 1.6 - view.k * 0.35)); // 1 = vista de globo
-
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  // fondo + estrellas
-  const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.8);
-  bg.addColorStop(0, '#0E2440');
-  bg.addColorStop(1, '#050D18');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-  if (far > 0.02) {
-    ctx.fillStyle = C.cream;
-    for (const s of stars) {
-      ctx.globalAlpha = far * (0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 1.3 + s.p)));
-      ctx.beginPath();
-      ctx.arc(s.x * W, s.y * H, s.s, 0, 6.2832);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  // atmósfera (glow)
-  if (R < Math.max(W, H) * 1.2) {
-    const g = ctx.createRadialGradient(cx, cy, R * 0.96, cx, cy, R * 1.32);
-    g.addColorStop(0, 'rgba(110,190,255,0.60)');
-    g.addColorStop(0.25, 'rgba(110,190,255,0.22)');
-    g.addColorStop(1, 'rgba(110,190,255,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(cx, cy, R * 1.32, 0, 6.2832);
-    ctx.fill();
-  }
-
-  // océano
-  const ocean = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.4, R * 0.1, cx, cy, R);
-  ocean.addColorStop(0, '#1F5C99');
-  ocean.addColorStop(1, '#0A2140');
-  ctx.fillStyle = ocean;
-  ctx.beginPath();
-  path({type: 'Sphere'});
-  ctx.fill();
-
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  path(graticule);
-  ctx.strokeStyle = 'rgba(170,215,255,0.10)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  // tierra
-  ctx.beginPath();
-  path(GEO.land);
-  ctx.fillStyle = '#3D7BB5'; // tierra sin datos: azul, para que lo verde sea solo lo que tiene datos
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(200,230,255,0.55)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  ctx.beginPath();
-  path(GEO.borders);
-  ctx.strokeStyle = 'rgba(200,230,255,0.16)';
-  ctx.stroke();
-  if (view.k > 1.4) {
-    ctx.beginPath();
-    path(GEO.stateMesh);
-    ctx.strokeStyle = `rgba(200,230,255,${0.28 * Math.min(1, view.k - 1.4)})`;
-    ctx.stroke();
-  }
-
-  // Argentina: solo contorno, como idea de expansión (toma C). No hay datos argentinos.
-  if (recording === 'c') {
-    ctx.beginPath();
-    path(GEO.argentina);
-    ctx.strokeStyle = C.glow;
-    ctx.lineWidth = 1.6;
-    ctx.setLineDash([6, 5]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // los 3 estados encendidos, con latido
-  for (const s of states) {
-    const isSel = selState === s;
-    const isHover = hover && hover.type === 'state' && hover.f === s;
-    const dim = selState && !isSel ? 0.45 : 1;
-    ctx.beginPath();
-    path(s);
-    ctx.shadowColor = C.glow;
-    ctx.shadowBlur = (10 + 16 * pulse) * (countyAlpha > 0.5 ? 0.3 : 1) * dim;
-    ctx.fillStyle = isHover ? '#55A83F' : C.leaf;
-    ctx.globalAlpha = dim * (0.82 + 0.18 * pulse);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.globalAlpha = dim;
-    ctx.strokeStyle = C.glow;
-    ctx.lineWidth = isSel || isHover ? 2.4 : 1.5;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-
-  // condados pintados por % de maíz (DATOS DE PRUEBA)
-  if (countyAlpha > 0.01) {
-    const twinSet = twinsOn && selCounty ? new Set(selCounty.twins.map((t) => t.f)) : null;
-    for (const c of counties) {
-      const dimmed = twinSet && c !== selCounty && !twinSet.has(c);
-      ctx.beginPath();
-      path(c);
-      ctx.fillStyle = `rgba(${c.rgb},${countyAlpha * (dimmed ? 0.35 : 1)})`;
-      ctx.fill();
-    }
-    ctx.beginPath();
-    for (const c of counties) path(c);
-    ctx.strokeStyle = `rgba(60,30,10,${0.5 * countyAlpha})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    if (hover && hover.type === 'county' && hover.f !== selCounty) {
-      ctx.beginPath();
-      path(hover.f);
-      ctx.fillStyle = 'rgba(255,255,255,0.25)';
-      ctx.fill();
-      ctx.strokeStyle = C.cream;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
-    if (twinSet) drawTwins(t);
-    if (selCounty) {
-      ctx.beginPath();
-      path(selCounty);
-      ctx.shadowColor = '#FFFFFF';
-      ctx.shadowBlur = 20;
-      ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 3.5;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    }
-  }
-
-  // sombra del borde: le da volumen a la esfera
-  if (far > 0.02) {
-    const limb = ctx.createRadialGradient(cx, cy, R * 0.55, cx, cy, R);
-    limb.addColorStop(0, 'rgba(0,0,0,0)');
-    limb.addColorStop(1, `rgba(2,8,20,${0.6 * far})`);
-    ctx.fillStyle = limb;
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, 6.2832);
-    ctx.fill();
-  }
-
-  drawLabels(pulse, countyAlpha);
-  requestAnimationFrame(draw);
-}
-
-/** Arcos brillantes del condado elegido hacia sus gemelos */
-function drawTwins(t) {
-  for (const tw of selCounty.twins) {
-    const a = projection(selCounty.centroid);
-    const b = projection(tw.f.centroid);
-    if (!a || !b) continue;
-    // curva levantada: punto de control perpendicular a la línea
-    const mx = (a[0] + b[0]) / 2;
-    const my = (a[1] + b[1]) / 2;
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    const cxp = mx + ((b[1] - a[1]) / len) * len * 0.22 * (b[0] > a[0] ? 1 : -1);
-    const cyp = my - Math.abs(((b[0] - a[0]) / len) * len * 0.22) - len * 0.08;
-    ctx.beginPath();
-    ctx.moveTo(a[0], a[1]);
-    ctx.quadraticCurveTo(cxp, cyp, b[0], b[1]);
-    ctx.shadowColor = '#FFFFFF';
-    ctx.shadowBlur = 16;
-    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
-    ctx.lineWidth = 2.6;
-    ctx.setLineDash([10, 7]);
-    ctx.lineDashOffset = -t * 26;
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.shadowBlur = 0;
-    ctx.beginPath();
-    path(tw.f);
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(b[0], b[1], 5, 0, 6.2832);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fill();
-  }
-}
-
-function visible(lonlat) {
-  return geoDistance(lonlat, [view.lon, view.lat]) < 1.45;
-}
-
-function label(text, x, y, size, color, weight = 700, font = 'DM Sans') {
-  ctx.font = `${weight} ${size}px "${font}", system-ui, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.lineWidth = Math.max(3, size * 0.28);
-  ctx.strokeStyle = 'rgba(8,20,30,0.85)';
-  ctx.strokeText(text, x, y);
-  ctx.fillStyle = color;
-  ctx.fillText(text, x, y);
-}
-
-function drawLabels(pulse, countyAlpha) {
-  // nombres de los estados
-  if (view.k > 1.7 && countyAlpha < 0.9) {
-    for (const s of states) {
-      if (!visible(s.centroid)) continue;
-      const [x, y] = projection(s.centroid);
-      ctx.globalAlpha = Math.min(1, view.k - 1.7) * (1 - countyAlpha * 0.6);
-      label(s.properties.name.toUpperCase(), x, y, Math.min(26, 11 + view.k * 2), C.cream, 700);
-    }
-    ctx.globalAlpha = 1;
-  } else if (view.k <= 1.7 && !recording && visible([-93.5, 40])) {
-    // en la vista de globo: un solo rótulo con línea
-    const [x, y] = projection([-93.4, 40.6]);
-    const lx = x + R0 * 0.3;
-    const ly = y - R0 * 0.3;
-    ctx.globalAlpha = Math.max(0, 1.7 - view.k);
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(lx - 8, ly + 8);
-    ctx.strokeStyle = C.glow;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.textAlign = 'left';
-    ctx.font = '700 15px "DM Sans", system-ui, sans-serif';
-    ctx.fillStyle = C.glow;
-    ctx.fillText('IOWA · ILLINOIS · KANSAS', lx, ly - 6);
-    ctx.font = '500 13px "DM Sans", system-ui, sans-serif';
-    ctx.fillStyle = 'rgba(246,241,228,0.75)';
-    ctx.fillText('Click a state to explore', lx, ly + 13);
-    ctx.globalAlpha = 1;
-  }
-
-  // condados con historia completa: anillo + nombre
-  if (countyAlpha > 0.3) {
-    for (const id of Object.keys(FEATURED)) {
-      const c = countyById[id];
-      if (!visible(c.centroid)) continue;
-      const [x, y] = projection(c.centroid);
-      ctx.globalAlpha = countyAlpha;
-      if (c !== selCounty) {
-        ctx.beginPath();
-        ctx.arc(x, y, 9 + 9 * pulse, 0, 6.2832);
-        ctx.strokeStyle = `rgba(246,241,228,${0.9 - 0.7 * pulse})`;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-      const half = (Math.abs(projection([c.bounds[0][0], c.bounds[0][1]])[1] - projection([c.bounds[1][0], c.bounds[1][1]])[1])) / 2;
-      label(c.properties.name, x, y - half - 16, view.k > 20 ? 22 : 15, C.cream, 800, 'Bricolage Grotesque');
-      ctx.globalAlpha = 1;
-    }
-  }
-  if (twinsOn && selCounty) {
-    for (const tw of [{f: selCounty}, ...selCounty.twins]) {
-      if (FEATURED[tw.f.id]) continue;
-      const [x, y] = projection(tw.f.centroid);
-      label(tw.f.properties.name, x, y - 18, 15, C.cream, 800, 'Bricolage Grotesque');
-    }
-  }
-  if (hover && hover.type === 'county' && !FEATURED[hover.f.id] && visible(hover.f.centroid)) {
-    const [x, y] = projection(hover.f.centroid);
-    label(hover.f.properties.name, x, y, 13, C.cream, 700);
-  }
-
-  // toma C: rótulo de expansión
-  if (recording === 'c' && visible([-64, -36])) {
-    const [x, y] = projection([-64, -35]);
-    ctx.globalAlpha = Math.max(0, Math.min(1, recordingProgress() * 3 - 1.9));
-    label('Next: Argentina', x + R0 * 0.02, y - 14, 30, C.cream, 800, 'Bricolage Grotesque');
-    label('as data is added', x + R0 * 0.02, y + 18, 18, C.glow, 500);
-    ctx.globalAlpha = 1;
-  }
-}
-
-// ---------- Interacción ----------
-function inBounds(f, [lon, lat]) {
-  const [[w, s], [e, n]] = f.bounds;
-  return lon >= w && lon <= e && lat >= s && lat <= n;
-}
-
-function pick(x, y) {
-  const [cx, cy] = projection.translate();
-  if (Math.hypot(x - cx, y - cy) > R0 * view.k) return null;
-  const ll = projection.invert([x, y]);
-  if (!ll) return null;
-  if (view.k > COUNTY_ZOOM_START + 0.6) {
-    for (const c of counties) if (inBounds(c, ll) && geoContains(c, ll)) return {type: 'county', f: c};
-  }
-  for (const s of states) if (inBounds(s, ll) && geoContains(s, ll)) return {type: 'state', f: s};
-  return null;
-}
-
-let drag = null;
-const pointers = new Map();
-let pinch = null;
-
-canvas.addEventListener('pointerdown', (e) => {
-  if (recording) return;
-  canvas.setPointerCapture(e.pointerId);
-  pointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
-  if (pointers.size === 2) {
-    const [a, b] = [...pointers.values()];
-    pinch = {d: Math.hypot(a.x - b.x, a.y - b.y), k: view.k};
-    drag = null;
-  } else {
-    drag = {x: e.clientX, y: e.clientY, lon: view.lon, lat: view.lat, moved: 0};
-  }
-  anim = null;
-});
-
-canvas.addEventListener('pointermove', (e) => {
-  if (recording) return;
-  const rect = canvas.getBoundingClientRect();
-  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
-  if (pinch && pointers.size === 2) {
-    const [a, b] = [...pointers.values()];
-    view.k = clampZoom((pinch.k * Math.hypot(a.x - b.x, a.y - b.y)) / pinch.d);
-    userMoved = true;
-    return;
-  }
-  if (drag) {
-    const dx = e.clientX - drag.x;
-    const dy = e.clientY - drag.y;
-    drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
-    if (drag.moved > 4) {
-      const deg = 180 / Math.PI / (R0 * view.k);
-      view.lon = drag.lon - (dx * deg) / Math.max(0.3, Math.cos((view.lat * Math.PI) / 180));
-      view.lat = Math.max(-80, Math.min(80, drag.lat + dy * deg));
-      userMoved = true;
-      canvas.style.cursor = 'grabbing';
-    }
-    return;
-  }
-  hover = pick(e.clientX - rect.left, e.clientY - rect.top);
-  canvas.style.cursor = hover ? 'pointer' : 'grab';
-});
-
-function endPointer(e) {
-  pointers.delete(e.pointerId);
-  if (pointers.size < 2) pinch = null;
-  if (!drag) return;
-  const wasClick = drag.moved <= 4;
-  drag = null;
-  canvas.style.cursor = 'grab';
-  if (!wasClick || recording) return;
-  const rect = canvas.getBoundingClientRect();
-  const hit = pick(e.clientX - rect.left, e.clientY - rect.top);
-  if (!hit) return;
-  if (hit.type === 'state') selectState(hit.f.id);
-  else selectCounty(hit.f.id);
-}
-canvas.addEventListener('pointerup', endPointer);
-canvas.addEventListener('pointercancel', endPointer);
-canvas.addEventListener('pointerleave', () => {
-  hover = null;
-});
-
-const clampZoom = (k) => Math.max(0.75, Math.min(70, k));
-canvas.addEventListener(
-  'wheel',
-  (e) => {
-    if (recording) return;
-    e.preventDefault();
-    anim = null;
-    userMoved = true;
-    view.k = clampZoom(view.k * Math.exp(-e.deltaY * 0.0016));
+const deckgl = new Deck({
+  parent: $('globe'),
+  views: new GlobeView({id: 'globe', resolution: 5}),
+  viewState: viewState(),
+  controller: CONTROLLER,
+  useDevicePixels: 2,
+  onViewStateChange: ({viewState: vs, interactionState: is}) => {
+    if (take || isLanding()) return;
+    if (is && (is.isDragging || is.isZooming || is.isPanning || is.inTransition)) { V = null; lastInput = performance.now(); }
+    R.lon = vs.longitude; R.lat = Math.max(-80, Math.min(80, vs.latitude)); R.k = kOfZoom(vs.zoom);
   },
-  {passive: false},
-);
+  getCursor: ({isDragging, isHovering}) => (isDragging ? 'grabbing' : isHovering ? 'pointer' : 'grab'),
+  onHover: (info) => { hover = info.object && !take ? {type: info.layer.id === 'counties' ? 'county' : 'state', f: info.object} : null; },
+  onClick: (info) => {
+    if (take || !info.object) return;
+    if (info.layer.id === 'counties') flyToCounty(info.object.id);
+    else flyToState(info.object.id);
+  },
+  onError: (e) => console.error('deck', e && e.stack),
+  layers: [],
+});
 
-// ---------- Interfaz ----------
-const $ = (id) => document.getElementById(id);
+const memo = new Map();
+const one = (key, obj) => { if (!obj) return []; const m = memo.get(key); if (m && m[0] === obj) return m; const a = [obj]; memo.set(key, a); return a; };
 
-function syncUI() {
+let viewport = null, LABELS = [];
+function buildLayers(a) {
+  const twinSet = twinMode && selCounty ? new Set(selCounty.twins.map((x) => x.f)) : null;
+  const centre = [R.lon, R.lat], front = (p) => angDist(p, centre) < 1.45;
+  const hoverState = hover && hover.type === 'state' ? hover.f : null;
+  const hoverCounty = hover && hover.type === 'county' && hover.f !== selCounty ? hover.f : null;
+  const stateFade = 1 - a * 0.85;
+  const layers = [
+    new SolidPolygonLayer({id: 'ocean', data: [[[-180, 90], [0, 90], [180, 90], [180, -90], [0, -90], [-180, -90]]],
+      getPolygon: (d) => d, getFillColor: OCEAN, parameters: {depthWriteEnabled: false}}),
+    new TileLayer({id: 'bluemarble', data: TILE_URL, minZoom: 0, maxZoom: 8, tileSize: 256, maxRequests: 12,
+      onTileError: () => {},
+      renderSubLayers: (props) => {
+        const [[w, s], [e, n]] = props.tile.boundingBox;
+        return new BitmapLayer(props, {data: null, image: props.data, bounds: [w, s, e, n],
+          _imageCoordinateSystem: COORDINATE_SYSTEM.CARTESIAN});
+      }}),
+    // brillo fijo debajo de los estados con datos (no late: no es un dato en vivo)
+    new GeoJsonLayer({id: 'states-glow', data: STATES, filled: false, stroked: true, lineWidthUnits: 'pixels',
+      getLineWidth: 9, getLineColor: [...GLOW, Math.round(65 * stateFade)],
+      updateTriggers: {getLineColor: [stateFade]}}),
+    new GeoJsonLayer({id: 'states', data: STATES, filled: true, stroked: true, pickable: R.k <= COUNTY_K + 0.6,
+      lineWidthUnits: 'pixels',
+      getFillColor: (f) => {
+        const dim = selState && selState !== f ? 0.45 : 1;
+        const c = f === hoverState ? GLOW : LEAF;
+        return [...c, Math.round(255 * dim * 0.56 * stateFade)];
+      },
+      getLineColor: (f) => [...GLOW, Math.round(255 * (selState && selState !== f ? 0.45 : 1))],
+      getLineWidth: (f) => (f === selState || f === hoverState ? 2.4 : 1.5),
+      updateTriggers: {getFillColor: [selState && selState.id, hoverState && hoverState.id, stateFade],
+        getLineColor: [selState && selState.id], getLineWidth: [selState && selState.id, hoverState && hoverState.id]}}),
+  ];
+  if (a > 0.01) {
+    layers.push(
+      new GeoJsonLayer({id: 'counties', data: COUNTIES, opacity: a, filled: true, stroked: true,
+        pickable: R.k > COUNTY_K + 0.6, lineWidthUnits: 'pixels', getLineWidth: 1, getLineColor: [...CREAM, 150],
+        getFillColor: (f) => [...f.rgb, twinSet && f !== selCounty && !twinSet.has(f) ? 70 : 255],
+        updateTriggers: {getFillColor: [twinMode, selCounty && selCounty.id]}}),
+      new GeoJsonLayer({id: 'county-hover', data: one('hover', hoverCounty), filled: true, stroked: true,
+        lineWidthUnits: 'pixels', getFillColor: [255, 255, 255, 64], getLineColor: CREAM, getLineWidth: 1.5}),
+      new GeoJsonLayer({id: 'county-selected', data: one('sel', selCounty), filled: false, stroked: true,
+        lineWidthUnits: 'pixels', getLineColor: WHITE, getLineWidth: 3.5}));
+    if (twinSet) layers.push(
+      new GeoJsonLayer({id: 'twin-outlines', data: one('twins', selCounty.twins.map((x) => x.f)), filled: false, stroked: true,
+        lineWidthUnits: 'pixels', getLineColor: WHITE, getLineWidth: 2.5}),
+      new ArcLayer({id: 'twin-arcs', data: selCounty.twins, getSourcePosition: () => selCounty.centroid,
+        getTargetPosition: (d) => d.f.centroid, getSourceColor: WHITE, getTargetColor: [...WHITE, 200],
+        getWidth: 2.6, widthUnits: 'pixels', getHeight: 0.35, greatCircle: false,
+        updateTriggers: {getSourcePosition: selCounty.id}}),
+      new ScatterplotLayer({id: 'twin-dots', data: selCounty.twins, getPosition: (d) => d.f.centroid,
+        radiusUnits: 'pixels', getRadius: 5, getFillColor: WHITE}));
+  }
+  if (take === 'c') layers.push(new GeoJsonLayer({id: 'argentina', data: ARGENTINA, filled: false, stroked: true,
+    lineWidthUnits: 'pixels', getLineWidth: 1.6, getLineColor: GLOW}));
+
+  // los rótulos se dibujan en el canvas de arriba (sombra suave), ver drawLabels()
+  LABELS = [];
+  // los nombres de estado le ceden el lugar a los de condado: nunca se ven los dos
+  if (R.k > 1.7 && a < 0.3) {
+    const al = Math.min(1, R.k - 1.7) * clamp01(1 - a / 0.3), size = Math.min(26, 11 + R.k * 2);
+    for (const s of STATES) if (front(s.centroid))
+      LABELS.push({p: s.centroid, text: s.properties.name.toUpperCase(), size, alpha: al, caps: true});
+  }
+  if (a > 0.3) for (const id of Object.keys(DEMO)) {
+    const c = countyById[id]; if (!front(c.centroid)) continue;
+    LABELS.push({p: c.centroid, text: c.properties.name, size: R.k > 20 ? 20 : 15, alpha: clamp01((a - 0.3) / 0.3), county: c});
+  }
+  if (twinMode && selCounty) for (const x of [{f: selCounty}, ...selCounty.twins])
+    if (!DEMO[x.f.id]) LABELS.push({p: x.f.centroid, text: x.f.properties.name, size: 15, alpha: 1, dy: -18});
+  if (hoverCounty && !DEMO[hoverCounty.id] && front(hoverCounty.centroid))
+    LABELS.push({p: hoverCounty.centroid, text: hoverCounty.properties.name, size: 13, alpha: 1});
+  return layers;
+}
+
+function halfHeightPx(c) {
+  if (!viewport) return 10;
+  const [[x0, y0], [x1, y1]] = c.bounds;
+  return Math.abs(viewport.project([x0, y0])[1] - viewport.project([x1, y1])[1]) / 2;
+}
+function globeRadiusPx() {
+  if (!viewport || R.k > 8) return base * R.k;
+  let best = 0;
+  for (let d = 0.9; d <= 1.5708; d += 0.015) {
+    const [x, y] = viewport.project(dest([R.lon, R.lat], 90, d));
+    best = Math.max(best, Math.hypot(x - W / 2, y - H / 2));
+  }
+  return best;
+}
+
+function drawSky(t, u, r) {
+  const c = sctx, cx = W / 2, cy = H / 2;
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const g = c.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.8);
+  g.addColorStop(0, '#03070D'); g.addColorStop(1, '#000000');
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  if (u > 0.02) {
+    c.fillStyle = '#FFFFFF';
+    for (const s of STARS) {
+      c.globalAlpha = u * s.b * (0.7 + 0.3 * Math.sin(t * 0.9 + s.p));
+      c.beginPath(); c.arc(s.x * W, s.y * H, s.s, 0, 6.2832); c.fill();
+    }
+    c.globalAlpha = 1;
+  }
+  if (r < Math.max(W, H) * 1.2) { // borde fino de atmósfera
+    const a = c.createRadialGradient(cx, cy, r * 0.985, cx, cy, r * 1.11);
+    a.addColorStop(0, 'rgba(150,205,255,0.55)'); a.addColorStop(0.3, 'rgba(90,160,255,0.18)'); a.addColorStop(1, 'rgba(60,130,255,0)');
+    c.fillStyle = a; c.beginPath(); c.arc(cx, cy, r * 1.11, 0, 6.2832); c.fill();
+  }
+}
+
+function shadowText(c, text, x, y, fill) { // sombra oscura suave, dos pasadas para que se lea sobre la imagen
+  c.shadowColor = 'rgba(0,0,0,0.9)'; c.shadowOffsetX = 0; c.shadowOffsetY = 1;
+  c.fillStyle = fill; c.shadowBlur = 8; c.fillText(text, x, y); c.shadowBlur = 3; c.fillText(text, x, y);
+  c.shadowColor = 'transparent'; c.shadowBlur = 0; c.shadowOffsetY = 0;
+}
+function label(c, text, x, y, size, fill, weight = 700, family = 'DM Sans') {
+  c.font = `${weight} ${size}px "${family}", system-ui, sans-serif`;
+  c.textAlign = 'center'; c.textBaseline = 'middle'; c.letterSpacing = '0px';
+  shadowText(c, text, x, y, fill);
+}
+function drawLabels(c) {
+  for (const l of LABELS) {
+    const [x, y] = viewport.project(l.p);
+    const dy = l.county ? -(halfHeightPx(l.county) + 16) : l.dy || 0;
+    c.globalAlpha = l.alpha;
+    c.font = `700 ${l.size}px "DM Sans", system-ui, sans-serif`;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.letterSpacing = l.caps ? `${(l.size * 0.08).toFixed(1)}px` : '0px';
+    shadowText(c, l.text, x, y + dy, COL.cream);
+  }
+  c.globalAlpha = 1; c.letterSpacing = '0px';
+}
+function drawHud(u, r) {
+  const c = hctx, cx = W / 2, cy = H / 2;
+  c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, W, H);
+  if (u > 0.02) { // lado de noche: la luz viene de arriba a la izquierda
+    const s = c.createRadialGradient(cx - r * 0.42, cy - r * 0.34, r * 0.2, cx - r * 0.42, cy - r * 0.34, r * 1.6);
+    s.addColorStop(0, 'rgba(0,0,0,0)'); s.addColorStop(0.5, 'rgba(0,0,0,0)');
+    s.addColorStop(0.82, `rgba(0,2,8,${0.55 * u})`); s.addColorStop(1, `rgba(0,0,4,${0.88 * u})`);
+    c.fillStyle = s; c.beginPath(); c.arc(cx, cy, r, 0, 6.2832); c.fill();
+  }
+  if (!viewport) return;
+  drawLabels(c);
+  if (R.k <= 1.7 && !take && !isLanding() && angDist([-93.5, 40], [R.lon, R.lat]) < 1.45) { // rótulo con línea
+    const [x, y] = viewport.project([-93.4, 40.6]), x2 = x + base * 0.3, y2 = y - base * 0.3;
+    c.globalAlpha = Math.max(0, Math.min(1, 1.7 - R.k));
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x2 - 8, y2 + 8); c.strokeStyle = COL.glow; c.lineWidth = 1.5; c.stroke();
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.font = '700 15px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '1.2px'; shadowText(c, 'IOWA · ILLINOIS · KANSAS', x2, y2 - 6, COL.glow);
+    c.font = '500 13px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '0px'; shadowText(c, 'Click a state to explore', x2, y2 + 13, 'rgba(246,241,228,0.85)');
+    c.globalAlpha = 1;
+  }
+  if (take === 'c' && angDist([-64, -36], [R.lon, R.lat]) < 1.45) {
+    const [x, y] = viewport.project([-64, -35]);
+    c.globalAlpha = Math.max(0, Math.min(1, takeProgress() * 3 - 1.9));
+    label(c, 'Next: Argentina', x + base * 0.02, y - 14, 30, COL.cream, 800, 'Bricolage Grotesque');
+    label(c, 'as data is added', x + base * 0.02, y + 18, 18, COL.glow, 500);
+    c.globalAlpha = 1;
+  }
+}
+
+function frame(now) {
+  try { if (active) step(now); else lastT = 0; } catch (e) { if (!frame.err) console.error('frame', e.stack); frame.err = 1; }
+  requestAnimationFrame(frame);
+}
+function step(now) {
+  const t = (now - T0) / 1000, dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0; lastT = now;
+  if (V) {
+    lastInput = now; spinV = 0;
+    const s = Math.min(1, (now - V.start) / V.dur), l = ease(s);
+    R.lon = V.from.lon + (V.to.lon - V.from.lon) * l;
+    R.lat = V.from.lat + (V.to.lat - V.from.lat) * l;
+    R.k = Math.exp(Math.log(V.from.k) + (Math.log(V.to.k) - Math.log(V.from.k)) * l);
+    if (s >= 1) V = null;
+  } else { // giro: arranca 3 s después del último toque (en la portada, enseguida), entra suave y frena al tocar
+    const idle = level === 'globe' && !take && !reduceMotion.matches && (isLanding() || now - lastInput > 3000);
+    spinV += ((idle ? SPIN_SPEED : 0) - spinV) * (1 - Math.exp(-dt / (idle ? 1.2 : 0.25)));
+    if (spinV > 0.001) R.lon = ((((R.lon - spinV * dt + 180) % 360) + 360) % 360) - 180;
+  }
+  const a = Math.round(clamp01((R.k - COUNTY_K) / 2) * 50) / 50;
+  const u = clamp01(1.6 - R.k * 0.35);
+  deckgl.setProps({viewState: viewState(), layers: buildLayers(a), controller: take || isLanding() ? false : CONTROLLER});
+  if (deckgl.isInitialized) viewport = deckgl.getViewports()[0] || viewport;
+  const r = globeRadiusPx();
+  drawSky(t, u, r); drawHud(u, r);
+}
+
+// ---- panel, migas y botones
+let rainUnit = 'in';
+try { if (localStorage.getItem('fieldrewind:rain-unit') === 'mm') rainUnit = 'mm'; } catch (e) { /* sin almacenamiento */ }
+const rainText = (mm) => (rainUnit === 'mm' ? `${Math.round(mm)} mm` : `${(mm / 25.4).toFixed(1)} in`);
+function updateUI() {
   document.body.dataset.level = level;
   writeHash();
-  $('back').textContent = twinsOn ? '← Back to county' : level === 'county' ? `← Back to ${selState.properties.name}` : level === 'state' ? '← Back to globe' : '← Home';
-  const crumbs = ['<button data-go="globe">Globe</button>'];
-  if (selState) crumbs.push(`<button data-go="state">${selState.properties.name}</button>`);
+  $('back').textContent = twinMode ? '← Back to county' : level === 'county' ? `← Back to ${selState.properties.name}` : level === 'state' ? '← Back to globe' : '← Back';
+  const crumbs = ['<button type="button" data-go="globe">Globe</button>'];
+  if (selState) crumbs.push(`<button type="button" data-go="state">${selState.properties.name}</button>`);
   if (selCounty) crumbs.push(`<span>${selCounty.properties.name} County</span>`);
   $('crumbs').innerHTML = crumbs.join('<i>›</i>');
-
-  const panel = $('panel');
-  const pct = (v) => `${Math.round(v * 100)}%`;
+  const panel = $('panel'), pct = (n) => `${Math.round(n * 100)}%`;
   $('legend').hidden = level === 'globe';
-  $('p-stats').hidden = !selCounty;
-  $('p-twins').hidden = !selCounty;
-  $('p-next').hidden = !selCounty;
-  $('p-twinlist').hidden = !(selCounty && twinsOn);
+  $('p-stats').hidden = !selCounty; $('p-twins').hidden = !selCounty; $('p-next').hidden = !selCounty;
+  $('p-twinlist').hidden = !(selCounty && twinMode);
   if (selCounty) {
-    const has = !!FEATURED[selCounty.id];
-    const m = selCounty.mock;
+    const full = !!DEMO[selCounty.id], m = selCounty.mock;
     $('p-name').textContent = `${selCounty.properties.name} County`;
     $('p-state').textContent = `${selState.properties.name} · FIPS ${selCounty.id}`;
-    $('p-status').textContent = has ? 'Full history available · 2015–2025' : 'History not loaded for this county yet';
-    $('p-status').className = has ? 'ok' : 'missing';
-    $('p-open').disabled = !has;
-    $('p-open').textContent = has ? 'Open county history →' : 'Missing data';
-    $('p-stats').innerHTML =
-      `<span class="stamp">Prototype data</span>` +
-      `<div><b>${pct(m.corn)}</b><small>Corn share of cropland</small></div>` +
-      `<div><b>${m.top}</b><small>Most common crop</small></div>` +
-      `<div><b>${m.rain} mm</b><small>Rain per year</small></div>`;
-    $('p-twins').textContent = twinsOn ? '← Back to county' : 'Counties like yours';
+    $('p-status').textContent = full ? 'Full history · 2015–2025' : 'Missing data: history not loaded for this county yet';
+    $('p-status').className = full ? 'ok' : 'missing';
+    $('p-open').disabled = !full;
+    $('p-open').textContent = 'Open county history →';
     const hasNext = NEXT_AVAILABLE.includes(selCounty.id);
     $('p-next').disabled = !hasNext;
     $('p-next').textContent = hasNext ? 'Next season: what to plant →' : 'Next season: Missing data';
-    $('p-twinlist').innerHTML =
-      `<span class="stamp">Prototype data</span>` +
-      selCounty.twins
-        .map(
-          (tw) =>
-            `<button data-fips="${tw.f.id}"><b>${tw.f.properties.name}, ${stateById[tw.f.properties.state].properties.name}</b>` +
-            `<small>Similar on ${tw.similar.join(' and ')} · ${tw.f.mock.top} on ${pct(tw.f.mock.corn > 0.42 ? tw.f.mock.corn : 0.3 + tw.f.mock.soil * 0.2)} of fields</small></button>`,
-        )
-        .join('');
+    $('p-stats').innerHTML = `<div class="proto"><span class="tag">Prototype data</span>Invented placeholder values</div><div class="stats"><div><b>${pct(m.corn)}</b><small>Corn share of cropland</small></div><div><b>${m.top}</b><small>Most common crop</small></div><div><b>${rainText(m.rain)}</b><small>Rain per year</small><span class="seg" role="group" aria-label="Rain units"><button type="button" data-unit="in" aria-pressed="${rainUnit === 'in'}">in</button><button type="button" data-unit="mm" aria-pressed="${rainUnit === 'mm'}">mm</button></span></div></div>`;
+    $('p-twins').textContent = twinMode ? '← Back to county' : 'Counties like yours';
+    $('p-twinlist').innerHTML = '<div class="proto"><span class="tag">Prototype data</span>Similar soil and climate</div><div class="twins">' + selCounty.twins.map((x) =>
+      `<button type="button" data-fips="${x.f.id}"><b>${x.f.properties.name}, ${stateById[x.f.properties.state].properties.name}</b><small>Similar on ${x.similar.join(' and ')} · ${x.f.mock.top} on ${pct(x.f.mock.corn > 0.42 ? x.f.mock.corn : 0.3 + x.f.mock.soil * 0.2)} of fields</small></button>`).join('') + '</div>';
     panel.hidden = false;
   } else if (selState) {
-    const n = counties.filter((c) => c.properties.state === selState.id).length;
-    const feat = Object.keys(FEATURED).find((id) => id.startsWith(selState.id));
+    const n = COUNTIES.filter((c) => c.properties.state === selState.id).length;
+    const demo = Object.keys(DEMO).find((id) => id.startsWith(selState.id));
     $('p-name').textContent = selState.properties.name;
     $('p-state').textContent = `${n} counties`;
-    $('p-status').textContent = `Demo county: ${FEATURED[feat]}`;
-    $('p-status').className = 'ok';
-    $('p-open').disabled = false;
-    $('p-open').textContent = `Go to ${FEATURED[feat]} County →`;
+    $('p-status').textContent = `Demo county: ${DEMO[demo]}`; $('p-status').className = 'ok';
+    $('p-open').disabled = false; $('p-open').textContent = `Go to ${DEMO[demo]} County →`;
     panel.hidden = false;
-  } else {
-    panel.hidden = true;
-  }
+  } else panel.hidden = true;
 }
-
 $('crumbs').addEventListener('click', (e) => {
   const go = e.target.dataset && e.target.dataset.go;
   if (go === 'globe') reset();
-  if (go === 'state' && selState) selectState(selState.id);
+  if (go === 'state' && selState) flyToState(selState.id);
 });
-$('back').addEventListener('click', back);
+$('p-stats').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-unit]'); if (!b || b.dataset.unit === rainUnit) return;
+  rainUnit = b.dataset.unit;
+  try { localStorage.setItem('fieldrewind:rain-unit', rainUnit); } catch (err) { /* sin almacenamiento */ }
+  updateUI();
+  const again = $('p-stats').querySelector(`button[data-unit="${rainUnit}"]`); if (again) again.focus();
+});
+$('back').addEventListener('click', goBack);
 $('home').addEventListener('click', goHome);
-$('p-twins').addEventListener('click', () => showTwins(!twinsOn));
-$('p-next').addEventListener('click', () => {
-  if (!selCounty) return;
-  emit('next', {fips: selCounty.id, name: selCounty.properties.name, state: selState.properties.name});
-  location.hash = `#/county/${selCounty.id}/next`;
-});
-$('p-twinlist').addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-fips]');
-  if (btn) selectCounty(btn.dataset.fips);
-});
-$('enter').addEventListener('click', () => {
-  location.hash = '#/map';
-});
-// "Rewind Sumner County, KS": vuela a Sumner y abre su historia con el play andando (F12)
+$('p-twins').addEventListener('click', () => showTwins(!twinMode));
+$('p-twinlist').addEventListener('click', (e) => { const b = e.target.closest('button[data-fips]'); if (b) flyToCounty(b.dataset.fips); });
+$('enter').addEventListener('click', () => { location.hash = '#/map'; });
+// "Rewind Sumner County, KS": vuelo corto a Sumner y abre su historia con el play andando (F12)
 $('cta').addEventListener('click', () => {
-  // vuelo corto: lo que importa es llegar rápido a la línea de tiempo
-  selectCounty(DEMO_COUNTY, true, 900);
-  window.setTimeout(() => {
-    location.hash = `#/county/${DEMO_COUNTY}?play=1`;
-  }, 1000);
+  flyToCounty(START, true, 900);
+  window.setTimeout(() => { location.hash = `#/county/${START}?play=1`; }, 1000);
 });
 $('p-open').addEventListener('click', () => {
   if (selCounty) {
     emit('open', {fips: selCounty.id});
     location.hash = `#/county/${selCounty.id}`;
-  } else if (selState) {
-    selectCounty(Object.keys(FEATURED).find((id) => id.startsWith(selState.id)));
-  }
+  } else if (selState) flyToCounty(Object.keys(DEMO).find((id) => id.startsWith(selState.id)));
 });
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && active && !document.body.classList.contains('landing')) back();
+$('p-next').addEventListener('click', () => {
+  if (!selCounty) return;
+  emit('next', {fips: selCounty.id, name: selCounty.properties.name, state: selState.properties.name});
+  location.hash = `#/county/${selCounty.id}/next`;
 });
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && active && !isLanding()) goBack(); });
 
-// ---------- Modos de grabación ----------
-let recStart = 0;
-let recDur = 1;
-const recordingProgress = () => Math.min(1, (performance.now() - recStart) / recDur);
-
-function startTake(which) {
-  recording = which;
-  document.body.classList.add('recording');
-  recStart = performance.now();
-  if (which === 'a') {
-    // Toma A (6 s): globo → Kansas → Sumner
-    recDur = 6000;
-    Object.assign(view, {lon: -20, lat: 22, k: 1});
+// ---- tomas para el video (?take=a o ?take=c)
+let takeStart = 0, takeDur = 1;
+const takeProgress = () => Math.min(1, (performance.now() - takeStart) / takeDur);
+function startTake(name) {
+  take = name; document.body.classList.add('recording'); takeStart = performance.now();
+  if (name === 'a') {
+    takeDur = 6000; Object.assign(R, {lon: -20, lat: 22, k: 1});
     flyTo({lon: -96, lat: 37, k: 1.15}, 2000);
-    setTimeout(() => selectState('20'), 2000);
-    setTimeout(() => selectCounty('20191'), 3900);
+    setTimeout(() => flyToState('20'), 2000); setTimeout(() => flyToCounty('20191'), 3900);
   } else {
-    // Toma C (3 s): desde Kansas, zoom out y giro a la Pampa
-    recDur = 3000;
-    const ks = stateById['20'];
-    Object.assign(view, {lon: ks.centroid[0], lat: ks.centroid[1], k: zoomFor(ks, 0.7)});
+    takeDur = 3000; const ks = stateById['20'];
+    Object.assign(R, {lon: ks.centroid[0], lat: ks.centroid[1], k: fitK(ks, 0.7)});
     flyTo({lon: -64, lat: -30, k: 1.25}, 2300);
   }
 }
 
-// ---------- Inicio ----------
+// ---- inicio
 resize();
-syncUI();
-const take = (new URLSearchParams(location.search).get('take') || (location.hash.match(/take-([ac])/) || [])[1] || '').toLowerCase();
-if (take === 'a' || take === 'c') {
+const takeParam = (new URLSearchParams(location.search).get('take') || (location.hash.match(/take-([ac])/) || [])[1] || '').toLowerCase();
+if (takeParam === 'a' || takeParam === 'c') {
   document.body.classList.remove('landing');
-  startTake(take);
+  updateUI();
+  startTake(takeParam);
 } else {
   document.body.classList.add('landing');
+  updateUI();
   applyHash(); // entrar directo a una vista (#/map, #/state/KS, #/map/20191)
 }
-requestAnimationFrame(draw);
-
-window.FieldRewindGlobe = {flyToState: selectState, flyToCounty: selectCounty, showTwins, reset, goHome};
+requestAnimationFrame(frame);
+window.FieldRewindGlobe = {flyToState, flyToCounty, showTwins, reset, goHome, view: () => ({...R, level})};
 }
