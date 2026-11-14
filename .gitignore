@@ -9,3 +9,7 @@ modelos/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Entorno virtual local
+.venv/
+__pycache__/
