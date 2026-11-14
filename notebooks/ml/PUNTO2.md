@@ -1,118 +1,332 @@
-# Punto 2: vigor esperado por cultivo
+# Punto 2: comparar rotaciones (modelo B)
 
-Notebook: [`punto2_vigor.ipynb`](punto2_vigor.ipynb). Corresponde al uso #2 del issue #6 (y al #3, que usa el mismo modelo).
+Notebook: [`punto2_rotaciones.ipynb`](punto2_rotaciones.ipynb). Corresponde al uso #2 del issue #6 (y al #3, que usa el mismo modelo). Es el **modelo B, escenarios de rotación**, de la sección 4 del [`CLAUDE.md`](CLAUDE.md).
 
 ## Qué le muestra al productor
 
-> "En este lugar de tu campo, el maíz tendría este vigor en un año normal, este en un año malo y este en un año muy bueno. La soja, este otro."
+> "En tu condado, el maíz rotado (después de soja) rinde entre X e Y bu/ac según el clima del año; el maíz sobre maíz, entre Z y W."
 
-Con eso el productor compara cultivos y ve cuánto riesgo tiene cada uno. El modelo **estima**; la decisión es del productor.
+Es la pantalla **"Compare rotations"** del `INFO.md`: la rotación actual y alternativas lado a lado, con el rango de rinde **del condado**. El rinde no se muestra por sector: eso es vigor relativo (punto 1). El modelo **estima**; la decisión es del productor.
 
 ## Cómo funciona, en simple
 
-1. **El modelo aprende del pasado.** Ve miles de puntos de campos, año por año: qué se sembró antes, cómo era el clima y el suelo, y **qué tan bien creció el cultivo** (`ndvi_peak`, el pico de verdor medido por satélite).
-2. **Le hacemos preguntas "¿y si…?".** Para un punto dado: "¿y si acá ponés maíz?", "¿y si ponés soja?". Cambiamos solo el cultivo y dejamos todo lo demás igual.
-3. **Lo repetimos con muchos climas.** Probamos el clima de cada año histórico de ese lugar. Así sale un rango, no un solo número: año normal (`media`), año malo (`p10`) y año muy bueno (`p90`).
+Son dos piezas, cada una para lo que hace bien:
+
+1. **Un modelo de ML para el clima y el suelo.** Ve el rinde de maíz (o soja) de cada condado en cada año, junto con el clima de ese año y el suelo. Como el rinde sube año a año por la tecnología, aprende cuánto se aparta cada año de esa tendencia y después se la vuelve a sumar.
+2. **Efectos fijos para la rotación.** Compara cada condado consigo mismo y contra sus vecinos del mismo año: "en los años en que este condado hizo más maíz sobre maíz que lo normal, ¿rindió más o menos?". Así mide cuánto cambia el rinde por rotar, sin confundirlo con que el condado sea bueno o con que ese año el maíz valiera caro.
+3. **Las juntamos en escenarios.** Para cada condado: rinde con su rotación normal (modelo de ML), y cuánto sube o baja si rota del todo o hace todo continuo (efectos fijos).
+4. **Con muchos climas.** Se prueba el clima de cada año de 2009 a 2023. Así sale un rango (año normal, malo y bueno), no un solo número.
 
 ## Partes de la notebook
 
-### Preparación (pasos 0 a 4), ya funciona
-
 | Paso | Qué hace |
 |---|---|
-| 0 | Carga las librerías (pandas, LightGBM). Si no está LightGBM, usa un modelo equivalente de scikit-learn |
-| 1 | Lee `cdl_puntos.csv` desde la raíz del repo: 9.000 puntos en 3 condados, 2017–2025 |
-| 2 | Muestra qué se siembra en cada región. En Iowa e Illinois es casi todo maíz y soja; en Kansas hay mucho trigo |
-| 3 | Junta los cultivos raros en `otros` y pasa los conteos a proporciones ("qué parte de los años hubo maíz") |
-| 4 | Separa por años: aprende con 2017–2023, se evalúa con 2024 y 2025 queda para el examen final |
+| 0 | Librerías. Si no está LightGBM, usa uno equivalente de scikit-learn |
+| 1 | **Parámetros:** cultivo (`maiz` o `soja`), años, features. Todo lo que se cambia está acá |
+| 2 | Carga `tabla_anual`, `tabla_mensual` y el diccionario de la entrega |
+| 3 | Cuántos condados tienen rinde por año y estado |
+| 4 | Tabla de modelado: una fila por condado y año. Avisa qué features no vinieron |
+| 5 | Folds: desarrollo 2009–2023 (un año afuera por vez) y prueba 2024–2025. Los guarda en `data/ml/folds.csv` |
+| 6 | Tendencia por estado (dentro del fold) y los 3 baselines |
+| 7 | Los dos modelos: Ridge y LightGBM poco profundo |
+| 8 | Validación: deja cada año afuera, predice y mide importancias |
+| 9 | Resultados por estado y por año contra los baselines. Elige el mejor modelo |
+| 10 | ¿Sirve en un estado que no vio? |
+| 11 | Qué variables pesan y si son estables entre años |
+| 12 | Banda de incertidumbre p10–p90 y su cobertura por estado |
+| 13 | Modelo final (se guarda en `modelos/`) y prueba 2024–2025, apagada con `MIRAR_PRUEBA` |
+| 14 | **Efecto de la rotación con efectos fijos** (mismo condado + mismo estado y año + clima) |
+| 15 | **Escenarios de rotación** (`actual`, `rotado`, `continuo`): la salida para la app |
+| 16 | Chequeo agronómico: efecto negativo, cerca de los experimentos, y rotado > continuo |
+| 17 | Registra la corrida en `data/ml/experimentos.csv` |
 
-### Parte A: modelo de práctica (pasos 5 a 8), ya funciona
-
-Predice **qué sembró el productor**. No es la recomendación: sirve para tener todo el código armado y probado mientras llegan los datos.
-
-| Paso | Qué hace |
-|---|---|
-| 5 | Regla simple a superar: "lo contrario del año anterior" (maíz → soja, soja → maíz) |
-| 6 | Entrena el modelo (`modelo_a.fit`) |
-| 7 | Compara modelo contra regla, por región |
-| 8 | Examen final con 2025. Está apagado: se activa con `MIRAR_TEST = True` una sola vez, al final |
-
-Resultado en validación (2024), % de acierto:
-
-| Región | Regla simple | Modelo |
-|---|---|---|
-| McLean (IL) | 94,2 | 94,9 |
-| Story (IA) | 83,4 | 85,9 |
-| Sumner (KS) | 34,7 | 55,0 |
-
-### Parte B: el modelo de vigor (pasos 9 a 12), espera los datos de Diego
-
-| Paso | Qué hace | Estado |
-|---|---|---|
-| 9 | Une NDVI, clima y suelo a la tabla de puntos | Faltan las rutas y los nombres de columnas |
-| 10 | Entrena el modelo de vigor (`modelo_b.fit`) y lo compara con una regla simple: el NDVI promedio de ese cultivo en esa región | Escrito, probado con datos inventados |
-| 11 | `recomendar`: para un punto, prueba cada cultivo y los ordena | Escrito, probado con datos inventados |
-| 12 | `simular_escenarios`: repite con el clima de cada año y da `media`, `p10` y `p90` | Escrito, probado con datos inventados |
-
-Cultivos que se comparan en cada región (solo los que tienen datos suficientes ahí):
-
-- Story (IA) y McLean (IL): maíz y soja.
-- Sumner (KS): maíz, soja, trigo, sorgo y doble trigo/soja.
+La notebook se corre **una vez por cultivo**. Las salidas de maíz y soja se juntan en los mismos archivos.
 
 ## Datos
 
-**Entra:**
+**Entra:** la parte `condado/` de la entrega `data/fieldshift_datos_v1.2/` (no va a Git; detalle en la sección 3 del `CLAUDE.md`). La v1.2 es igual a la v1.1 en las tablas del condado; solo suma `extras/teledeteccion_anual.csv`.
 
-| Archivo | Qué tiene | De quién |
-|---|---|---|
-| `cdl_puntos.csv` | Cultivo de cada punto en cada año y los dos anteriores | Lucho (ya está) |
-| NDVI (MODIS) | `point_id, year, ndvi_peak`: es lo que el modelo aprende a predecir | Diego |
-| Clima (POWER) | `point_id, year` + variables de clima | Diego |
-| Suelo (SSURGO) | `point_id` + variables de suelo | Diego |
+| Archivo | Qué se usa |
+|---|---|
+| `tabla_anual.csv` | `rend_bu_ac` (target), clima de julio, agosto y la temporada, suelo, `pct_<cultivo>_tras_<mismo cultivo>` |
+| `tabla_mensual.csv` | Calor y déficit de julio o agosto, lluvia y humedad de abril y mayo |
+| `diccionario.csv` | Chequea que cada feature figure como `entrada` |
+
+**Features del modelo** (elegidas con la sección 5 del `CLAUDE.md`; descripciones, unidades y fuentes del `diccionario.csv` de la entrega). Maíz usa 25 y soja 23. Las columnas con `_MM` al final salen de la tabla mensual: `deficit_mm_07` es el déficit de julio.
+
+| Columna | Qué es | Unidad | Fuente | Maíz | Soja |
+|---|---|---|---|:-:|:-:|
+| **Clima del cultivo** | | | | | |
+| `prec_jul_mm` | Lluvia de julio (floración del maíz) | mm | NASA POWER | ✓ | |
+| `tmax_jul_c` | Media de la temperatura máxima diaria de julio | °C | NASA POWER | ✓ | |
+| `dias_tmax_gt30_jul` | Días de julio con máxima > 30 °C | días | NASA POWER | ✓ | |
+| `dias_tmax_gt35_07` | Días de julio con máxima > 35 °C | días | NASA POWER (mensual) | ✓ | |
+| `deficit_mm_07` | Lluvia − evapotranspiración de julio | mm | NASA POWER (mensual) | ✓ | |
+| `prec_ago_mm` | Lluvia de agosto (llenado de la soja) | mm | NASA POWER | | ✓ |
+| `tmax_c_08` | Media de la temperatura máxima de agosto | °C | NASA POWER (mensual) | | ✓ |
+| `deficit_mm_08` | Lluvia − evapotranspiración de agosto | mm | NASA POWER (mensual) | | ✓ |
+| **Clima de la temporada** | | | | | |
+| `prec_temporada_mm` | Lluvia de abril a septiembre | mm | NASA POWER | ✓ | ✓ |
+| `gdd_temporada` | Grados-día (base 10, tope 30 °C) de abril a septiembre | °C·día | NASA POWER | ✓ | ✓ |
+| `deficit_temporada_mm` | Lluvia − evapotranspiración de abril a septiembre | mm | NASA POWER | ✓ | ✓ |
+| **Primavera (exceso de agua, atrasa la siembra)** | | | | | |
+| `prec_power_mm_04`, `prec_power_mm_05` | Lluvia de abril y de mayo | mm | NASA POWER (mensual) | ✓ | ✓ |
+| `dias_lluvia_gt50_04`, `dias_lluvia_gt50_05` | Días con lluvia > 50 mm en abril y en mayo | días | NASA POWER (mensual) | ✓ | ✓ |
+| `gwettop_04`, `gwettop_05` | Humedad del suelo superficial en abril y en mayo | 0–1 | NASA POWER (mensual) | ✓ | ✓ |
+| `gwetroot_04`, `gwetroot_05` | Humedad de la zona de raíces en abril y en mayo | 0–1 | NASA POWER (mensual) | ✓ | ✓ |
+| **Suelo y terreno (fijos)** | | | | | |
+| `aws0_100_mm` | Agua que el suelo puede guardar, 0–100 cm | mm | SSURGO | ✓ | ✓ |
+| `nccpi_maiz` / `nccpi_soja` | Índice de productividad del suelo para ese cultivo (NCCPI 3.0) | 0–1 | SSURGO | ✓ | ✓ |
+| `soc0_30_gm2` | Carbono orgánico 0–30 cm | g C/m² | SSURGO | ✓ | ✓ |
+| `pendiente_media_pct` | Pendiente media | % | NASADEM | ✓ | ✓ |
+| `twi_medio` | Índice topográfico de humedad (dónde se junta el agua) | adim. | NASADEM | ✓ | ✓ |
+| `clase_drenaje` | Clase de drenaje dominante (categórica) | clase | SSURGO | ✓ | ✓ |
+| `grupo_hidrologico` | Grupo hidrológico dominante (categórica) | clase | SSURGO | ✓ | ✓ |
+| **Rotación** (se calculan en la notebook) | | | | | |
+| `pct_maiz_tras_maiz_media` / `pct_soja_tras_soja_media` | % del cultivo sembrado sobre sí mismo, **normal del condado** (promedio del train del fold) | % | CDL (USDA) | ✓ | ✓ |
+| `pct_maiz_tras_maiz_desvio` / `pct_soja_tras_soja_desvio` | Cuánto se apartó **ese año** de lo normal del condado | puntos | CDL (USDA) | ✓ | ✓ |
+
+- **Efectos fijos (paso 14):** usan el % crudo del cultivo sobre sí mismo (`pct_maiz_tras_maiz` o `pct_soja_tras_soja`) y, como controles de clima, las mismas columnas de clima de la tabla (sin suelo ni rotación).
+- **Nunca se usan:** NDVI o EVI del año (son consecuencia del cultivo), `produccion_bu`, `sup_cosechada_ac` y `ratio_cosechada` (salen de la cosecha), `rend_kgha` (es el target en otra unidad).
+- **Ojo con el `momento`:** el diccionario marca el clima como `temporada` y los `pct_*` como `post_cosecha`. Para el modelo B está bien: en un escenario el clima es el de un año histórico y la rotación es una decisión que el productor toma al sembrar. Para un pronóstico en temporada (modelo A) no se podrían usar así.
 
 **Sale:**
 
-- `data/ml/punto2_vigor.csv`: `point_id, cultivo, media, p10, p90`. Lo usa el front.
-- `modelos/punto2_vigor.joblib`: el modelo entrenado. No se sube a Git.
+| Archivo | Columnas | Para quién |
+|---|---|---|
+| `data/ml/escenarios_rotacion.csv` | `fips, rotacion, cultivo, anio_clima, pred, p10, p90` | Front (`INFO.md` 4.6). `p10`/`p90` = error del modelo + incertidumbre del efecto de rotar |
+| `data/ml/escenarios_rotacion_resumen.csv` | `fips, rotacion, cultivo, mediana_clima, p10_clima, p90_clima` | Front. Cómo varía el rinde **entre climas** |
+| `data/ml/folds.csv` | `fips, anio, estado, cultivo, bloque, fold_anio, fold_estado` | Repetir la validación |
+| `data/ml/experimentos.csv` | Una fila por corrida | Comparar corridas |
+| `data/ml/efecto_rotacion.csv` | `cultivo, columna, bu_ac_por_punto, ic95_bajo, ic95_alto, p, n, rinde_medio_bu_ac, continuo_vs_rotado_pct, version_datos` | Punto 3 y front: el efecto de rotar (paso 14) |
+| `data/ml/tabla_modelado.csv` | `fips, anio, estado, cultivo, rend_bu_ac` + las features crudas | Puntos 3 y 4: la misma tabla que usó el modelo |
+| `modelos/punto2_rotaciones_<cultivo>.joblib` | Modelo, tendencia, promedios de rotación, features y banda | Puntos 3 y 4. No va a Git: se regenera corriendo esta notebook |
 
 ## Depende de / lo usan
 
-- **Depende de:** `cdl_puntos.csv` y los datos de NDVI, clima y suelo de Diego.
-- **Lo usan:** el front (ranking de cultivos con banda de riesgo), el punto 3 (explicaciones, en esta misma notebook) y el punto 4 (años raros), que carga el modelo guardado.
+- **Depende de:** la entrega `fieldshift_datos_v1.2` (parte `condado/`) del pipeline de datos.
+- **Lo usan:** el front (pantalla "Compare rotations"), el punto 3 (explicaciones, sección siguiente) y el punto 4 (años raros), que cargan el modelo guardado.
+
+## Para el punto 3 (explicaciones)
+
+Esta sección es todo lo que necesita quien haga el punto 3. No hace falta abrir la notebook del punto 2.
+
+### Qué tiene que hacer el punto 3
+
+Darle al productor el **"por qué"** de los números de la pantalla "Compare rotations", en frases simples y en inglés. Por ejemplo:
+
+> "In years with a hot July, corn yields in this county tend to be about 25 bu/ac lower."
+> "Corn after corn tends to yield about 17 % less than corn after soybeans."
+
+Hay **dos fuentes de explicación distintas**, y no se mezclan:
+
+| Qué explica | De dónde sale | Archivo |
+|---|---|---|
+| Cómo el **clima y el suelo** mueven el rinde de un condado en un año | Valores SHAP del modelo de ML | `modelos/punto2_rotaciones_<cultivo>.joblib` + `data/ml/tabla_modelado.csv` |
+| Cuánto cambia el rinde por **rotar o no rotar** | Efectos fijos (paso 14) | `data/ml/efecto_rotacion.csv` |
+
+**Importante: la rotación nunca se explica con SHAP.** Las columnas `pct_*_media` y `pct_*_desvio` del modelo de ML miden sobre todo qué tipo de condado es (los más productivos hacen más maíz sobre maíz), no el efecto de rotar. Para la rotación se usa solo `efecto_rotacion.csv`.
+
+Va en su propia notebook (`punto3_explicaciones.ipynb`) con su `PUNTO3.md`, así no se pisa con quien edite la del punto 2.
+
+### Qué hay que tener antes
+
+1. La entrega descomprimida en `data/fieldshift_datos_v1.2/` (ver `README.md`).
+2. Haber corrido `punto2_rotaciones.ipynb` con `CULTIVO = "maiz"` y con `"soja"`. Eso crea los `.joblib` en `modelos/`, que no están en Git.
+3. Nada más: no hace falta instalar `shap`. LightGBM calcula los mismos valores con `pred_contrib=True`.
+
+### Qué tiene el modelo guardado
+
+`joblib.load("modelos/punto2_rotaciones_maiz.joblib")` devuelve un diccionario:
+
+| Clave | Qué es |
+|---|---|
+| `modelo` | Pipeline de scikit-learn: `prep` (prepara las columnas) + `modelo` (LightGBM). Predice la **anomalía**: cuánto se aparta el rinde de la tendencia |
+| `tendencia` | Coeficientes de la recta rinde ~ año por estado (`{"por_estado": {"17": [pendiente, ordenada], ...}, "global": [...]}`) |
+| `medias` | % normal de rotación de cada condado (índice `fips`) |
+| `features` | Lista de columnas, en el orden que espera el modelo (ver la tabla de features) |
+| `rotacion` | La columna de rotación cruda (`["pct_maiz_tras_maiz"]` o `["pct_soja_tras_soja"]`) |
+| `cultivo`, `target`, `version_datos` | Cultivo, `rend_bu_ac` y la entrega usada |
+| `q10`, `q90` | Banda de error del modelo, en bu/ac |
+
+### Código de arranque (probado con los datos reales)
+
+```python
+from pathlib import Path
+
+import joblib
+import numpy as np
+import pandas as pd
+
+RAIZ = next(p for p in [Path.cwd(), *Path.cwd().parents] if (p / ".git").exists())
+CULTIVO = "maiz"   # o "soja"
+
+# 1. Cargar el modelo y la tabla que guardó el punto 2
+paquete = joblib.load(RAIZ / "modelos" / f"punto2_rotaciones_{CULTIVO}.joblib")
+tabla = pd.read_csv(RAIZ / "data" / "ml" / "tabla_modelado.csv", dtype={"fips": str, "estado": str})
+tabla = tabla[tabla["cultivo"] == CULTIVO].reset_index(drop=True)
+
+
+# 2. Rearmar las columnas de rotación (copia de separar_rotacion del punto 2)
+def separar_rotacion(datos, medias):
+    d = datos.copy()
+    for c in paquete["rotacion"]:
+        media = d["fips"].map(medias[c]).fillna(d.groupby("fips")[c].transform("mean"))
+        d[f"{c}_media"] = media
+        d[f"{c}_desvio"] = d[c] - media
+    return d
+
+
+X = separar_rotacion(tabla, paquete["medias"])[paquete["features"]]
+
+# 3. Contribución de cada variable (valores SHAP) con LightGBM, sin instalar shap
+prep = paquete["modelo"].named_steps["prep"]
+arboles = paquete["modelo"].named_steps["modelo"]
+Xt = prep.transform(X)
+nombres = [n.split("__", 1)[1] for n in prep.get_feature_names_out()]
+contrib = arboles.predict(Xt, pred_contrib=True)          # una columna por variable + la base al final
+shap = pd.DataFrame(contrib[:, :-1], columns=nombres, index=tabla.index)
+base = contrib[0, -1]                                      # anomalía promedio (bu/ac)
+
+# Chequeo: base + suma de contribuciones = lo que predice el modelo (la anomalía, sin tendencia)
+assert np.allclose(base + shap.sum(axis=1), paquete["modelo"].predict(X))
+
+# 4. Ejemplo: qué variables empujaron más el rinde de un condado en un año
+fila = tabla.index[(tabla["fips"] == "19169") & (tabla["anio"] == 2012)][0]
+print(shap.loc[fila].sort_values(key=abs, ascending=False).head(5).round(1))
+```
+
+Salida real (maíz, Story, Iowa, 2012, el año de la sequía):
+
+```
+tmax_jul_c           -25.2
+dias_tmax_gt30_jul    -7.6
+deficit_mm_07         -5.6
+dias_tmax_gt35_07     -4.4
+nccpi_maiz             4.4
+```
+
+### Cómo leer los valores SHAP
+
+- Están en **bu/ac**. Positivo = empujó el rinde para arriba; negativo, para abajo.
+- Explican la **anomalía** (rinde − tendencia del estado), no el rinde total. `base` es la anomalía promedio; `base + suma de las contribuciones` da la predicción del modelo.
+- Son de **un condado en un año**. Para frases generales ("in hot Julys…"), promediá sobre los años o condados que correspondan.
+- Las columnas categóricas (`clase_drenaje`, `grupo_hidrologico`) entran codificadas como números, pero su SHAP se lee igual.
+- Si algún día el modelo elegido pasa a ser Ridge (paso 9 del punto 2), `pred_contrib` no existe. Revisá `type(arboles).__name__` y, para Ridge, usá coeficiente × valor escalado.
+
+### Grupos de variables y frases (borrador)
+
+Al productor no le sirve "`gwetroot_05`". Conviene **sumar el SHAP por grupo** y usar una frase fija por grupo. Los ids van en español y `snake_case`, y el texto visible en inglés va en `textos.json` (`INFO.md`, secciones 4 y 6). Las frases son un borrador para acordar con el front.
+
+| id de grupo | Columnas (sumar su SHAP) | Frase en la app (borrador) | Fuente |
+|---|---|---|---|
+| `calor_julio` | `tmax_jul_c`, `dias_tmax_gt30_jul`, `dias_tmax_gt35_07` | "July heat (corn flowering)" | NASA POWER |
+| `agua_julio` | `prec_jul_mm`, `deficit_mm_07` | "July rain and water balance" | NASA POWER |
+| `calor_agosto` | `tmax_c_08` | "August heat (soybean pod filling)" | NASA POWER |
+| `agua_agosto` | `prec_ago_mm`, `deficit_mm_08` | "August rain and water balance" | NASA POWER |
+| `temporada` | `prec_temporada_mm`, `gdd_temporada`, `deficit_temporada_mm` | "Season rain, warmth and water balance (Apr–Sep)" | NASA POWER |
+| `primavera_humeda` | `prec_power_mm_04`, `prec_power_mm_05`, `dias_lluvia_gt50_04`, `dias_lluvia_gt50_05`, `gwettop_04`, `gwettop_05`, `gwetroot_04`, `gwetroot_05` | "Wet spring (can delay planting)" | NASA POWER |
+| `suelo_productivo` | `nccpi_maiz` o `nccpi_soja`, `soc0_30_gm2` | "How productive the soil is" | USDA SSURGO |
+| `agua_del_suelo` | `aws0_100_mm`, `clase_drenaje`, `grupo_hidrologico` | "Water the soil can hold and how it drains" | USDA SSURGO |
+| `terreno` | `pendiente_media_pct`, `twi_medio` | "Slope and where water collects" | NASA NASADEM |
+| `tipo_de_condado` | `pct_*_media`, `pct_*_desvio` | **No mostrar.** Mide qué tipo de condado es, no el efecto de rotar | — |
+
+Para la rotación, la frase sale de `efecto_rotacion.csv` (`continuo_vs_rotado_pct`), por ejemplo: *"Corn after corn tends to yield about 17 % less than corn after soybeans (USDA cropland data, 2009–2023)."*
+
+### Reglas para los textos (`INFO.md`, sección 6)
+
+- **En inglés**, con palabras simples ("water the soil can hold", no "AWS").
+- **Asociación, no causa:** "tends to", nunca "because".
+- **No recomendar:** nada de "recommended", "best option" ni "you should".
+- **Plantillas fijas**, sin IA generativa: así no se inventa nada y no hay texto generado que declarar en Space Apps.
+- Cada frase lleva su **fuente** (`fuentes.json`) y su marca: "From NASA data + model" para SHAP y efectos fijos; "Agronomic rule" solo para lo que sale de reglas (nitrógeno, carbono, erosión).
+- **Precisión honesta:** bu/ac y % sin decimales.
+
+### Qué falta definir con el front
+
+- Dónde van las explicaciones por condado. `INFO.md` no tiene un archivo para eso todavía: proponer uno (por ejemplo `explicaciones/<fips>.json`) en la sección 9 del contrato.
+- Cuántos grupos mostrar por condado (2 o 3, como los "rasgos" de los sectores).
 
 ## Cómo se valida
 
-- **Separar por años, nunca filas al azar.** Cada punto aparece 9 veces; si se mezclan, el modelo reconoce el campo y parece mejor de lo que es.
-- **Regla simple a superar.** En la Parte A, "lo contrario del año anterior". En la Parte B, el NDVI promedio de ese cultivo en esa región durante el entrenamiento.
-- **Métrica:** % de acierto en la Parte A. En la Parte B, MAE, el error promedio en unidades de NDVI (más bajo es mejor).
-- **Reportar por región.** Un buen promedio puede esconder que en Kansas anda mal.
-- **El test 2025 se mira una sola vez.** Si después de verlo se ajusta el modelo, deja de ser un examen honesto.
-- **Sin fugas:** como entrada, solo datos de antes de la siembra. El NDVI de la temporada es el resultado, nunca una entrada.
-- **Chequeos agronómicos** (sección 6 de `ML_NOTAS_CDL.md`): por ejemplo, maíz después de soja tiene que dar mejor que maíz después de maíz.
+- **Un año afuera por vez** (2009–2023), nunca filas al azar: los condados de un mismo año comparten el clima.
+- **Prueba final 2024–2025**, apagada con `MIRAR_PRUEBA = False` hasta el final. Se mira una sola vez.
+- **Baselines:** media del condado, tendencia lineal del condado y rinde del año anterior. Si el modelo no les gana, la notebook avisa.
+- **Métricas:** MAE, RMSE (bu/ac) y R², por estado y por año.
+- **Un estado afuera:** entrena con dos estados y evalúa en el tercero.
+- **Tendencia dentro del fold:** se ajusta solo con los años de entrenamiento.
+- **Banda p10–p90:** sale de los errores fuera del fold; se reporta qué % de casos cae adentro (objetivo 80 %).
+- **Chequeo agronómico:** el efecto de la rotación tiene que ser negativo (intervalo de confianza sin tocar el cero), en maíz cerca del 11–28 % de los experimentos, y `rotado` tiene que rendir más que `continuo`. Si no, la notebook avisa.
 
 ## Supuestos
 
-- Los cultivos con menos de ~1 % de las filas (`alfalfa`, `barbecho`, `otros_dobles`, `otros_cultivos`) se agrupan en `otros`: con tan pocos ejemplos el modelo no aprende nada confiable.
-- Los conteos de cultivos previos se dividen por los años de historia disponibles, porque no todos los puntos tienen la misma cantidad.
-- En Iowa e Illinois solo se comparan maíz y soja: casi no hay otros cultivos y el modelo estaría adivinando.
-- `ndvi_peak` se usa como medida de vigor. Es una aproximación al rinde, no el rinde.
+- Se arranca en 2009 porque las transiciones del CDL de 2008 están vacías.
+- La tendencia es una recta por estado (si un estado no está en el train, la de todos).
+- Ridge con `alpha = 10` y LightGBM con 300 árboles de 3 niveles y al menos 40 filas por hoja, fijos (sin ajustar todavía). Se elige el de menor MAE fuera del fold.
+- Rotación: se usa solo el % del cultivo sobre sí mismo. La otra columna (`tras_soja` para maíz) es casi su espejo dentro de cada condado (correlación −0,91) y con las dos el modelo no separa los efectos.
+- La rotación se parte en "normal del condado" (promedio en el train del fold) y "desvío del año", porque entre condados el % de rotación refleja sobre todo qué tan productivo es el condado.
+- Efecto de la rotación: regresión con efectos fijos de condado y de estado × año, más el clima local, y errores agrupados por condado. Solo con los años de desarrollo.
+- Escenarios: `actual` = modelo de ML con la rotación normal del condado; `rotado` (0 % sobre sí mismo) y `continuo` (100 %) = `actual` + efecto × cambio de %. El efecto se midió con cambios chicos (unos 6 puntos por condado) y **se extiende de forma proporcional a 0 % y 100 %**. **Los ids son provisorios** hasta acordarlos con el front.
+- Los escenarios fijan la tendencia en 2025 (`ANIO_TENDENCIA`): comparan rotaciones para una campaña actual con los climas de 2009–2023.
+- Si una feature pedida no viene en la entrega, se sigue sin ella y se avisa.
+
+## Resultados con datos reales (entrega v1.2, 2026-11-14)
+
+Validación dejando un año afuera, 2009–2023. MAE en bu/ac (más bajo es mejor). La prueba 2024–2025 **todavía no se miró**.
+
+| | Maíz | Soja |
+|---|---:|---:|
+| Media del condado | 22,6 | 5,7 |
+| Tendencia del condado (mejor baseline) | 18,9 | 4,2 |
+| Año anterior | 22,6 | 5,3 |
+| Ridge | 18,4 | 4,6 |
+| **LightGBM (elegido)** | **17,4** | **4,0** |
+| R² del elegido | 0,44 | 0,60 |
+| Años en que le gana al mejor baseline | 9 de 15 | 9 de 15 |
+| Banda p10–p90 | −29 a +24 | −7 a +6 |
+
+- **El modelo le gana a los baselines, pero por poco** (−8 % de error en maíz, −5 % en soja). El año que más falla es 2012 (sequía): error de ~51 bu/ac en maíz.
+- **Con un estado afuera** generaliza mejor que la tendencia de los otros estados (maíz: 15–17 contra 20–23 bu/ac).
+- **Lo que más pesa:** en maíz, el NCCPI (productividad del suelo), el déficit de agua de julio y la rotación normal del condado; en soja, la rotación normal del condado, el NCCPI y el TWI.
+- **Lo que más pesa:** en maíz, el NCCPI (productividad del suelo) y el déficit de agua de julio; en soja, el NCCPI y el TWI. También la rotación normal del condado, que acá mide sobre todo qué tipo de condado es.
+
+**Efecto de la rotación** (paso 14, efectos fijos):
+
+| | Maíz | Soja |
+|---|---:|---:|
+| bu/ac por punto de % sobre sí mismo | −0,29 (IC95 −0,41 a −0,18) | −0,10 (IC95 −0,13 a −0,06) |
+| Continuo (100 %) contra rotado (0 %) | **−17 %** | **−18 %** |
+| Experimentos de campo | −11 a −28 % (Iowa State) | sin rango citado en el repo |
+| Rotado − continuo, mediana de los condados | +29 bu/ac | +10 bu/ac |
+
+- El chequeo agronómico **pasa** en los dos cultivos, y el maíz cae dentro del rango de los experimentos.
+- El resultado depende de controlar bien: sin controles da que el maíz continuo rinde *más* (+3 %), y controlando solo por condado da un absurdo (−127 %). Con condado + estado y año + clima se estabiliza. Sacando la sequía de 2012 el efecto del maíz es algo mayor (−0,46 bu/ac por punto).
+
+**Historia de este resultado:** las primeras versiones medían la rotación con el modelo de ML y daban que el maíz continuo rinde más. Era confusión: los condados que más lo hacen son los más productivos, y en los años de precios altos se siembra más maíz sobre maíz. Separar condado y año dentro del ML no alcanzó; los efectos fijos con estado × año sí.
+
+Las primeras pruebas del código se hicieron con datos inventados (en una carpeta temporal, fuera del repo); esos números no son resultados.
 
 ## Qué falta
 
-- [ ] Recibir los archivos de Diego y completar el paso 9.
-- [ ] Correr la Parte B con datos reales y ver que le gane a la regla simple.
-- [ ] Chequeos agronómicos (sección 6 de `ML_NOTAS_CDL.md`). Por ejemplo, maíz después de soja tiene que dar mejor que maíz después de maíz.
-- [ ] Probar alguna variante del modelo (uno más simple, menos o más variables) y quedarse con la mejor.
-- [ ] Generar la tabla para la app con **todos** los puntos y guardarla en `data/ml/punto2_vigor.csv`.
-- [ ] Guardar el modelo en `modelos/punto2_vigor.joblib`.
-- [ ] Más escenarios de clima: POWER llega hasta 1981, no solo 2017–2025.
-- [ ] Definir con quien haga el #1 cómo se pasa de puntos a sectores del lote.
-- [ ] Cruzar las variables con el catálogo de Diego.
-- [ ] Punto 3: explicaciones con SHAP sobre el mismo modelo, traducidas a frases con plantillas fijas.
+- [ ] Acordar con el front los ids de `rotacion` (`actual`, `rotado`, `continuo`) y generar `data/ml/front/escenarios_rotacion.json`.
+- [ ] Cuando llegue la v2: repetir el paso 14 con la humedad del suelo de NLDAS como control extra, y pasar los escenarios a US$/acre con `economia` (rinde × precio − costos, en un paso aparte).
+- [ ] Comprobar el efecto de la rotación a escala de lote con `lotes/` (NDVI por píxel según el cultivo anterior).
+- [ ] Sacar pares de features con |r| > 0,9.
+- [ ] Early stopping y ajuste de hiperparámetros con un bloque de años reservado (nunca la prueba).
+- [ ] Sumar prácticas del censo.
+- [ ] Punto 3: explicaciones (ver "Para el punto 3").
+- [ ] `docs/ml/model_card.md`.
+- [ ] Al final, una sola vez: `MIRAR_PRUEBA = True`.
 
 ## Limitaciones (para el pitch)
 
-- Son 3 condados de muestra, no todo el Corn Belt.
-- Las etiquetas de cultivo del USDA aciertan 75 % en general: bien en maíz y soja, menos en cultivos chicos.
-- El NDVI mide verdor, no rinde. Es una aproximación.
-- El modelo encuentra asociaciones, no causas: el productor elige el cultivo por razones que el modelo no ve.
+- El rinde es **por condado**, no por lote.
+- El clima de POWER viene a ~0,5°: condados vecinos comparten valores.
+- 2024–2025 tienen menos condados y otro CDL (10 m).
+- El modelo encuentra **asociaciones, no causas**. Los efectos fijos sacan mucho de la confusión, pero no es un experimento.
+- El efecto de rotar se midió con cambios chicos del % del condado y se extiende a un lote que rota del todo o nada.
+- Los beneficios de suelo (nitrógeno, carbono, erosión) no salen del modelo: son reglas agronómicas.
+
+## Historia
+
+La primera versión (`punto2_vigor.ipynb`) predecía `ndvi_peak` por punto de 30 m con `cdl_puntos.csv`. Se reemplazó cuando el equipo definió el modelo B por condado con la entrega v1.1, porque el NDVI del año no puede ser entrada en un escenario. Sigue en el historial de Git (commit `6773162`).

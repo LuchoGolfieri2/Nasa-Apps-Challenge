@@ -1,6 +1,9 @@
 # Credenciales (ver CLAUDE.md)
 .env
 
+# Entregas de datos para ML: solo lectura, llegan aparte (notebooks/ml/CLAUDE.md)
+data/fieldshift_datos_*/
+
 # Modelos entrenados: se regeneran con las notebooks
 modelos/
 
