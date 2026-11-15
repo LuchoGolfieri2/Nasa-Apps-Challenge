@@ -86,6 +86,7 @@ Ejemplo:
 
 ## Pantalla 1 · Mapa
 
+- [ ] **F39** Argentina en la interfaz: pantalla `#/argentina` con el mapa de los 219 departamentos por zona, la ficha de cada uno (rinde del MAGyP contra sus análogos de EE. UU., clima de Buenos Aires, suelo) y enlaces a los condados análogos. Sin predicción, según `docs/argentina-front.md` · 🔨 Lucho/Claude (15/11 20:15)
 - [x] ~~**F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar~~ · ✅ Naim
   - Archivos: `web/src/map/globe.js` (deck.gl + Blue Marble de GIBS)
   - Sin latido: el resaltado es fijo, porque un latido parece un dato en vivo y no lo es. Gira solo a 3°/s tras 3 s sin tocarlo.
