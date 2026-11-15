@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RasterInfo } from "../data/types";
 import { CLASS_LABEL, CLASS_ORDER, CROP_COLOR, NON_AG_COLOR, type ClassId, type CropId } from "../ui/crops";
 import { Missing } from "../ui/Missing";
+import { SourceChip } from "../ui/SourceChip";
 import { createRenderer, type CdlRenderer, type Frame } from "./cdlRenderer";
 import type { Playback } from "./usePlayback";
 import type { Rasters } from "./useRasters";
@@ -10,6 +11,8 @@ const NIGHT = [0x0f, 0x2a, 0x1d];
 const MAX_ZOOM = 12;
 /** Parte de la transición que dura el fundido de cada lote: 150 ms de los 800 ms. */
 const BLOCK_FADE = 0.1875;
+/** Primer índice de clase que es un cultivo (0 = fuera del condado, 1 = sin cultivo). */
+const FIRST_CROP = 2;
 
 interface View {
   k: number;
@@ -33,12 +36,12 @@ function rgb(hex: string): [number, number, number] {
 }
 
 /** Tabla clase -> color (ABGR, como lo espera ImageData). Lo no resaltado se funde con el fondo. */
-export function buildLut(highlight: CropId | null): Uint32Array {
+export function buildLut(highlight: CropId | null, dimAll = false): Uint32Array {
   const lut = new Uint32Array(256);
   CLASS_ORDER.forEach((cls, i) => {
     if (cls === "nodata") return; // transparente
     let [r, g, b] = rgb(cls === "non_ag" ? NON_AG_COLOR : CROP_COLOR[cls]);
-    if (cls !== "non_ag" && highlight && cls !== highlight) {
+    if (cls !== "non_ag" && (dimAll || (highlight && cls !== highlight))) {
       const k = 0.82;
       r = Math.round(r + (NIGHT[0] - r) * k);
       g = Math.round(g + (NIGHT[1] - g) * k);
@@ -74,7 +77,7 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
   const renderer = useRef<CdlRenderer | null>(null);
   const [epoch, setEpoch] = useState(0);
   const [broken, setBroken] = useState(false);
-  const [tip, setTip] = useState<{ x: number; y: number; cls: ClassId } | null>(null);
+  const [tip, setTip] = useState<{ x: number; y: number; cls: ClassId; was: ClassId | null } | null>(null);
   const lut = useMemo(() => buildLut(highlight), [highlight]);
   const lutRef = useRef(lut);
   lutRef.current = lut;
@@ -88,6 +91,45 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
   const year = years[index];
   const status = rasters.status[year];
   const classes = rasters.get(year);
+
+  // Modo "qué cambió": solo en un año exacto, comparado con el año anterior.
+  const still = !between && !playing;
+  const prevYear = index > 0 ? years[index - 1] : null;
+  const prevClasses = prevYear === null ? null : rasters.get(prevYear);
+  const changes = useRef<HTMLCanvasElement>(null);
+  const [changesOn, setChangesOn] = useState(false);
+  const canCompare = !!prevClasses && !!classes;
+  const showChanges = changesOn && canCompare && still;
+  const dimLut = useMemo(() => buildLut(null, true), []);
+
+  // Parte del área con cultivo que tiene otro cultivo que el año anterior.
+  const changedPct = useMemo(() => {
+    if (!showChanges) return null;
+    let crop = 0;
+    let changed = 0;
+    for (let i = 0; i < classes!.length; i++) {
+      if (classes![i] < FIRST_CROP) continue;
+      crop++;
+      if (classes![i] !== prevClasses![i]) changed++;
+    }
+    return crop ? Math.round((100 * changed) / crop) : null;
+  }, [showChanges, classes, prevClasses]);
+
+  // La capa tapa el mapa con el mismo año: a pleno color solo lo que cambió de cultivo.
+  useEffect(() => {
+    const el = changes.current;
+    if (!el || !showChanges) return;
+    const ctx = el.getContext("2d");
+    if (!ctx) return;
+    const img = ctx.createImageData(info.width, info.height);
+    const px = new Uint32Array(img.data.buffer);
+    const prev = prevClasses!;
+    for (let i = 0; i < classes!.length; i++) {
+      const c = classes![i];
+      px[i] = c !== prev[i] && c >= FIRST_CROP ? lut[c] : dimLut[c];
+    }
+    ctx.putImageData(img, 0, 0);
+  }, [showChanges, classes, prevClasses, lut, dimLut, info.width, info.height]);
 
   // Lo que hace falta en cada cuadro, sin volver a suscribirse en cada render.
   const live = useRef({ years, rasters });
@@ -214,7 +256,6 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
   }, []);
 
   // El cartel del píxel solo existe en un año exacto: en una transición no hay dato que nombrar.
-  const still = !between && !playing;
   useEffect(() => {
     if (!still) setTip(null);
   }, [still]);
@@ -233,9 +274,11 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
     const px = Math.floor(((mx - view.x) / view.k / box.width) * info.width);
     const py = Math.floor(((my - view.y) / view.k / box.height) * info.height);
     if (px < 0 || py < 0 || px >= info.width || py >= info.height) return setTip(null);
-    const cls = CLASS_ORDER[classes[py * info.width + px]] ?? "nodata";
+    const i = py * info.width + px;
+    const cls = CLASS_ORDER[classes[i]] ?? "nodata";
     if (cls === "nodata") return setTip(null);
-    setTip({ x: mx, y: my, cls });
+    const was = showChanges && prevClasses![i] !== classes[i] ? (CLASS_ORDER[prevClasses![i]] ?? null) : null;
+    setTip({ x: mx, y: my, cls, was: was === "nodata" ? null : was });
   };
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (view.k === 1 || (e.target as HTMLElement).closest("button, .guide")) return;
@@ -278,6 +321,9 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
               role="img"
               aria-label={`Map of ${countyName} County in ${year}, colored by the crop planted on each 30 meter square. The list next to it gives the same areas as text.`}
             />
+            {showChanges ? (
+              <canvas ref={changes} width={info.width} height={info.height} className="cdl__changes" aria-hidden="true" />
+            ) : null}
           </div>
         </div>
         {broken ? (
@@ -324,9 +370,30 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
               }}
             />
             {CLASS_LABEL[tip.cls]} in {year}
+            {tip.was ? <span className="cdl__was">{`, ${CLASS_LABEL[tip.was].toLowerCase()} in ${prevYear}`}</span> : null}
           </div>
         ) : null}
       </div>
+      <figcaption>
+        <span>
+          {showChanges
+            ? changedPct === null
+              ? `Bright squares have a different crop than in ${prevYear}.`
+              : `${changedPct}% of cropland has a different crop than in ${prevYear}. Those squares stay bright.`
+            : `What was planted in ${year}, square by square (30 m).`}
+        </span>
+        <button
+          type="button"
+          className="cdl__toggle"
+          aria-pressed={changesOn && canCompare}
+          disabled={!canCompare}
+          onClick={() => setChangesOn((on) => !on)}
+          title={prevYear === null ? "There is no earlier year to compare with" : undefined}
+        >
+          {prevYear === null ? "No earlier year to compare" : `What changed since ${prevYear}`}
+        </button>
+        <SourceChip source={info.source} />
+      </figcaption>
     </figure>
   );
 }

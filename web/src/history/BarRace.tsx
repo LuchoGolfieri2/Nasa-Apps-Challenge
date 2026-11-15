@@ -2,9 +2,10 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { CountyYear } from "../data/types";
 import { CROPS, CROP_COLOR, CROP_LABEL, CROP_NOTE, type CropId } from "../ui/crops";
 import { Missing } from "../ui/Missing";
+import { SourceChip } from "../ui/SourceChip";
 import type { Playback } from "./usePlayback";
 
-const ROW = 48;
+const ROW = 54;
 const fmt = new Intl.NumberFormat("en-US");
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
   /** Cultivo que quedó fijo con un clic (sigue resaltado sin el cursor encima). */
   pinned: CropId | null;
   onPin: (crop: CropId) => void;
+  source: string;
 }
 
 /**
@@ -29,7 +31,7 @@ interface Props {
  * Esos valores intermedios no son datos (por eso van atenuados y fuera de la lectura de pantalla); la
  * etiqueta accesible de cada fila siempre da el valor del año exacto.
  */
-export function BarRace({ years, pb, index, between, highlight, onHighlight, pinned, onPin }: Props) {
+export function BarRace({ years, pb, index, between, highlight, onHighlight, pinned, onPin, source }: Props) {
   // Entran los cultivos que alguna vez pasaron el 2 % de la superficie con cultivo.
   const { crops, maxAc } = useMemo(() => {
     const shown = CROPS.filter((c) => years.some((y) => (y.crops_pct?.[c] ?? 0) >= 2));
@@ -88,7 +90,10 @@ export function BarRace({ years, pb, index, between, highlight, onHighlight, pin
 
   return (
     <section className={between ? "race race--between" : "race"} aria-labelledby="race-title">
-      <h2 id="race-title">Acres by crop</h2>
+      <div className="race__head">
+        <h2 id="race-title">Acres by crop, {current.year}</h2>
+        <SourceChip source={source} />
+      </div>
       <ol className="race__rows" style={{ height: crops.length * ROW }} onPointerLeave={() => onHighlight(null)}>
         {crops.map((c) => {
           const dim = highlight !== null && highlight !== c;
@@ -116,18 +121,19 @@ export function BarRace({ years, pb, index, between, highlight, onHighlight, pin
                 onClick={() => onPin(c)}
               >
                 <span className="race__label">{CROP_LABEL[c]}</span>
+                <span className="race__track" aria-hidden="true">
+                  <span className="race__bar" style={{ background: CROP_COLOR[c] }} />
+                </span>
                 <span className="race__value" aria-hidden="true">
                   <span className="race__num" /> <small>ac</small>
                 </span>
                 <span className="race__pct" aria-hidden="true" />
-                <span className="race__track" aria-hidden="true">
-                  <span className="race__bar" style={{ background: CROP_COLOR[c] }} />
-                </span>
               </button>
             </li>
           );
         })}
       </ol>
+      <p className="race__note">% of the county's cropland. Tap a crop to keep it lit on the map; tap it again to show all.</p>
     </section>
   );
 }
