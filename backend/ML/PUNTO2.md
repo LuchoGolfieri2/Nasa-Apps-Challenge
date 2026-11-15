@@ -247,6 +247,57 @@ Para la rotación, la frase sale de `efecto_rotacion.csv` (`continuo_vs_rotado_p
 - ~~Dónde van las explicaciones por condado.~~ Resuelto: `backend/Datos/front/explicaciones.json` (punto 3), que lee el script del front.
 - Cuántos grupos mostrar por condado (2 o 3, como los "rasgos" de los sectores).
 
+## Cierre del modelo (15/11)
+
+El modelo quedó **cerrado** el 15/11 con la entrega `fieldshift_datos_final_20261115` (11 estados, 948 condados).
+Los números finales están en [`docs/ml/model_card.md`](../../docs/ml/model_card.md) y en `MEJORAS_15_11.md` §7.
+
+| | Maíz | Soja |
+|---|---:|---:|
+| Desarrollo, un año afuera 2009–2023 (modelo vs. tendencia del condado) | 15,3 vs. 18,6 | 4,3 vs. 5,1 |
+| **Prueba 2024–2025** (modelo vs. tendencia del condado) | **15,2 vs. 14,9** (gana en 5 de 11) | **4,5 vs. 5,6** (gana en 11 de 11) |
+| Banda p10–p90 en la prueba (objetivo 80 %) | 83 % | 79 % |
+
+- **Datos de cada parte:** entrenamiento y elección del modelo solo con 2009–2023, dejando un año afuera por vez.
+  La prueba es 2024–2025 completa (todos los condados con rinde de NASS en esos años), que no se usó para nada antes.
+- **La prueba se abrió una sola vez**, con el modelo congelado. Después no se cambió nada: ni features, ni
+  hiperparámetros, ni la banda. Por eso `MIRAR_PRUEBA` vuelve a quedar en `False` en la notebook (correrla de nuevo
+  no la reabre: da los mismos números, pero no se usa para decidir).
+- **El modelo que usa la app es el entrenado con 2009–2023** (`backend/ML/modelos/punto2_rotaciones_*.joblib`), el
+  mismo que se evaluó en la prueba. **No se reentrenó con 2024–2025**: esos años traen el CDL de 10 m, que corre las
+  columnas de rotación, y reentrenar a último momento dejaría a la app con un modelo que nadie evaluó.
+- Lectura honesta: en soja el modelo le gana a la tendencia también en años nuevos; en maíz empata en total y pierde
+  en el núcleo (IL, IN, IA). Lo útil de la app es la comparación de rotaciones (efectos fijos) y el rango, no
+  pronosticar el rinde de maíz de un año.
+
+### Test final de entrega (15/11, 20:30)
+
+Se corrió de punta a punta **solo con los datos del repo** (`data/fieldshift_final/`), para que cualquiera pueda
+repetir el resultado sin la entrega completa:
+
+1. **Datos:** `unir.py` rearma `tabla_mensual.csv` y `tabla_anual.zip` se descomprime. Sus sha256 son **idénticos**
+   a los de la carpeta con la que se entrenó el modelo (`a900f4…` y `eae482…`, como dice `contenido.csv`).
+2. **Punto 2, maíz y soja, con `MIRAR_PRUEBA = True`**, en una copia aparte (no pisa nada del repo). Corre en unos
+   25 s por cultivo, sin errores, y da los mismos números de la tabla de arriba:
+
+| | Maíz | Soja |
+|---|---:|---:|
+| Desarrollo (MAE modelo / tendencia del condado) | 15,3 / 18,6 (gana 14 de 15 años) | 4,3 / 5,1 (gana 13 de 15) |
+| Prueba 2024–2025 (MAE modelo / tendencia) | 15,2 / 14,9 | 4,5 / 5,6 |
+| Filas de la prueba | 1.251 | 1.195 |
+| Banda p10–p90 en la prueba, una sola banda para todos | 80,5 % | 78,7 % |
+| Efecto de rotar (continuo contra rotado) | −18,9 % | −12,1 % |
+| Chequeo agronómico | pasa | pasa |
+
+3. **Mismas salidas:** el modelo guardado tiene las mismas features y la misma banda (maíz −25,3 a +23,4; soja −7,5
+   a +6,3). `escenarios_rotacion.csv` y `escenarios_rotacion_resumen.csv`, que son lo que lee el sitio, dan igual
+   en `pred` y en el resumen (cero diferencias). En `predicciones_oof.csv` (las usa el punto 4) cambian 1.655 de
+   23.046 filas, en promedio 0,03 bu/ac: LightGBM con varios hilos no da siempre el mismo número. Como la banda por
+   estado sale de esos residuos, el `p10`/`p90` de cada escenario se mueve hasta 0,5 bu/ac; el sitio no los usa
+   (usa el resumen). No cambia ningún MAE.
+4. **Sitio:** `scripts/build_next_json.py` vuelve a armar los 948 `next/<fips>.json` sin una sola diferencia contra
+   el repo, `scripts/check_coverage.py` da "Sin errores" y el front compila (`tsc --noEmit` y `npm run build`).
+
 ## Cómo se valida
 
 - **Un año afuera por vez** (2009–2023), nunca filas al azar: los condados de un mismo año comparten el clima.
@@ -272,7 +323,7 @@ Para la rotación, la frase sale de `efecto_rotacion.csv` (`continuo_vs_rotado_p
 
 ## Resultados con datos reales (entrega v1.2, 2026-11-14)
 
-Validación dejando un año afuera, 2009–2023. MAE en bu/ac (más bajo es mejor). La prueba 2024–2025 **todavía no se miró**.
+Validación dejando un año afuera, 2009–2023. MAE en bu/ac (más bajo es mejor). (Resultado viejo, con 3 estados; los finales están en "Cierre del modelo".)
 
 | | Maíz | Soja |
 |---|---:|---:|
@@ -315,8 +366,8 @@ Las primeras pruebas del código se hicieron con datos inventados (en una carpet
 - [ ] Early stopping y ajuste de hiperparámetros con un bloque de años reservado (nunca la prueba).
 - [ ] Sumar prácticas del censo.
 - [ ] Punto 3: explicaciones (ver "Para el punto 3").
-- [ ] `docs/ml/model_card.md`.
-- [ ] Al final, una sola vez: `MIRAR_PRUEBA = True`.
+- [x] `docs/ml/model_card.md`.
+- [x] Al final, una sola vez: `MIRAR_PRUEBA = True` (15/11; ver "Cierre del modelo").
 
 ## Limitaciones (para el pitch)
 

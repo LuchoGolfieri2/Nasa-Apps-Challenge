@@ -69,6 +69,6 @@ Revisión de los puntos 2, 3 y 4 contra lo que el front ya tiene (`scripts/build
 
 ### Pendiente del lado de ML (no bloquea al front)
 
-- Sumar 2024 y 2025 solo cuando se abra la prueba final del punto 2 (`MIRAR_PRUEBA`). Hasta entonces, "Missing data".
+- La prueba final 2024–2025 del punto 2 ya se abrió (15/11) y el modelo está cerrado: ver "Cierre del modelo" en `PUNTO2.md`. Las comparaciones de rinde de 2024 y 2025 siguen sin mostrarse en la app ("Missing data").
 - Kansas: no está en la entrega. Sumarlo implica pedirlo al pipeline y reentrenar los puntos 2 a 4.
 - Predicciones fuera del fold para el punto 4 (ver `PUNTO4.md`).
