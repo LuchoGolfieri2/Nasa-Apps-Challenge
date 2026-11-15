@@ -331,7 +331,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
         </div>
       </section>
       <p className="ns-unit">
-        {plan.label} yield in bushels per acre, for the whole county: bad year (low 10%), typical year, good year (top 10%), with this county&apos;s weather since 2009. Tap a year to see it in the county history.{' '}
+        {plan.label} yield in bushels per acre, for the whole county: the model&apos;s average across this county&apos;s weather since 2009 (low 10%, typical, top 10%). Real single years swing about twice as much. Tap a year to see it in the county history.{' '}
         <SourceChip source={option.source || 'Field Rewind model · 2009–2023'} />
       </p>
 
