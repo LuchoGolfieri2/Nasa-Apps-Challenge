@@ -13,7 +13,7 @@ Una notebook por cada uso de ML del issue #6. Cada una se corre de arriba hacia 
 
 | # | Notebook | Explicación | Qué hace | Estado |
 |---|---|---|---|---|
-| 1 | `punto1_sectores.ipynb` | `PUNTO1.md` | Divide el lote en sectores con vigor relativo (k-means sobre HLS/Landsat, NASADEM y SSURGO) | Sin empezar |
+| 1 | [`punto1_sectores.ipynb`](punto1_sectores.ipynb) | [`PUNTO1.md`](PUNTO1.md) | Divide el lote en sectores (fuzzy c-means sobre el vigor de Landsat de varios años; terreno 3DEP, SSURGO y drenaje con caños para nombrarlos) | Corrida con la v1.3 (10 lotes): 5 con sectores, 2 con sectores débiles y 3 parejos. Salida en `backend/Datos/punto1_sectores*.csv`. Falta la salida en GeoJSON para el front |
 | 2 | [`punto2_rotaciones.ipynb`](punto2_rotaciones.ipynb) | [`PUNTO2.md`](PUNTO2.md) | Rango de rinde del condado por rotación y clima (modelo B) | Corrida con la v1.2. Le gana a los baselines; efecto de la rotación con efectos fijos (maíz continuo −17 %), pasa el chequeo |
 | 3 | [`punto3_explicaciones.ipynb`](punto3_explicaciones.ipynb) | [`PUNTO3.md`](PUNTO3.md) | El "por qué" de los números, en frases simples (SHAP por grupo + efecto de rotar), con `benefits`, `risks` y confianza por opción | Corrida con la v1.2: 293 condados, 6 chequeos OK. Salida en `backend/Datos/explicaciones.csv` y `backend/Datos/front/explicaciones.json` |
 | 4 | [`punto4_anomalias.ipynb`](punto4_anomalias.ipynb) | [`PUNTO4.md`](PUNTO4.md) | Años que rindieron distinto de lo esperado, con su causa más probable | Corrida con la v1.2 (maíz y soja). Reconoce 2012 y 2019. Salida para el front en `backend/Datos/front/anomalias.json` |
@@ -22,7 +22,7 @@ Una notebook por cada uso de ML del issue #6. Cada una se corre de arriba hacia 
 
 ## Entradas
 
-- `backend/Datos/entregas/fieldshift_datos_vX/` (fuera de Git): las entregas del pipeline de datos. Llegan como `fieldshift_datos_vX.zip`; descomprimilas en `backend/Datos/entregas/` para que quede, por ejemplo, `backend/Datos/entregas/fieldshift_datos_v1.3/condado/tabla_anual.csv`. `condado/` es para los puntos 2 a 5 y `lotes/` para el punto 1.
+- `backend/Datos/entregas/fieldshift_datos_vX/` (fuera de Git): las entregas del pipeline de datos. Llegan como `fieldshift_datos_vX.zip`; descomprimilas en `backend/Datos/entregas/` para que quede, por ejemplo, `backend/Datos/entregas/fieldshift_datos_v1.3/condado/tabla_anual.csv`. `condado/` es para los puntos 2 a 5 y `lotes/` para el punto 1. El punto 1 usa la carpeta `lotes/` de la v1.3, que es la misma de la v2.
 - **Si ya tenías las entregas en `data/`** (antes de que ML se mudara a `backend/`), movelas una vez desde la raíz del repo: `mkdir -p backend/Datos/entregas && mv data/fieldshift_datos_v* backend/Datos/entregas/`.
 
 ## Carpetas
