@@ -27,7 +27,18 @@ const FIPS_OF = {IA: '19', IL: '17', KS: '20'};
 const rad = Math.PI / 180, clamp01 = (x) => Math.max(0, Math.min(1, x));
 const toFeature = (o) => ({type: 'Feature', id: o.id, properties: {name: o.name, state: o.state},
   geometry: o.geometry, centroid: o.centroid, bounds: o.bounds, mock: o.mock, _twins: o.twins});
-const STATES = D.states.map(toFeature), COUNTIES = D.counties.map(toFeature);
+// En el globo un tramo recto entre dos vértices es una cuerda: si es largo, corta camino y se despega del
+// paralelo (el borde sur de Kansas mide casi 3°). Se le agregan vértices cada STEP° para que el borde del
+// estado coincida con los bordes de sus condados.
+const STEP = 0.25;
+const densifyRing = (ring) => ring.flatMap((p, i) => {
+  if (!i) return [p];
+  const q = ring[i - 1], n = Math.ceil(Math.max(Math.abs(p[0] - q[0]), Math.abs(p[1] - q[1])) / STEP);
+  return Array.from({length: n}, (_, j) => (j === n - 1 ? p : [q[0] + (p[0] - q[0]) * (j + 1) / n, q[1] + (p[1] - q[1]) * (j + 1) / n]));
+});
+const densify = (g) => ({...g, coordinates: g.type === 'Polygon' ? g.coordinates.map(densifyRing)
+  : g.coordinates.map((poly) => poly.map(densifyRing))});
+const STATES = D.states.map((o) => toFeature({...o, geometry: densify(o.geometry)})), COUNTIES = D.counties.map(toFeature);
 const stateById = Object.fromEntries(STATES.map((f) => [f.id, f]));
 const countyById = Object.fromEntries(COUNTIES.map((f) => [f.id, f]));
 // Rampa del % de maíz: viridis (apta para daltonismo), de 0 % a 70 %+
@@ -256,6 +267,24 @@ const deckgl = new Deck({
 const memo = new Map();
 const one = (key, obj) => { if (!obj) return []; const m = memo.get(key); if (m && m[0] === obj) return m; const a = [obj]; memo.set(key, a); return a; };
 
+// En el globo, cada capa (océano, teselas, estados, condados) es una malla de triángulos planos que solo toca la
+// esfera en sus vértices. Cerca del vértice de una capa, esa capa queda más alta que el triángulo de la capa de
+// encima, y la prueba de profundidad dejaba pasar lo de abajo (la imagen satelital sobre los condados).
+// Arreglo: solo el océano escribe profundidad, hundido GROUND_SINK_M metros (el doble del peor desnivel, el de
+// un triángulo de 5°, la resolution del GlobeView). Sirve para tapar la cara de atrás del globo. Las demás capas
+// no escriben profundidad (SURFACE): entre ellas manda el orden en que se dibujan.
+const GROUND_SINK_M = 25000;
+const SURFACE = {depthWriteEnabled: false};
+let groundBias = 0, depthUnit = 0;
+const groundOffset = () => [0, groundBias];
+function updateGroundBias() {
+  if (!viewport) return;
+  if (!depthUnit) { const gl = deckgl.device && deckgl.device.gl; depthUnit = 2 ** -((gl && gl.getParameter(gl.DEPTH_BITS)) || 24); }
+  // project() devuelve z en [-1, 1]; el buffer de profundidad usa la mitad de ese rango
+  const dz = viewport.project([R.lon, R.lat, -GROUND_SINK_M])[2] - viewport.project([R.lon, R.lat, 0])[2];
+  groundBias = Number.isFinite(dz) && dz > 0 ? dz / 2 / depthUnit : 0;
+}
+
 let viewport = null, LABELS = [];
 function buildLayers(a) {
   const twinSet = twinMode && selCounty ? new Set(selCounty.twins.map((x) => x.f)) : null;
@@ -265,19 +294,19 @@ function buildLayers(a) {
   const stateFade = 1 - a * 0.85;
   const layers = [
     new SolidPolygonLayer({id: 'ocean', data: [[[-180, 90], [0, 90], [180, 90], [180, -90], [0, -90], [-180, -90]]],
-      getPolygon: (d) => d, getFillColor: OCEAN, parameters: {depthWriteEnabled: false}}),
+      getPolygon: (d) => d, getFillColor: OCEAN, getPolygonOffset: groundOffset}),
     new TileLayer({id: 'bluemarble', data: TILE_URL, minZoom: 0, maxZoom: 8, tileSize: 256, maxRequests: 12,
       onTileError: () => {},
       renderSubLayers: (props) => {
         const [[w, s], [e, n]] = props.tile.boundingBox;
         return new BitmapLayer(props, {data: null, image: props.data, bounds: [w, s, e, n],
-          _imageCoordinateSystem: COORDINATE_SYSTEM.CARTESIAN});
+          _imageCoordinateSystem: COORDINATE_SYSTEM.CARTESIAN, parameters: SURFACE});
       }}),
     // brillo fijo debajo de los estados con datos (no late: no es un dato en vivo)
-    new GeoJsonLayer({id: 'states-glow', data: STATES, filled: false, stroked: true, lineWidthUnits: 'pixels',
+    new GeoJsonLayer({id: 'states-glow', parameters: SURFACE, data: STATES, filled: false, stroked: true, lineWidthUnits: 'pixels',
       getLineWidth: 9, getLineColor: [...GLOW, Math.round(65 * stateFade)],
       updateTriggers: {getLineColor: [stateFade]}}),
-    new GeoJsonLayer({id: 'states', data: STATES, filled: true, stroked: true, pickable: R.k <= COUNTY_K + 0.6,
+    new GeoJsonLayer({id: 'states', parameters: SURFACE, data: STATES, filled: true, stroked: true, pickable: R.k <= COUNTY_K + 0.6,
       lineWidthUnits: 'pixels',
       getFillColor: (f) => {
         const dim = selState && selState !== f ? 0.45 : 1;
@@ -293,32 +322,32 @@ function buildLayers(a) {
     // con el mapa lejos (gemelos) los condados miden pocos px: el borde se afina para no tapar el color
     const countyPx = base * R.k * rad * 0.45, edge = Math.max(1.5, Math.min(3, countyPx / 12));
     layers.push(
-      new GeoJsonLayer({id: 'counties', data: COUNTIES, opacity: a, filled: true, stroked: true,
+      new GeoJsonLayer({id: 'counties', parameters: SURFACE, data: COUNTIES, opacity: a, filled: true, stroked: true,
         pickable: R.k > COUNTY_K + 0.6, lineWidthUnits: 'pixels', getLineWidth: edge, getLineColor: NIGHT,
         updateTriggers: {getFillColor: [twinMode, selCounty && selCounty.id], getLineWidth: edge},
         getFillColor: (f) => [...f.rgb, twinSet && f !== selCounty && !twinSet.has(f) ? 70 : 255]}),
       // borde doble: Papel fino sobre Verde noche, así siempre contrasta uno de los dos con la rampa
-      new GeoJsonLayer({id: 'county-lines', data: COUNTIES, opacity: a, filled: false, stroked: true,
+      new GeoJsonLayer({id: 'county-lines', parameters: SURFACE, data: COUNTIES, opacity: a, filled: false, stroked: true,
         lineWidthUnits: 'pixels', getLineWidth: edge / 3, getLineColor: CREAM, updateTriggers: {getLineWidth: edge}}),
-      new GeoJsonLayer({id: 'state-edge-dark', data: STATES, opacity: a, filled: false, stroked: true,
+      new GeoJsonLayer({id: 'state-edge-dark', parameters: SURFACE, data: STATES, opacity: a, filled: false, stroked: true,
         lineWidthUnits: 'pixels', getLineWidth: 5, getLineColor: NIGHT}),
-      new GeoJsonLayer({id: 'state-edge', data: STATES, opacity: a, filled: false, stroked: true,
+      new GeoJsonLayer({id: 'state-edge', parameters: SURFACE, data: STATES, opacity: a, filled: false, stroked: true,
         lineWidthUnits: 'pixels', getLineWidth: 3, getLineColor: CREAM}),
-      new GeoJsonLayer({id: 'county-hover', data: one('hover', hoverCounty), filled: true, stroked: true,
+      new GeoJsonLayer({id: 'county-hover', parameters: SURFACE, data: one('hover', hoverCounty), filled: true, stroked: true,
         lineWidthUnits: 'pixels', getFillColor: [255, 255, 255, 64], getLineColor: CREAM, getLineWidth: 1.5}),
-      new GeoJsonLayer({id: 'county-selected', data: one('sel', selCounty), filled: false, stroked: true,
+      new GeoJsonLayer({id: 'county-selected', parameters: SURFACE, data: one('sel', selCounty), filled: false, stroked: true,
         lineWidthUnits: 'pixels', getLineColor: WHITE, getLineWidth: 3.5}));
     if (twinSet) layers.push(
-      new GeoJsonLayer({id: 'twin-outlines', data: one('twins', selCounty.twins.map((x) => x.f)), filled: false, stroked: true,
+      new GeoJsonLayer({id: 'twin-outlines', parameters: SURFACE, data: one('twins', selCounty.twins.map((x) => x.f)), filled: false, stroked: true,
         lineWidthUnits: 'pixels', getLineColor: WHITE, getLineWidth: 2.5}),
-      new ArcLayer({id: 'twin-arcs', data: selCounty.twins, getSourcePosition: () => selCounty.centroid,
+      new ArcLayer({id: 'twin-arcs', parameters: SURFACE, data: selCounty.twins, getSourcePosition: () => selCounty.centroid,
         getTargetPosition: (d) => d.f.centroid, getSourceColor: WHITE, getTargetColor: [...WHITE, 200],
         getWidth: 2.6, widthUnits: 'pixels', getHeight: 0.35, greatCircle: false,
         updateTriggers: {getSourcePosition: selCounty.id}}),
-      new ScatterplotLayer({id: 'twin-dots', data: selCounty.twins, getPosition: (d) => d.f.centroid,
+      new ScatterplotLayer({id: 'twin-dots', parameters: SURFACE, data: selCounty.twins, getPosition: (d) => d.f.centroid,
         radiusUnits: 'pixels', getRadius: 5, getFillColor: WHITE}));
   }
-  if (take === 'c') layers.push(new GeoJsonLayer({id: 'argentina', data: ARGENTINA, filled: false, stroked: true,
+  if (take === 'c') layers.push(new GeoJsonLayer({id: 'argentina', parameters: SURFACE, data: ARGENTINA, filled: false, stroked: true,
     lineWidthUnits: 'pixels', getLineWidth: 1.6, getLineColor: GLOW}));
 
   // los rótulos se dibujan en el canvas de arriba (sombra suave), ver drawLabels()
@@ -500,6 +529,7 @@ function step(now) {
   const u = clamp01(1.6 - R.k * 0.35);
   deckgl.setProps({viewState: viewState(), layers: buildLayers(a), controller: take || isLanding() ? false : CONTROLLER});
   if (deckgl.isInitialized) viewport = deckgl.getViewports()[0] || viewport;
+  updateGroundBias();
   const r = globeRadiusPx();
   drawSky(t, u, r); drawHud(u, r, a);
 }
