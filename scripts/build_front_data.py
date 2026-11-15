@@ -337,7 +337,10 @@ def titular(anio: int, anios: dict[int, dict], trans: dict[int, list], clima: di
     frases += frase_anomalia(anom, anio)
     primero = min(anios)
     actual, base = anios[anio]["area_by_crop"], anios[primero]["area_by_crop"]
-    if anio == primero:
+    # Condados con muy poco cultivo: un cambio de unas decenas de acres no es noticia ("Fallow down 100%").
+    c_cambio = max(CULTIVOS, key=lambda k: abs(actual[k]["ac"] - base[k]["ac"]))
+    cambio_chico = abs(actual[c_cambio]["ac"] - base[c_cambio]["ac"]) < 0.03 * max(1, anios[anio]["cropland_ac"])
+    if anio == primero or cambio_chico:
         top = max(CULTIVOS, key=lambda c: actual[c]["ac"])
         frases.append({
             "text": f"{ETIQUETAS[top].split(' (')[0]} covers {round(anios[anio]['crops_pct'][top])}% of cropland.",
