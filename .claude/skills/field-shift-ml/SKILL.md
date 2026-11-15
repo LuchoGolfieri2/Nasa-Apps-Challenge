@@ -63,7 +63,7 @@ Nada de deep learning: con unos 25 años, la muestra efectiva es chica aunque ha
 ## 9. Entregables
 
 - `docs/ml/model_card.md`: datos, target, validación, métricas contra los baselines (MAE y R² por fold, no solo el promedio), features, limitaciones y dónde no usarlo.
-- `data/ml/escenarios_rotacion.csv` para el frontend: `fips, rotacion, cultivo, anio_clima, pred, p10, p90`.
+- `backend/Datos/escenarios_rotacion.csv` para el frontend: `fips, rotacion, cultivo, anio_clima, pred, p10, p90`.
 
 ## 10. Errores a evitar
 

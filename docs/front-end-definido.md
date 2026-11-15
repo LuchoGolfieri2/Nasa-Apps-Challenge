@@ -169,7 +169,7 @@ Objetivo: comparar la rotación actual con dos alternativas y mostrar la evidenc
 
 | En pantalla | Archivo | Columnas |
 | --- | --- | --- |
-| Rangos de resultado | JSON del equipo de ML (`data/ml/`) | p10, mediana, p90 y confianza por rotación |
+| Rangos de resultado | JSON del equipo de ML (`backend/Datos/`) | p10, mediana, p90 y confianza por rotación |
 | Suelo para confirmar y para buscar gemelos | `suelo_terreno/suelo_terreno_estatico.csv` | agua disponible, drenaje, textura, NCCPI, pendiente |
 | Clima para buscar gemelos | `clima/clima_anual.csv` | `gdd_temporada`, `prec_temporada_mm`, heladas |
 | Dónde se sembró el cultivo y cómo rindió | `cultivos/rotacion_anual.csv`, `produccion_anual.csv` | % del área, `rend_bu_ac` |

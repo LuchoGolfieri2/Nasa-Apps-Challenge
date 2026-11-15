@@ -15,18 +15,29 @@ Una notebook por cada uso de ML del issue #6. Cada una se corre de arriba hacia 
 |---|---|---|---|---|
 | 1 | `punto1_sectores.ipynb` | `PUNTO1.md` | Divide el lote en sectores con vigor relativo (k-means sobre HLS/Landsat, NASADEM y SSURGO) | Sin empezar |
 | 2 | [`punto2_rotaciones.ipynb`](punto2_rotaciones.ipynb) | [`PUNTO2.md`](PUNTO2.md) | Rango de rinde del condado por rotación y clima (modelo B) | Corrida con la v1.2. Le gana a los baselines; efecto de la rotación con efectos fijos (maíz continuo −17 %), pasa el chequeo |
-| 3 | [`punto3_explicaciones.ipynb`](punto3_explicaciones.ipynb) | [`PUNTO3.md`](PUNTO3.md) | El "por qué" de los números, en frases simples (SHAP por grupo + efecto de rotar), con `benefits`, `risks` y confianza por opción | Corrida con la v1.2: 293 condados, 6 chequeos OK. Salida en `data/ml/explicaciones.csv` y `data/ml/front/explicaciones.json` |
-| 4 | [`punto4_anomalias.ipynb`](punto4_anomalias.ipynb) | [`PUNTO4.md`](PUNTO4.md) | Años que rindieron distinto de lo esperado, con su causa más probable | Corrida con la v1.2 (maíz y soja). Reconoce 2012 y 2019. Salida para el front en `data/ml/front/anomalias.json` |
-| 5 | [`punto5_vecinos.ipynb`](punto5_vecinos.ipynb) | [`PUNTO5.md`](PUNTO5.md) | Condados gemelos por suelo y clima que sí hicieron cada opción (kNN), con su rango de rinde | Corrida con la v1.3 y lluvia IMERG. Le gana a los vecinos del mapa en las 6 opciones. Salida en `data/ml/gemelos*.csv` y `data/ml/front/gemelos.json` (formato de `web/src/next/types.ts`) |
+| 3 | [`punto3_explicaciones.ipynb`](punto3_explicaciones.ipynb) | [`PUNTO3.md`](PUNTO3.md) | El "por qué" de los números, en frases simples (SHAP por grupo + efecto de rotar), con `benefits`, `risks` y confianza por opción | Corrida con la v1.2: 293 condados, 6 chequeos OK. Salida en `backend/Datos/explicaciones.csv` y `backend/Datos/front/explicaciones.json` |
+| 4 | [`punto4_anomalias.ipynb`](punto4_anomalias.ipynb) | [`PUNTO4.md`](PUNTO4.md) | Años que rindieron distinto de lo esperado, con su causa más probable | Corrida con la v1.2 (maíz y soja). Reconoce 2012 y 2019. Salida para el front en `backend/Datos/front/anomalias.json` |
+| 5 | [`punto5_vecinos.ipynb`](punto5_vecinos.ipynb) | [`PUNTO5.md`](PUNTO5.md) | Condados gemelos por suelo y clima que sí hicieron cada opción (kNN), con su rango de rinde | Corrida con la v1.3 y lluvia IMERG. Le gana a los vecinos del mapa en las 6 opciones. Salida en `backend/Datos/gemelos*.csv` y `backend/Datos/front/gemelos.json` (formato de `web/src/next/types.ts`) |
 
 ## Entradas
 
-- `data/fieldshift_datos_v1.2/` (raíz del repo, fuera de Git): la entrega del pipeline de datos. Llega como `fieldshift_datos_v1.2.zip`; descomprimilo en `data/` para que quede `data/fieldshift_datos_v1.2/condado/tabla_anual.csv`. `condado/` es para los puntos 2 a 5 y `lotes/` para el punto 1.
+- `backend/Datos/entregas/fieldshift_datos_vX/` (fuera de Git): las entregas del pipeline de datos. Llegan como `fieldshift_datos_vX.zip`; descomprimilas en `backend/Datos/entregas/` para que quede, por ejemplo, `backend/Datos/entregas/fieldshift_datos_v1.3/condado/tabla_anual.csv`. `condado/` es para los puntos 2 a 5 y `lotes/` para el punto 1.
+- **Si ya tenías las entregas en `data/`** (antes de que ML se mudara a `backend/`), movelas una vez desde la raíz del repo: `mkdir -p backend/Datos/entregas && mv data/fieldshift_datos_v* backend/Datos/entregas/`.
+
+## Carpetas
+
+| Carpeta | Qué va |
+|---|---|
+| `backend/ML/` | Las notebooks, sus `PUNTON.md`, este README y el `CLAUDE.md` de ML |
+| `backend/ML/modelos/` | Modelos entrenados (`.joblib`). No van a Git |
+| `backend/Datos/` | Todos los CSV que generan las notebooks |
+| `backend/Datos/front/` | Los JSON que lee el front |
+| `backend/Datos/entregas/` | Las entregas del pipeline de datos. No van a Git |
 
 ## Salidas
 
-- `data/ml/`: `folds.csv`, `experimentos.csv`, `tabla_modelado.csv`, `efecto_rotacion.csv`, `escenarios_rotacion*.csv` (punto 2), `explicaciones*.csv` (punto 3), `anomalias_anio.csv` (punto 4), `gemelos*.csv` (punto 5) y, para el front, `data/ml/front/`.
-- `modelos/`: modelos entrenados (`.joblib`). No se suben a Git: se regeneran corriendo la notebook.
+- `backend/Datos/`: `folds.csv`, `experimentos.csv`, `tabla_modelado.csv`, `efecto_rotacion.csv`, `escenarios_rotacion*.csv` (punto 2), `explicaciones*.csv` (punto 3), `anomalias_anio.csv` (punto 4), `gemelos*.csv` (punto 5) y, para el front, `backend/Datos/front/`.
+- `backend/ML/modelos/`: modelos entrenados (`.joblib`). No se suben a Git: se regeneran corriendo la notebook.
 - `docs/ml/`: `model_card.md` y `pedidos_datos.md`.
 
 ## Avisos para el front (revisión del 2026-11-14)
@@ -35,8 +46,8 @@ Revisión de los puntos 2, 3 y 4 contra lo que el front ya tiene (`scripts/build
 
 ### Ya arreglado del lado de ML
 
-- `data/ml/front/explicaciones.json` pasó a `version_contrato: "0.2"`, igual que `INFO.md`. También se cambió en `punto3_explicaciones.ipynb`.
-- Nuevo `data/ml/front/anomalias.json` (punto 4, paso 9) con el formato acordado: `counties[fips][corn|soy][anio]` → rinde, rinde de un año normal (`usual_bu_ac`), `vs_usual` (`above` / `similar` / `below`), causa y `headline`. El titular depende de si el año fue mejor o peor (un julio fresco es "Mild July", no "Hot July"). Columnas en `PUNTO4.md`.
+- `backend/Datos/front/explicaciones.json` pasó a `version_contrato: "0.2"`, igual que `INFO.md`. También se cambió en `punto3_explicaciones.ipynb`.
+- Nuevo `backend/Datos/front/anomalias.json` (punto 4, paso 9) con el formato acordado: `counties[fips][corn|soy][anio]` → rinde, rinde de un año normal (`usual_bu_ac`), `vs_usual` (`above` / `similar` / `below`), causa y `headline`. El titular depende de si el año fue mejor o peor (un julio fresco es "Mild July", no "Hot July"). Columnas en `PUNTO4.md`.
 - La regla "la app sugiere, los textos no recomiendan" quedó escrita en `INFO.md` (regla 5 y cambios del contrato), `CLAUDE.md` y `PUNTO2.md`.
 
 ### Lo que tiene que hacer el front

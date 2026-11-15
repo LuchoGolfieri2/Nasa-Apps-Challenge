@@ -55,8 +55,8 @@ Notebook: [`puntoN_<tema>.ipynb`](puntoN_<tema>.ipynb). Corresponde al uso #N de
 
 | Archivo | Columnas | Para quién |
 |---|---|---|
-| `data/ml/<archivo>.csv` | <columnas, claves primero> | <el front (`INFO.md` sección X) / el punto M> |
-| `modelos/puntoN_<tema>.joblib` | <si aplica> | <quién lo carga>. No va a Git |
+| `backend/Datos/<archivo>.csv` | <columnas, claves primero> | <el front (`INFO.md` sección X) / el punto M> |
+| `backend/ML/modelos/puntoN_<tema>.joblib` | <si aplica> | <quién lo carga>. No va a Git |
 
 ## Depende de / lo usan
 
