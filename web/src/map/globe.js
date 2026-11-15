@@ -3,7 +3,7 @@
 // El color de los condados y el número de la tarjeta son reales: rinde de maíz del USDA NASS, media
 // 2021–2025 ("stat" en globe-data.json, lo escribe scripts/build_front_data.py). Sin dato: "Missing data".
 import {POSTAL_BY_FIPS, FIPS_BY_POSTAL, STATES as STATE_LIST} from '../data/states';
-import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
+import {Deck, _GlobeView as GlobeView, _GlobeController as GlobeController, COORDINATE_SYSTEM} from '@deck.gl/core';
 import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
 import D from './globe-data.json';
@@ -334,7 +334,47 @@ window.addEventListener('pointermove', (e) => { if (e.buttons) lastInput = perfo
 
 const viewState = () => ({longitude: R.lon, latitude: R.lat, zoom: zoomOfK(R.k),
   minZoom: zoomOfK(K_MIN), maxZoom: zoomOfK(K_MAX)});
-const CONTROLLER = {inertia: 400, scrollZoom: {speed: 0.01, smooth: true}, keyboard: false, dragRotate: false};
+// El paneo de deck "agarra" el punto bajo el cursor (unproject): cerca del polo ese punto deja de
+// existir o salta al otro lado, y el globo parpadea. Acá el arrastre rota el globo en grados por
+// píxel desde el centro inicial y la latitud se limita a ±LAT_MAX dentro del propio controlador,
+// así el estado de deck y R nunca discrepan.
+const LAT_MAX = 80;
+let PoleState = null;
+class PoleSafeGlobeController extends GlobeController {
+  constructor(...args) {
+    super(...args);
+    if (!PoleState) {
+      PoleState = class extends this.ControllerState {
+        applyConstraints(props) {
+          props = super.applyConstraints(props);
+          props.latitude = Math.max(-LAT_MAX, Math.min(LAT_MAX, props.latitude));
+          return props;
+        }
+        panStart({pos}) {
+          const {longitude, latitude} = this.getViewportProps();
+          return this._getUpdatedState({startPanLngLat: [longitude, latitude, pos[0], pos[1]]});
+        }
+        pan({pos, startPos}) {
+          const st = this.getState();
+          const vp = this.getViewportProps();
+          const from = st.startPanLngLat || [vp.longitude, vp.latitude];
+          const p0 = st.startPanLngLat ? [from[2], from[3]] : startPos || pos;
+          // píxeles por grado en el centro de la vista (mismo valor en lon y lat sobre el ecuador)
+          const viewport = this.makeViewport({...vp, longitude: 0, latitude: 0});
+          const a = viewport.project([0, 0]), b = viewport.project([1, 0]);
+          const ppd = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+          return this._getUpdatedState({
+            longitude: from[0] - (pos[0] - p0[0]) / ppd,
+            latitude: from[1] + (pos[1] - p0[1]) / ppd,
+          });
+        }
+        panEnd() { return this._getUpdatedState({startPanLngLat: null}); }
+      };
+    }
+    this.ControllerState = PoleState;
+  }
+}
+const CONTROLLER = {type: PoleSafeGlobeController, inertia: 400,scrollZoom: {speed: 0.01, smooth: true}, keyboard: false, dragRotate: false};
 
 // Sin WebGL el globo no se puede dibujar (queda la esfera lisa): se avisa en vez de callar.
 if (!document.createElement('canvas').getContext('webgl2')) {
