@@ -28,7 +28,15 @@ export type CropId = Exclude<ClassId, "nodata" | "non_ag">;
 
 export const CROPS: CropId[] = ["corn", "soy", "wheat", "sorghum", "double_wheat_soy", "alfalfa", "fallow", "other"];
 
-export const CROP_COLOR: Record<CropId, string> = {
+/**
+ * Cultivos que se pueden mostrar. La avena no es una clase del CDL (ahí cae en "other"), pero sí es un cultivo
+ * de Próxima campaña (gemelos y "Something new nearby"), así que tiene su propio color e ícono.
+ * No entra en CLASS_ORDER ni en CROPS: esos son los índices de los PNG del CDL.
+ */
+export type DisplayCrop = CropId | "oats";
+
+export const CROP_COLOR: Record<DisplayCrop, string> = {
+  oats: "#e8590c", // naranja terracota: distinto del oro del maíz y del magenta del trigo; siempre va con ícono y etiqueta
   corn: "#c98500",
   soy: "#199e70",
   wheat: "#c2255c",
@@ -42,7 +50,8 @@ export const CROP_COLOR: Record<CropId, string> = {
 /** Tierra sin cultivo dentro del condado: apenas más clara que el fondo. */
 export const NON_AG_COLOR = "#173826";
 
-export const CROP_LABEL: Record<CropId, string> = {
+export const CROP_LABEL: Record<DisplayCrop, string> = {
+  oats: "Oats",
   corn: "Corn",
   soy: "Soybeans",
   wheat: "Wheat",
