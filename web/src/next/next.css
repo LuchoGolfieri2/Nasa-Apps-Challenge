@@ -237,3 +237,8 @@
 .fr-twinglobe-label.is-dim{opacity:.75}
 @media (prefers-reduced-motion:reduce){.fr-twinglobe-label{animation:none}}
 .fr-twinglobe::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(170,215,255,.18),inset 0 0 60px 10px rgba(6,22,44,.75)}
+
+/* tema claro (fondo blanco): lo que estaba pensado en crema sobre oscuro pasa a tinta, así se lee */
+.ns-missing{color:var(--ink)}
+.ns-card.open{border-color:var(--field)}
+.fr-conf--high{color:var(--field)}.fr-conf--medium{color:#7a570c}.fr-conf--low{color:#b3261e}
