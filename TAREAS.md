@@ -85,6 +85,14 @@ Ejemplo:
 - [x] ~~**F18** Bar chart race de superficie por cultivo, sincronizado con la línea de tiempo~~ · ✅ Walicki · Bloquea: F05, F15
 - [x] ~~**F19** Titular por año ("2023 — Dry July (NASA POWER). Corn after soy on 46% of fields (USDA CDL).")~~ · ✅ Walicki · Bloquea: F05, F07
 - [x] ~~**F20** Bloque inferior: rinde vs. lo habitual en palabras, verdor (como vigor), clima, agua en el suelo, con chips de fuente~~ · ✅ Walicki
+- [x] ~~**F35** Tarjeta "This season, before USDA's map" (punto 6 de ML) en la historia: duelo regla de rotación contra satélite, fechas de corte y curva de probabilidad; barra de desplazamiento propia en la columna del año~~ · ✅ Walicki
+  - Archivos: `web/src/history/SeasonCard.tsx`, `season.css`, `useScrollFade.ts`, `scripts/build_season_json.py` · Datos: `backend/Datos/front/cultivo_temporada.json`
+  - Alcance: solo los 5 condados con lote de demo (Champaign IL, Tippecanoe IN, Crawford IA, Hamilton IA, Shelby IA) y solo con el año 2025; es la temporada 2025 repetida, no un pronóstico (ver fila C7 de `docs/datos-de-prueba.md`).
+  - Falta: sumar NASA HLS a la pantalla de Fuentes; más lotes (lo decide ML); decidir si el punto 6 también va en el pitch.
+- [ ] **F34** Definir cómo se ve "See more" en los condados sin PNG del mapa (hoy 291 de los 294 con historia; el resto de los estados no tiene historia) · Libre · A definir en el grupo
+  - Hoy: sin mapa del CDL, "See more" abre la pantalla de rinde año a año con un aviso "Missing data" donde iría el mapa (ej. Shelby, IL). El globo con el condado pegado solo existe en Story, McLean y Sumner.
+  - A decidir: qué muestra en lugar del globo con el mapa (el condado resaltado sobre el globo sin capa de cultivos, o una de las vistas livianas de F32), y qué texto acompaña.
+  - Relacionada: F32 (opciones A, B y C de vista liviana) y F31 (cuántos condados tendrán mapa lote a lote).
 
 ## Pantalla 3 · Próxima campaña
 
