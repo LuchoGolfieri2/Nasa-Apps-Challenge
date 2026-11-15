@@ -319,10 +319,12 @@ docs/ml/                     # model_card.md, pedidos_datos.md
 | 4 | [`punto4_anomalias.ipynb`](punto4_anomalias.ipynb) | Años que rindieron distinto de lo esperado | Real contra un año normal según el modelo del punto 2; causa por grupos de clima (SHAP) |
 | 5 | `punto5_vecinos.ipynb` | Condados o lotes parecidos que sí hicieron esa rotación | kNN por suelo, clima e historial |
 | 6 | [`punto6_cultivo_temporada.ipynb`](punto6_cultivo_temporada.ipynb) | Qué está sembrado este año, antes de que el USDA publique el CDL | Clasificador LightGBM sobre Landsat + Sentinel-2 (HLS) por píxel, validado hacia adelante por año contra la regla de rotación; híbrido regla + satélite |
+| 7 | `punto7_decision.ipynb` (propuesta: [`PUNTO7.md`](PUNTO7.md)) | Cómo se ordenan las rotaciones según lo que le importa (ingreso, riesgo, suelo, agua), y por qué | Capa de decisión sobre los escenarios del punto 2, sin tocar el modelo: ingreso medio, CVaR 10 % y probabilidad de pérdida; pesos por chips, orden o comparación de a pares (regresión logística) |
 
 Prioridad (comentario de Lucho en el issue #6): #1 imprescindible; #2 y #3 muy recomendables; #4 y
 #5 si sobra tiempo; #6 quedaba para el pitch como "próximos pasos" (dificultad alta), y ya tiene una
-primera versión con los 10 lotes de demo. Qué ve el front de cada uno: `INFO.md` en la raíz.
+primera versión con los 10 lotes de demo. #7 es una propuesta del 2026-11-15 para la "Aplicación de IA" del
+pitch; falta decidir si lo arma el front o ML. Qué ve el front de cada uno: `INFO.md` en la raíz.
 
 ---
 
