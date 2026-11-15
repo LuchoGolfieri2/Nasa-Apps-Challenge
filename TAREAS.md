@@ -2,7 +2,7 @@
 
 Lista única de tareas de la app. Sale de `docs/specs/front-back-connection-spec.md` (manda) y `docs/front-end-plan.md`. Si una tarea choca con la spec, manda la spec.
 
-> **Tarea principal ahora: F34** (cómo se ve "See more" en los condados sin mapa). Sin resolver todavía.
+> **F34 resuelta el 15/11** con el mapa del estado por rinde (opción 6). Lo urgente ahora: activar GitHub Pages (F27) y la prueba a mano con WebGL (F37).
 
 ## Cómo trabajamos
 
