@@ -201,3 +201,15 @@
   .fr-reason-text{font-size:17px}
   .fr-suggestion{padding:16px 16px 18px}
 }
+
+/* gemelos sobre el globo (TwinGlobe): el globo de la pantalla 1 de fondo, quieto */
+.fr-twins-map:has(.fr-twinglobe){padding:0;overflow:hidden}
+.fr-twinglobe{position:relative;width:100%;aspect-ratio:16/10;background:#0e2e5c;border-radius:12px;overflow:hidden}
+.fr-twinglobe-canvas{position:absolute;inset:0}
+.fr-twinglobe-labels{position:absolute;inset:0;pointer-events:none}
+.fr-twinglobe-label{position:absolute;white-space:nowrap;font:700 12px var(--fr-font-sans,system-ui);color:var(--c);text-shadow:0 0 3px #0d2c52,0 0 3px #0d2c52,0 1px 2px rgba(0,0,0,.8);animation:fr-pop .3s ease-out}
+.fr-twinglobe-label.is-origin{font:800 13px var(--fr-font-display,system-ui);color:var(--g)}
+.fr-twinglobe-label.is-hot{color:#e9b949}
+.fr-twinglobe-label.is-dim{opacity:.75}
+@media (prefers-reduced-motion:reduce){.fr-twinglobe-label{animation:none}}
+.fr-twinglobe::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(170,215,255,.18),inset 0 0 60px 10px rgba(6,22,44,.75)}

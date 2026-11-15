@@ -18,7 +18,7 @@
 import React, {useMemo, useState} from 'react';
 import {Confidence, Missing, ModelRuleTag, PrototypeStamp, SourceChip} from './bits';
 import {commonAxis, suggest} from './suggest';
-import {TwinArcs} from './TwinArcs';
+import {TwinGlobe} from './TwinGlobe';
 import {CROP_COLOR, CROP_LABEL} from '../ui/crops';
 import {PRIORITY_LABEL} from './types';
 import type {CropId, NextData, NextOption, PlanCrop, Priority} from './types';
@@ -290,7 +290,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
           <div className="fr-twins-map">
             {data.twins.some((t) => t.prototype) ? <PrototypeStamp /> : null}
             {data.centroid ? (
-              <TwinArcs origin={{name: data.name, centroid: data.centroid}} twins={data.twins} highlight={focus.twins} animateKey={focus.id} selected={twinSel} onSelect={setTwinSel} />
+              <TwinGlobe origin={{fips: data.fips, name: data.name, centroid: data.centroid}} twins={data.twins} highlight={focus.twins} animateKey={focus.id} selected={twinSel} onSelect={setTwinSel} />
             ) : (
               <Missing>county location</Missing>
             )}

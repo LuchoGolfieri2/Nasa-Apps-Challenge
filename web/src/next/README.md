@@ -8,7 +8,7 @@ Estado: funciona con **datos reales** del equipo de ML y del CDL. Los JSON los a
 |---|---|
 | `NextSeason.tsx` | La pantalla. `<NextSeason data={json} onYearClick={(y) => …} />` |
 | `suggest.ts` | Lógica pura: qué opción gana según las prioridades, y el eje común de las barras |
-| `TwinArcs.tsx` | F24. Mapa chico con arcos, aislado. Se dibuja 1 s después de cambiar `animateKey` |
+| `TwinGlobe.tsx` | F24. El globo de la pantalla 1 de fondo (deck.gl, Blue Marble de GIBS), quieto: el usuario no lo mueve. Arcos en 3D del condado a sus gemelos, 1 s después de cambiar `animateKey`; el gemelo elegido va en oro. Al aparecer, la cámara baja hacia los estados (1,1 s; sin animación con `prefers-reduced-motion`) |
 | `NextScreen.tsx` | Ruta `#/county/<fips>/next`: carga `data/next/<fips>.json`, migas y "Missing data" si no hay archivo |
 | `bits.tsx` | Usa `Missing`, `PrototypeStamp` y `SourceChip` de `src/ui`; suma `Confidence` y `ModelRuleTag` (mover a `src/ui` con F04) |
 | `types.ts` | Tipos de `next/<fips>.json`. Los cultivos usan los ids de `src/ui/crops.ts` |
