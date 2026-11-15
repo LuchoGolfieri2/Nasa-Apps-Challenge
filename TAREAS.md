@@ -2,6 +2,8 @@
 
 Lista única de tareas de la app. Sale de `docs/specs/front-back-connection-spec.md` (manda) y `docs/front-end-plan.md`. Si una tarea choca con la spec, manda la spec.
 
+> **Tarea principal ahora: F34** (cómo se ve "See more" en los condados sin mapa). Sin resolver todavía.
+
 ## Cómo trabajamos
 
 1. **Antes de empezar, anotá tu nombre.** Hacé `git pull`, elegí una tarea libre (`- [ ]` sin nombre), cambiá `Libre` por `🔨 TuNombre (dd/mm hh:mm)` y pusheá ese cambio solo a `main` enseguida, con el mensaje `Tomo F07`. Así nadie agarra la misma.
@@ -98,10 +100,18 @@ Ejemplo:
   - Alcance: solo los 5 condados con lote de demo (Champaign IL, Tippecanoe IN, Crawford IA, Hamilton IA, Shelby IA) y solo con el año 2025; es la temporada 2025 repetida, no un pronóstico (ver fila C7 de `docs/datos-de-prueba.md`).
   - Hecho después: NASA HLS en la pantalla de Fuentes (el contador de la cabecera pasó a 8) y su límite ("Satellite guess").
   - Falta: más lotes (lo decide ML); decidir si el punto 6 también va en el pitch.
-- [ ] **F34** Definir cómo se ve "See more" en los condados sin PNG del mapa (hoy 291 de los 294 con historia; el resto de los estados no tiene historia) · Libre · A definir en el grupo
-  - Hoy: sin mapa del CDL, "See more" abre la pantalla de rinde año a año con un aviso "Missing data" donde iría el mapa (ej. Shelby, IL). El globo con el condado pegado solo existe en Story, McLean y Sumner.
-  - A decidir: qué muestra en lugar del globo con el mapa (el condado resaltado sobre el globo sin capa de cultivos, o una de las vistas livianas de F32), y qué texto acompaña.
-  - Relacionada: F32 (opciones A, B y C de vista liviana) y F31 (cuántos condados tendrán mapa lote a lote).
+- [ ] **F34** ⭐ **TAREA PRINCIPAL** Definir cómo se ve "See more" en los condados sin PNG del mapa (hoy 291 de los 294 con historia más los 596 de los estados nuevos; ejemplo: Champaign, IL) · Libre · A definir en el grupo (marcada como principal el 15/11; no se resuelve todavía)
+  - Hoy: sin mapa del CDL, "See more" abre la pantalla de rinde año a año con un aviso "Missing data" donde iría el mapa. El globo con el condado pegado solo existe en Story, McLean y Sumner.
+  - Datos que sí hay para esos condados: polígono (919), rinde de NASS y clima de POWER por año. Faltan los % por cultivo y el mapa por año (solo hay 2025 en algunos estados).
+  - Opciones (15/11), de menor a mayor trabajo:
+    1. Dejarlo como hoy con un aviso más claro. Horas. Deja la pantalla coja.
+    2. Condado resaltado sobre el globo con Landsat y la columna del año, sin capa de cultivos. ~1 día, sin datos nuevos; `CountyGlobe` hoy se encuadra con las esquinas del ráster y habría que usar el polígono. Necesita WebGL (sin WebGL cae a la opción 1). El mosaico Landsat es una imagen anual vieja: rotularla.
+    3. Mapa real en baja resolución con play (CropScape WMS, ~160 m, rotulado "Lower detail"). ~10.000 pedidos, 100–200 MB, ~2 h en paralelo; 1–2 días. Necesita OK por la descarga. Se cruza con F31 y F32 (A).
+    4. Celdas de ~1 km con el cultivo dominante (sale de la 3, ~25 MB). F32 (B).
+    5. Retrato en cuadritos (1 cuadro = 1 % de la superficie) y la tendencia del % de maíz por año, de `GetCDLStat` por año (~2 MB, ~10.000 pedidos chicos). ~1 día. Además llena la carrera de barras, el titular y las cajitas, hoy en "Missing data". F32 (C).
+    6. Mapa del estado que se "rebobina" por rinde, con el condado resaltado entre sus vecinos. Sin datos nuevos y sin WebGL, ~1 día; muchos años salen rayados (en Champaign faltan 2024 y 2025).
+  - Recomendación: combinar 2 y 5 (misma pantalla que los condados con mapa y datos reales de cultivos). Sin descargas: 2 y 6.
+  - Relacionada: F32 (vistas livianas A, B y C), F31 (cuántos condados tendrán mapa lote a lote) y F33 (estados nuevos).
 
 ## Pantalla 3 · Próxima campaña
 
