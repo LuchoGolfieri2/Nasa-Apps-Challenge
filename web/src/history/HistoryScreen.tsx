@@ -8,6 +8,7 @@ import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 import { BarRace } from "./BarRace";
 import { CdlMap } from "./CdlMap";
+import { CountyTwins } from "./CountyTwins";
 import { Timeline } from "./Timeline";
 import { useRasters } from "./useRasters";
 import { YearFacts } from "./YearFacts";
@@ -299,6 +300,7 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
             </p>
           </div>
         </div>
+        <CountyTwins fips={county.fips} name={county.name} />
         {/* En pantallas angostas el botón sale de la barra fija, que si no tapa media pantalla. */}
         <a className="btn btn--primary history__next history__next--end" href={`#/county/${county.fips}/next`}>
           Options for next season →
