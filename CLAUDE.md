@@ -321,6 +321,6 @@ El pipeline sigue siendo el objetivo de este repo; esta sección resume para qu�
 
 **Gemelos (definido en `backend/ML/PUNTO5.md`):** dos condados se parecen por **suelo y clima** (9 números: 5 de suelo de SSURGO y 4 de clima típico), sin mirar qué siembran. La lista de cada opción toma, entre los más parecidos, los **primeros 5 que de verdad hicieron esa opción**; con menos de 3 no hay rango. Se muestran como arcos sobre el globo, con el condado resaltado.
 
-**Argentina en el front** (según la entrega; a confirmar con el equipo antes de construirla): predicción solo en zona `dentro`, con aviso en `cerca` y sin predicción (o marcada) en `fuera`; clima por campaña solo en Buenos Aires; comparar con los rindes MAGyP. 
+**Argentina en el front** (según la entrega; a confirmar con el equipo antes de construirla): predicción solo en zona `dentro`, con aviso en `cerca` y sin predicción (o marcada) en `fuera`; clima por campaña solo en Buenos Aires; comparar con los rindes MAGyP. **Ya está en la interfaz (F39, 15/11):** provincias y departamentos en el globo igual que estados y condados, y pantalla `#/argentina`; ver `docs/argentina-front.md` y `web/src/argentina/`. 
 
 **Sin definir:** qué variable pinta el mapa de estado (propuesta: % de maíz de NASS) y quién genera los JSON del front.
