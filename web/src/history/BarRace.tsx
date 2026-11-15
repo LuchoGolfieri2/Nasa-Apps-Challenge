@@ -1,3 +1,4 @@
+import { CropIcon } from "../ui/CropIcon";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { CountyYear } from "../data/types";
 import { CHART_MIN_PCT, CROP_COLOR, CROP_LABEL, CROP_NOTE, splitChartCrops, type CropId } from "../ui/crops";
@@ -126,7 +127,10 @@ export function BarRace({ years, pb, index, between, highlight, onHighlight, pin
                 title={c === "other" ? groupedNote : CROP_NOTE[c]}
                 onClick={() => onPin(c)}
               >
-                <span className="race__label">{CROP_LABEL[c]}</span>
+                <span className="race__label">
+                  <CropIcon crop={c} size={18} onDark />
+                  {CROP_LABEL[c]}
+                </span>
                 <span className="race__track" aria-hidden="true">
                   <span className="race__bar" style={{ background: CROP_COLOR[c] }} />
                 </span>

@@ -381,3 +381,9 @@
 
 /* My Farm (F29): la opción que coincide con la rotación del productor */
 .ns-card-mine{display:inline-flex;align-items:center;gap:5px;margin-left:6px;padding:3px 10px;border-radius:999px;background:rgba(233,185,73,.22);color:var(--wheat-ink);font-size:12px;font-weight:700}
+/* Íconos de cultivo (CropIcon) en chips, títulos y barras de gemelos */
+.ns-chip .crop-ico{margin-left:-2px}
+.ns-card h2 .crop-ico,.ns-answer h2 .crop-ico{transform:translateY(2px);align-self:center}
+.ns-split-text{display:inline}
+.ns-split-item{white-space:nowrap}
+.ns-split-item .crop-ico{margin:0 3px 0 4px;vertical-align:-3px}
