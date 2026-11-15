@@ -30,13 +30,13 @@ export function NextScreen({ fips }: { fips: string }) {
       <main className="fr-next">
         <div className="fr-next-empty">
           <h1>Options for next season</h1>
-          <Missing what={`next-season options are not loaded for county ${fips} yet`} />
+          <Missing what={`the yield model doesn't cover county ${fips} yet (it covers Iowa and Illinois)`} />
           <p>
             <a className="btn" href={`#/county/${fips}`}>
               ← Back to the county history
             </a>{" "}
-            <a className="btn btn--primary" href="#/county/20191/next">
-              See Sumner County, KS
+            <a className="btn btn--primary" href="#/county/19169/next">
+              See Story County, IA
             </a>
           </p>
         </div>

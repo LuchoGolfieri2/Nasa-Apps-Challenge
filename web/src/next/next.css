@@ -175,3 +175,16 @@
 .fr-crumbs{margin:0 0 6px!important;font-size:15px;color:var(--m)}
 .fr-crumbs a{color:var(--g)}
 .fr-next-empty{max-width:640px;margin:80px auto;text-align:center;display:grid;gap:16px;justify-items:center}
+
+/* datos reales: notas, gemelos y cultivos nuevos */
+.fr-options-note{margin:10px 0 2px!important;font-size:14px;color:var(--m)}
+.fr-row-conf small.fr-row-conf-why{color:var(--m);font-size:12.5px;line-height:1.3}
+.fr-years{display:inline-flex;gap:6px;margin-left:6px}
+.fr-twins-note{margin:10px 0 0!important;font-size:14px;line-height:1.4}
+.fr-twins-note--weak{color:var(--m)}
+.fr-twins-note .fr-conf{margin-left:4px;font-size:13px}
+.fr-explore{margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.07);border:1px dashed rgba(170,215,255,.4)}
+.fr-explore h3{margin:0 0 6px!important;font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#bfe0ff}
+.fr-explore p{margin:6px 0 0!important;font-size:14px;line-height:1.4}
+.fr-explore .fr-conf{font-size:13px}
+.fr-explore-note{color:var(--m);font-size:12.5px!important}

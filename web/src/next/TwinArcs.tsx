@@ -5,7 +5,7 @@
  * (por defecto 1 s después de la frase sugerida).
  */
 import React from 'react';
-import {STATE_PATHS, projectTwinMap} from './twinMapShapes';
+import {STATE_PATHS, TWIN_VIEWBOX, projectTwinMap} from './twinMapShapes';
 import type {Twin} from './types';
 
 export interface TwinArcsProps {
@@ -23,7 +23,7 @@ export interface TwinArcsProps {
 export const TwinArcs: React.FC<TwinArcsProps> = ({origin, twins, highlight, animateKey, delayMs = 1000, selected, onSelect}) => {
   const [ox, oy] = projectTwinMap(origin.centroid[0], origin.centroid[1]);
   return (
-    <svg className="fr-twinmap" viewBox="0 0 420 250" role="img" aria-label={`Map of counties similar to ${origin.name}`}>
+    <svg className="fr-twinmap" viewBox={TWIN_VIEWBOX} role="img" aria-label={`Map of counties similar to ${origin.name}`}>
       {Object.entries(STATE_PATHS).map(([name, d]) => (
         <path key={name} d={d} className="fr-twinmap-state" />
       ))}
@@ -56,9 +56,9 @@ export const TwinArcs: React.FC<TwinArcsProps> = ({origin, twins, highlight, ani
                 onClick={() => onSelect?.(isSel ? null : tw.fips)}
                 onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelect?.(isSel ? null : tw.fips)}
               />
-              <text className="fr-twin-label" x={x + (x > 330 || x < ox ? -9 : 9)} y={y + 4} textAnchor={x > 330 || x < ox ? 'end' : 'start'} style={{animationDelay: `${delayMs + 350 + i * 120}ms`}}>
+              {on ? <text className="fr-twin-label" x={x + (x > 330 || x < ox ? -9 : 9)} y={y + 4} textAnchor={x > 330 || x < ox ? 'end' : 'start'} style={{animationDelay: `${delayMs + 350 + i * 120}ms`}}>
                 {tw.name}
-              </text>
+              </text> : null}
             </g>
           );
         })}
