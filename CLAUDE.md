@@ -285,7 +285,7 @@ El pipeline sigue siendo el objetivo de este repo; esta sección resume para qu�
 - Un dato de prueba se muestra con el sello "Prototype data"; nunca se mezcla con datos reales sin marca.
 - Un faltante se muestra escrito como "Missing data". Por eso los faltantes van como celda vacía, nunca 0 (sección 4).
 - No se le pregunta maquinaria al productor. El suelo sale de `suelo_terreno_estatico.csv` y el usuario solo lo confirma.
-- La app lee JSON estáticos derivados de `data/processed/` y de `data/ml/`. No llama a APIs en vivo.
+- La app lee JSON estáticos derivados de `data/processed/` y de `backend/Datos/`. No llama a APIs en vivo.
 
 **Qué archivo usa cada pantalla:**
 
@@ -293,7 +293,7 @@ El pipeline sigue siendo el objetivo de este repo; esta sección resume para qu�
 |---|---|
 | Mapa | `data/reference/condados.gpkg`, `condados.csv`, `vegetacion/fenologia_anual.csv` |
 | Historia del condado | `cultivos/rotacion_anual.csv`, `rotacion_secuencia.csv`, `produccion_anual.csv`, `vegetacion/vegetacion_16d.csv`, `clima/clima_anual.csv`, `clima_mensual.csv`, `agua/agua_mensual.csv` |
-| Próxima campaña y gemelos | `suelo_terreno/suelo_terreno_estatico.csv`, `clima/clima_anual.csv`, `cultivos/rotacion_anual.csv`, `produccion_anual.csv`, `practicas_censo.csv`, salidas del modelo en `data/ml/` |
+| Próxima campaña y gemelos | `suelo_terreno/suelo_terreno_estatico.csv`, `clima/clima_anual.csv`, `cultivos/rotacion_anual.csv`, `produccion_anual.csv`, `practicas_censo.csv`, salidas del modelo en `backend/Datos/` |
 
 **Pendiente para el equipo de datos:** comparar el verdor del maíz según el cultivo anterior (maíz tras soja frente a maíz tras maíz) necesita cruzar el NDVI con las transiciones por píxel del CDL. Ese cálculo no está en el contrato de la sección 4; agregarlo cambia el esquema, así que se consulta antes (regla 6).
 

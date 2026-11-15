@@ -92,7 +92,7 @@ El nombre en inglés de cada pantalla es el que va en la interfaz; el español e
 
 ## 4. Contrato de datos
 
-**Dónde:** ML escribe todo en `data/ml/front/`. El front lo copia o lo sirve como archivos estáticos.
+**Dónde:** ML escribe todo en `backend/Datos/front/`. El front lo copia o lo sirve como archivos estáticos.
 No hay API en vivo.
 
 **Reglas de todos los archivos (FIRME):**
@@ -220,7 +220,7 @@ Fuentes previstas para la idea 1:
 ### 4.6 `escenarios_rotacion.json` y `clima_condado/` (PROVISORIO)
 
 - `escenarios_rotacion.json`: una fila por `fips`, `rotacion`, `cultivo` y `anio_clima`, con `pred`,
-  `p10` y `p90` en bu/ac. Son las mismas columnas que `data/ml/escenarios_rotacion.csv` del CLAUDE.md
+  `p10` y `p90` en bu/ac. Son las mismas columnas que `backend/Datos/escenarios_rotacion.csv` del CLAUDE.md
   de ML. Los ids de `rotacion` todavía no están definidos.
 - `clima_condado/<fips>.json`: sin formato todavía. Maquetá la franja con datos de prueba.
 

@@ -4,8 +4,8 @@ Proyecto del equipo para NASA Space Apps Challenge 2026, desafío **"Field Shift
 with NASA Data"**. La herramienta final ayuda a productores del **Corn Belt de EE.UU.** a comparar
 rotaciones de cultivos con datos de la NASA.
 
-**Esta carpeta (`notebooks/ml/`) es la del modelado.** Los datos los arma otro repo (`ResearchAgent`)
-y llegan como entregas versionadas a `data/fieldshift_datos_vX/`, en la raíz de este repo (hoy, la v1.2). Se reciben como .zip y se descomprimen ahí; no van a Git. Acá no
+**Esta carpeta (`backend/ML/`) es la del modelado.** Los datos los arma otro repo (`ResearchAgent`)
+y llegan como entregas versionadas a `backend/Datos/entregas/fieldshift_datos_vX/` (hoy, la v1.2). Se reciben como .zip y se descomprimen ahí; no van a Git. Acá no
 se bajan ni se limpian datos: se modelan. El `CLAUDE.md` de la raíz (pipeline de datos, "este repo
 no entrena modelos") no aplica a esta carpeta.
 
@@ -24,13 +24,13 @@ Basado en el CLAUDE.md de ML del equipo, con las rutas adaptadas a este repo (se
 1. **No inventes datos.** No rellenes faltantes con valores supuestos. Si algo falta o se ve mal,
    anotalo en `docs/ml/pedidos_datos.md` y avisá al humano. Los datos inventados solo sirven para
    probar código en una carpeta temporal: nunca se guardan en el repo ni se presentan como resultados.
-2. **`data/fieldshift_datos_v1.2/` (y cualquier entrega) es de solo lectura** y no va a Git. Lo que derives va a `data/ml/`.
+2. **`backend/Datos/entregas/fieldshift_datos_v1.2/` (y cualquier entrega) es de solo lectura** y no va a Git. Lo que derives va a `backend/Datos/`.
 3. **Nunca uses un split aleatorio.** Siempre se separa por años (sección 4).
 4. **Todo lo que aprende de los datos va dentro del fold**, en un `Pipeline` o en una función que
    recibe solo el train del fold: la tendencia del rendimiento, las anomalías y z-scores, la
    imputación, el escalado y la selección de features.
-5. **Reproducible.** Semillas fijas y folds guardados en `data/ml/folds.csv`. Cada corrida suma una
-   fila a `data/ml/experimentos.csv`: fecha, target, modelo, features, folds y métricas.
+5. **Reproducible.** Semillas fijas y folds guardados en `backend/Datos/folds.csv`. Cada corrida suma una
+   fila a `backend/Datos/experimentos.csv`: fecha, target, modelo, features, folds y métricas.
 6. **No toques el repo `ResearchAgent`.** Ahí corre un agente autónomo que revierte los cambios
    ajenos. Los pedidos de datos van por el humano.
 7. **Preguntá al humano antes de:**
@@ -74,13 +74,13 @@ Basado en el CLAUDE.md de ML del equipo, con las rutas adaptadas a este repo (se
   - ECOSTRESS, NLDAS;
   - napa y caudales (USGS).
 
-  Cada entrega nueva va en su propia carpeta (`data/fieldshift_datos_v2/`), al lado de la anterior.
+  Cada entrega nueva va en su propia carpeta (`backend/Datos/entregas/fieldshift_datos_v2/`), al lado de la anterior.
 - **Guía para humanos:** https://claude.ai/artifact/TyDqsds1bv69BsciWoXam4. Tiene el mismo
   diccionario, con filtros.
 
 ---
 
-## 3. Los datos: `data/fieldshift_datos_v1.2/`
+## 3. Los datos: `backend/Datos/entregas/fieldshift_datos_v1.2/`
 
 La v1.2 trae dos carpetas: `condado/` (lo de abajo, para los modelos de rinde) y `lotes/` (píxeles de 30 m de 10 lotes, para el punto 1). Leé primero `GUIA.md`, después `condado/LEEME.md`, `condado/diccionario.csv` y, para el detalle de cada fuente, `condado/data_cards/`. Las tablas del condado son idénticas a las de la v1.1; la v1.2 solo suma `extras/teledeteccion_anual.csv`.
 
@@ -134,7 +134,7 @@ import pandas as pd
 from pathlib import Path
 
 RAIZ = next(p for p in [Path.cwd(), *Path.cwd().parents] if (p / ".git").exists())
-D = RAIZ / "data/fieldshift_datos_v1.2/condado"
+D = RAIZ / "backend/Datos/entregas/fieldshift_datos_v1.2/condado"
 anual = pd.read_csv(D / "tabla_anual.csv", dtype={"fips": str})
 mensual = pd.read_csv(D / "tabla_mensual.csv", dtype={"fips": str})
 dic = pd.read_csv(D / "diccionario.csv")
@@ -209,7 +209,7 @@ que es el que necesita la herramienta. Después, el A en julio. **Está implemen
 
 1. **Tabla de modelado:** una fila por `fips × anio` con el target y las features, desde 2009 si
    usás las transiciones del CDL (2008 está vacío).
-2. **Folds** (`data/ml/folds.csv`): por año y por estado, más el bloque de prueba 2024–2025.
+2. **Folds** (`backend/Datos/folds.csv`): por año y por estado, más el bloque de prueba 2024–2025.
 3. **Baselines** que el modelo tiene que ganar, y el informe lo muestra:
    - media histórica del condado;
    - tendencia lineal del condado;
@@ -253,10 +253,10 @@ que es el que necesita la herramienta. Después, el A en julio. **Está implemen
 
 - `docs/ml/model_card.md`: datos, target, validación, métricas contra los baselines por fold,
   features, limitaciones y dónde no usarlo.
-- `data/ml/escenarios_rotacion.csv` para el frontend: `fips, rotacion, cultivo, anio_clima, pred,
-  p10, p90`. El front lo recibe como `data/ml/front/escenarios_rotacion.json` (contrato en
+- `backend/Datos/escenarios_rotacion.csv` para el frontend: `fips, rotacion, cultivo, anio_clima, pred,
+  p10, p90`. El front lo recibe como `backend/Datos/front/escenarios_rotacion.json` (contrato en
   `INFO.md`, sección 4.6).
-- `data/ml/experimentos.csv`.
+- `backend/Datos/experimentos.csv`.
 
 ---
 
@@ -292,17 +292,18 @@ que es el que necesita la herramienta. Después, el A en julio. **Está implemen
 ## 7. Dónde va cada cosa en este repo
 
 ```
-data/
-  fieldshift_datos_v1.2/   # entrega de datos (condado/ y lotes/): solo lectura, no va a Git
-  ml/                      # folds.csv, experimentos.csv, escenarios_rotacion*.csv
-    front/                 # archivos del contrato del front (INFO.md)
-docs/ml/                   # model_card.md, pedidos_datos.md
-modelos/                   # modelos entrenados (.joblib), no van a Git
-notebooks/ml/              # esta carpeta: notebooks, sus PUNTON.md y este CLAUDE.md
+backend/
+  ML/                        # esta carpeta: notebooks, sus PUNTON.md y este CLAUDE.md
+    modelos/                 # modelos entrenados (.joblib), no van a Git
+  Datos/                     # todos los CSV de ML: folds.csv, experimentos.csv, escenarios_rotacion*.csv, gemelos*.csv…
+    front/                   # archivos del contrato del front (INFO.md)
+    entregas/
+      fieldshift_datos_v1.3/ # entrega de datos (condado/ y lotes/): solo lectura, no va a Git
+docs/ml/                     # model_card.md, pedidos_datos.md
 ```
 
 - El `src/` del CLAUDE.md de ML original no existe acá: el código vive en las notebooks. Si una
-  función se repite en dos notebooks, va a `notebooks/ml/comun.py` (preguntá antes de crearlo).
+  función se repite en dos notebooks, va a `backend/ML/comun.py` (preguntá antes de crearlo).
 - **Rutas siempre desde la raíz del repo** con `RAIZ` (snippet de la sección 3), nunca relativas a
   la notebook.
 

@@ -26,7 +26,7 @@ En la historia de su condado, los años que se salieron de lo normal, para mejor
 | 5 | Aporte de cada grupo de clima, causa principal y años marcados | Funciona |
 | 6 | Chequeo: ¿reconoce 2012 (sequía) y 2019 (primavera húmeda)? | Funciona |
 | 7 | Ejemplo: la historia de Story, Iowa | Funciona |
-| 8 | Guarda `data/ml/anomalias_anio.csv` | Funciona |
+| 8 | Guarda `backend/Datos/anomalias_anio.csv` | Funciona |
 
 Se corre **una vez por cultivo**; las salidas de maíz y soja se juntan en el mismo archivo.
 
@@ -36,14 +36,14 @@ Se corre **una vez por cultivo**; las salidas de maíz y soja se juntan en el mi
 
 | Archivo | Qué tiene | De quién |
 |---|---|---|
-| `modelos/punto2_rotaciones_<cultivo>.joblib` | Modelo, tendencia, promedios de rotación y features | Punto 2 (correr su notebook primero; no va a Git) |
-| `data/ml/tabla_modelado.csv` | Rinde y features de cada condado y año | Punto 2 |
+| `backend/ML/modelos/punto2_rotaciones_<cultivo>.joblib` | Modelo, tendencia, promedios de rotación y features | Punto 2 (correr su notebook primero; no va a Git) |
+| `backend/Datos/tabla_modelado.csv` | Rinde y features de cada condado y año | Punto 2 |
 
 **Sale:**
 
 | Archivo | Columnas | Para quién |
 |---|---|---|
-| `data/ml/anomalias_anio.csv` | `fips, anio, estado, cultivo, rend_bu_ac, rend_anio_normal_bu_ac, rend_predicho_bu_ac, diferencia_bu_ac, diferencia_pct, explicado_clima_bu_ac, no_explicado_bu_ac, causa_principal, efecto_causa_bu_ac, marcado, direccion, ef_<grupo>_bu_ac` | Front (línea de tiempo del condado) y punto 3 (frases). Detalle de cada columna en el paso 8 de la notebook |
+| `backend/Datos/anomalias_anio.csv` | `fips, anio, estado, cultivo, rend_bu_ac, rend_anio_normal_bu_ac, rend_predicho_bu_ac, diferencia_bu_ac, diferencia_pct, explicado_clima_bu_ac, no_explicado_bu_ac, causa_principal, efecto_causa_bu_ac, marcado, direccion, ef_<grupo>_bu_ac` | Front (línea de tiempo del condado) y punto 3 (frases). Detalle de cada columna en el paso 8 de la notebook |
 
 **Grupos de clima** (`causa_principal`), los mismos que propone el punto 3:
 
@@ -93,7 +93,7 @@ Con los datos reales (entrega v1.2, 2026-11-14), años 2009–2023:
 
 ## Qué falta
 
-- [ ] Acordar con el front dónde va la línea de tiempo del condado (`INFO.md` no tiene un archivo para esto) y generarlo en `data/ml/front/`.
+- [ ] Acordar con el front dónde va la línea de tiempo del condado (`INFO.md` no tiene un archivo para esto) y generarlo en `backend/Datos/front/`.
 - [ ] Frases para cada `causa_principal` en `textos.json`, junto con el punto 3.
 - [ ] Predicciones fuera del fold (reentrenando sin cada año), para que el año que se explica no esté en el entrenamiento del modelo.
 - [ ] Sumar 2024 y 2025 cuando se mire la prueba del punto 2.
