@@ -4,6 +4,7 @@ import { loadCounty } from "../data/load";
 import type { County, CountyYear, RasterInfo } from "../data/types";
 import type { CropId } from "../ui/crops";
 import { CROPS, CROP_COLOR, CROP_LABEL } from "../ui/crops";
+import { CropIcon } from "../ui/CropIcon";
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 import { BarRace } from "./BarRace";
@@ -490,6 +491,7 @@ function DecadeMix({
         {shown.map((c) => (
           <li key={c}>
             <i style={{ background: CROP_COLOR[c] }} />
+            <CropIcon crop={c} size={16} />
             {CROP_LABEL[c]}
           </li>
         ))}

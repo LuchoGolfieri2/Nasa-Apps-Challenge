@@ -11,12 +11,13 @@
  * Uso:  <NextSeason data={json} onYearClick={(y) => navigate(`#/county/${fips}?year=${y}`)} />
  */
 import React, {useMemo, useState} from 'react';
+import {CropIcon} from '../ui/CropIcon';
 import {CountUp} from '../ui/CountUp';
 import {Confidence, ModelRuleTag, PrototypeStamp, SourceChip} from './bits';
 import {Icon, PRIORITY_ICON, similarIcon} from './icons';
 import {commonAxis, suggest} from './suggest';
 import {TwinGlobe} from './TwinGlobe';
-import {CROP_COLOR, CROP_LABEL} from '../ui/crops';
+import {CROP_COLOR, CROP_LABEL, type DisplayCrop} from '../ui/crops';
 import {PRIORITY_LABEL} from './types';
 import type {CropId, NextData, NextOption, PlanCrop, Priority, Reason, Twin} from './types';
 import './next.css';
@@ -24,7 +25,9 @@ import './next.css';
 const PRIORITIES: Priority[] = ['risk', 'income', 'soil', 'water'];
 const COUNT_WORD = ['No', 'One', 'Two', 'Three', 'Four', 'Five'];
 
-const CropDot: React.FC<{crop: CropId}> = ({crop}) => <i className="ns-dot" style={{background: CROP_COLOR[crop]}} />;
+const CropDot: React.FC<{crop: DisplayCrop; size?: number}> = ({crop, size = 20}) => <CropIcon crop={crop} size={size} />;
+/** La avena llega del modelo como "other" (no es una clase del CDL): aquí vuelve a ser avena. */
+const exploreCrop = (x: {id: string; crop: CropId}): DisplayCrop => (x.id === 'oats' ? 'oats' : x.crop);
 
 const fmt = (v: number) => Math.round(v).toString();
 const usd = (v: number) => `$${Math.round(v).toLocaleString('en-US')}`;
@@ -287,7 +290,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
           <div key={x.id} className="ns-new">
             <div>
               <h3>
-                <CropDot crop={x.crop} /> Something new nearby: {x.label.toLowerCase()}
+                <CropDot crop={exploreCrop(x)} /> Something new nearby: {x.label.toLowerCase()}
               </h3>
               <p>
                 {x.twins.length} counties like yours grow it. From those counties, not from the model: similar soil and weather doesn&apos;t guarantee the same result.
@@ -338,7 +341,7 @@ const Answer: React.FC<{option: NextOption; usual: number | null; onWhy: () => v
         <div>
           <p className="ns-answer-kicker">Suggested for your priorities</p>
           <h2 id="ns-answer-title">
-            <CropDot crop={o.crop} />
+            <CropDot crop={o.crop} size={30} />
             {o.label}
           </h2>
           <button type="button" className="ns-answer-why" onClick={onWhy}>
@@ -408,7 +411,15 @@ const CropSplit: React.FC<{twin: Twin}> = ({twin}) => {
           <i key={c} style={{flexGrow: v, background: CROP_COLOR[c]}} />
         ))}
       </span>
-      <small>{parts.map(([c, v]) => `${CROP_LABEL[c] ?? c} ${fmt(v)}%`).join(', ')}</small>
+      <small className="ns-split-text">
+        {parts.map(([c, v], i) => (
+          <span key={c} className="ns-split-item">
+            {i ? ', ' : ''}
+            <CropIcon crop={c} size={16} />
+            {CROP_LABEL[c] ?? c} {fmt(v)}%
+          </span>
+        ))}
+      </small>
     </>
   );
 };
