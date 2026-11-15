@@ -1,7 +1,7 @@
 # Pantalla 3 — Next season (F21, F22, F23, F24)
 
 Estado: funciona con **datos reales** del equipo de ML y del CDL. Los JSON los arma `scripts/build_next_json.py`
-(201 condados de Iowa e Illinois; Kansas todavía no está en el modelo → "Missing data").
+(895 condados de 10 estados: IA, IL, IN, KS, MN, MO, NE, OH, SD y WI; Dakota del Norte todavía no está en la entrega → "Missing data". Fuera de la zona maíz-soja, como Sumner KS, solo hay la opción "actual").
 
 ## Archivos
 | Archivo | Qué es |

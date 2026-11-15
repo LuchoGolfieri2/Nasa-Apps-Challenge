@@ -17,6 +17,7 @@ export const DATASETS: Dataset[] = [
   { name: "SSURGO soil survey (NRCS)", agency: "USDA", gives: "Soil drainage, productivity and organic carbon", where: "Counties like yours", detail: "Soil map units, averaged per county" },
   { name: "POWER", agency: "NASA", gives: "Heat and rain by year", where: "Yield model, risks in bad years, county history", detail: "0.5° · 2009–2025" },
   { name: "GPM IMERG", agency: "NASA", gives: "Rain averaged over each county", where: "Counties like yours", detail: "0.1° · median 2009–2023" },
+  { name: "HLS Landsat and Sentinel-2", agency: "NASA", gives: "In-season crop guess, before USDA's map", where: "County history, demo fields", detail: "30 m · 2025 season · 10 demo fields" },
   { name: "Blue Marble (GIBS)", agency: "NASA", gives: "Satellite image of the Earth", where: "Globe", detail: "Background imagery" },
   { name: "Census county boundaries", agency: "Other", gives: "County and state outlines", where: "Globe, maps", detail: "US Census Bureau" },
 ];
