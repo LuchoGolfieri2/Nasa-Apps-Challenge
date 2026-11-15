@@ -1,0 +1,32 @@
+1
+00:00:00,200 --> 00:00:02,500
+We're Team Pepers, from Argentina.
+
+2
+00:00:02,500 --> 00:00:05,900
+Every season, farmers bet on what to plant,
+
+3
+00:00:05,900 --> 00:00:09,300
+often without knowing how their land has really done.
+
+4
+00:00:09,300 --> 00:00:13,000
+Field Rewind replays a decade of your county, field by field.
+
+5
+00:00:13,000 --> 00:00:16,700
+Yield, weather and crop history from NASA and USDA data.
+
+6
+00:00:16,700 --> 00:00:19,700
+Then it suggests a rotation for your priorities,
+
+7
+00:00:19,700 --> 00:00:22,700
+with its reasons, a yield range and counties like yours.
+
+8
+00:00:22,700 --> 00:00:26,900
+Built to grow, from the Corn Belt to farms everywhere.
+
