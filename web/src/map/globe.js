@@ -7,6 +7,15 @@ import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
 import D from './globe-data.json';
 import NEXT_LIST from './next-available.json'; // lo genera scripts/build_next_json.py
+import {prefetchCounty} from '../data/load';
+import DENSITY from './crop-density.json'; // lo genera scripts/build_crop_density.py (USDA CDL)
+import ICON_YIELD from '../ui/icons/crops/yield.svg?raw';
+import ICON_CORN from '../ui/icons/crops/corn.svg?raw';
+import ICON_SOY from '../ui/icons/crops/soy.svg?raw';
+import ICON_WHEAT from '../ui/icons/crops/wheat.svg?raw';
+import ICON_OATS from '../ui/icons/crops/oats.svg?raw';
+import ICON_ALFALFA from '../ui/icons/crops/alfalfa.svg?raw';
+import ICON_HAY from '../ui/icons/crops/hay.svg?raw';
 
 let active = true, onActive = null;
 /** MapLayer avisa si el mapa está a la vista; oculto no dibuja */
@@ -58,10 +67,46 @@ function rampColor(v) {
 }
 // sin dato = celda vacía (nunca 0): gris con rayado "Missing data"
 const hasCorn = (c) => typeof c.stat.corn_bu_ac === 'number';
-for (const c of COUNTIES) c.rgb = hasCorn(c) ? rampColor(c.stat.corn_bu_ac) : [70, 70, 70];
 // Historia: completa (con el mapa del CDL) o solo rinde y clima; sin ficha, no se abre
 const historyOf = (c) => c.stat.history || null;
-const MISSING = COUNTIES.filter((c) => !hasCorn(c));
+
+// ---- "Color by": rinde de maíz (por defecto) o densidad de un cultivo = % de la superficie del condado
+// sembrada con ese cultivo (USDA CDL, crop-density.json). Elegir un cultivo pinta los condados en todo el
+// globo, también de lejos. Sin dato: gris rayado "Missing data", nunca 0.
+const MODES = [
+  {id: 'yield', label: 'Corn yield', icon: ICON_YIELD},
+  {id: 'corn', label: 'Corn', icon: ICON_CORN, color: '#E9B949'},
+  {id: 'soy', label: 'Soybeans', icon: ICON_SOY, color: '#3FBF7F'},
+  {id: 'wheat', label: 'Winter wheat', icon: ICON_WHEAT, color: '#E8698E'},
+  {id: 'oats', label: 'Oats', icon: ICON_OATS, color: '#B79CF2'},
+  {id: 'alfalfa', label: 'Alfalfa', icon: ICON_ALFALFA, color: '#9ED36A'},
+  {id: 'hay', label: 'Other hay', icon: ICON_HAY, color: '#D9A066'},
+];
+const DENS = DENSITY.counties || {};
+const densityOf = (c, crop) => { const v = DENS[c.id] && DENS[c.id][crop]; return typeof v === 'number' ? v : null; };
+// tope de la rampa: percentil 95 del cultivo, redondeado hacia arriba (si no, la avena o el heno se ven todos oscuros)
+const niceCeil = (v) => { const s = v <= 5 ? 1 : v <= 20 ? 5 : 10; return Math.max(1, Math.ceil(v / s) * s); };
+const DENS_MAX = Object.fromEntries(MODES.filter((m) => m.color).map((m) => {
+  const vals = COUNTIES.map((c) => densityOf(c, m.id)).filter((v) => v !== null).sort((x, y) => x - y);
+  return [m.id, vals.length ? niceCeil(vals[Math.floor(vals.length * 0.95)] || vals[vals.length - 1]) : 1];
+}));
+const DENS_LOW = [18, 40, 30]; // 0 %: apenas más claro que Verde noche
+const lighten = (rgb, t) => rgb.map((x) => Math.round(x + (255 - x) * t));
+function densityColor(v, crop) {
+  const top = hex(MODES.find((m) => m.id === crop).color), t = clamp01(v / DENS_MAX[crop]);
+  const [a, b, u] = t < 0.7 ? [DENS_LOW, top, t / 0.7] : [top, lighten(top, 0.55), (t - 0.7) / 0.3];
+  return a.map((x, j) => Math.round(x + (b[j] - x) * u));
+}
+let mode = 'yield', MISSING = [];
+const valueOf = (c) => (mode === 'yield' ? (hasCorn(c) ? c.stat.corn_bu_ac : null) : densityOf(c, mode));
+function recolor() {
+  for (const c of COUNTIES) {
+    const v = valueOf(c);
+    c.rgb = v === null ? [70, 70, 70] : mode === 'yield' ? rampColor(v) : densityColor(v, mode);
+  }
+  MISSING = COUNTIES.filter((c) => valueOf(c) === null);
+}
+recolor();
 // lugar libre alrededor del centroide, en grados: hasta el borde por izquierda/derecha (a su latitud)
 // y por abajo/arriba (a su longitud). Sirve para saber si el nombre entra adentro del condado.
 function room(rings, [cx, cy], axis) {
@@ -341,13 +386,16 @@ function buildLayers(a) {
       updateTriggers: {getFillColor: [selState && selState.id, hoverState && hoverState.id, stateFade],
         getLineColor: [selState && selState.id], getLineWidth: [selState && selState.id, hoverState && hoverState.id]}}),
   ];
-  if (a > 0.01) {
+  // con un cultivo elegido los condados se ven también de lejos (el rinde los muestra solo al acercarse)
+  const fillA = mode === 'yield' ? a : Math.max(a, 0.95);
+  if (fillA > 0.01) {
     // con el mapa lejos los condados miden pocos px: el borde se afina para no tapar el color
     const countyPx = base * R.k * rad * 0.45, edge = Math.max(1.5, Math.min(3, countyPx / 12));
+    const fillEdge = a > 0.5 ? edge : Math.min(edge, Math.max(0.3, countyPx / 10));
     layers.push(
-      new GeoJsonLayer({id: 'counties', parameters: SURFACE, data: COUNTIES, opacity: a, filled: true, stroked: true,
-        pickable: R.k > COUNTY_K + 0.6, lineWidthUnits: 'pixels', getLineWidth: edge, getLineColor: NIGHT,
-        updateTriggers: {getLineWidth: edge}, getFillColor: (f) => [...f.rgb, 255]}),
+      new GeoJsonLayer({id: 'counties', parameters: SURFACE, data: COUNTIES, opacity: fillA, filled: true, stroked: true,
+        pickable: R.k > COUNTY_K + 0.6, lineWidthUnits: 'pixels', getLineWidth: fillEdge, getLineColor: NIGHT,
+        updateTriggers: {getLineWidth: fillEdge, getFillColor: mode}, getFillColor: (f) => [...f.rgb, 255]}),
       // borde doble: Papel fino sobre Verde noche, así siempre contrasta uno de los dos con la rampa
       new GeoJsonLayer({id: 'county-lines', parameters: SURFACE, data: COUNTIES, opacity: a, filled: false, stroked: true,
         lineWidthUnits: 'pixels', getLineWidth: edge / 3, getLineColor: CREAM, updateTriggers: {getLineWidth: edge}}),
@@ -439,7 +487,7 @@ const overlaps = (r, s) => r[0] < s[2] && r[2] > s[0] && r[1] < s[3] && r[3] > s
 function drawLabels(c) {
   const placed = [], selBox = selCounty && R.k > COUNTY_K ? screenRect(selCounty) : null;
   // los nombres que quedarían debajo de la barra de arriba, la leyenda o la tarjeta no se dibujan
-  const cover = ['top', 'legend'].map((id) => $(id)).filter((el) => el && !el.hidden && el.offsetWidth)
+  const cover = ['top', 'legend', 'layers'].map((id) => $(id)).filter((el) => el && !el.hidden && el.offsetWidth)
     .map((el) => { const q = el.getBoundingClientRect(); return [q.left, q.top, q.right, q.bottom]; });
   if (cardPhase !== 'hidden' && cardPhase !== 'waiting')
     cover.push(isSheet() ? [0, H - cardH, W, H] : [cardPos[0], cardPos[1], cardPos[0] + CARD_W, cardPos[1] + cardH]);
@@ -684,17 +732,19 @@ function closeCard(viaKeyboard = false) {
   updateUI();
 }
 /** "See more": la tarjeta crece hasta cubrir la pantalla y recién ahí se abre la historia */
+const GROW_MS = 260; // igual que la transición de #card-grow en map.css
 function endGrow() { clearTimeout(growTimer); growing = false; grow.hidden = true; grow.className = ''; grow.style.clipPath = ''; }
 function openHistory() {
   if (!selCounty || growing) return;
   const fips = selCounty.id, q = cardBox.getBoundingClientRect();
   emit('open', {fips});
+  prefetchCounty(fips); // los datos bajan mientras la tarjeta crece
   growing = true; grow.hidden = false;
   grow.style.clipPath = `inset(${q.top}px ${W - q.right}px ${H - q.bottom}px ${q.left}px round 12px)`;
   void grow.offsetWidth;
   grow.classList.add('on');
   grow.style.clipPath = 'inset(0px 0px 0px 0px round 0px)';
-  growTimer = setTimeout(() => { location.hash = `#/county/${fips}?play=1`; }, reduceMotion.matches ? 200 : 450); // la historia arranca reproduciéndose
+  growTimer = setTimeout(() => { location.hash = `#/county/${fips}?play=1`; }, reduceMotion.matches ? 120 : GROW_MS); // la historia arranca reproduciéndose
 }
 // al volver al mapa: se saca el velo y, si la tarjeta sigue abierta, el foco vuelve a ella
 onActive = (on) => { if (!on) return; endGrow(); if (cardPhase === 'open') focusCard(); };
@@ -709,9 +759,71 @@ function updateUI() {
   if (selCounty) crumbs.push(`<span>${selCounty.properties.name} County</span>`);
   $('crumbs').innerHTML = crumbs.join('<i>›</i>');
   showTip(null);
-  $('legend').hidden = level === 'globe';
+  $('legend').hidden = level === 'globe' && mode === 'yield';
   if (!selCounty) hideCard();
 }
+
+// ---- selector "Color by": un botón con el ícono del cultivo; abre la lista de capas (radio)
+const layersEl = document.createElement('div');
+layersEl.id = 'layers';
+layersEl.className = 'ui';
+layersEl.innerHTML = `<button id="layers-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="layers-menu">
+  <span class="ico"></span><span class="txt"><small>Color by</small><b></b></span>
+  <svg class="chev" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+<div id="layers-menu" role="radiogroup" aria-label="Color counties by" hidden>
+  <p class="h">Color counties by</p>
+  ${MODES.map((m, i) => `${i === 1 ? '<p class="h">Share of county planted to</p>' : ''}
+  <button type="button" role="radio" data-mode="${m.id}" aria-checked="false" style="--crop:${m.color || COL.glow}">
+    <span class="ico">${m.icon}</span><span>${m.id === 'yield' ? 'Corn yield (bu/acre)' : m.label}</span>
+  </button>`).join('')}
+</div>`;
+$('legend').before(layersEl);
+const layersBtn = $('layers-btn'), layersMenu = $('layers-menu');
+const modeOf = (id) => MODES.find((m) => m.id === id);
+function openLayers(open) {
+  layersMenu.hidden = !open;
+  layersBtn.setAttribute('aria-expanded', String(open));
+  if (open) (layersMenu.querySelector('[aria-checked="true"]') || layersMenu.querySelector('[role=radio]')).focus();
+}
+function renderLegend() {
+  const m = modeOf(mode), lg = $('legend');
+  if (mode === 'yield') {
+    lg.innerHTML = `<div class="t">Corn yield, 2021–2025 avg <span class="src">USDA NASS</span></div>
+      <div class="bar"></div><div class="n"><span>150</span><span>190 bu/acre</span><span>230+</span></div>
+      <div class="m"><i></i>Missing data</div>`;
+  } else {
+    const max = DENS_MAX[mode], css = (v) => `rgb(${densityColor(v, mode).join(',')})`;
+    const stops = [0, 0.35, 0.7, 0.85, 1].map((t) => `${css(t * max)} ${t * 100}%`).join(',');
+    lg.innerHTML = `<div class="t wrap">${m.label}, % of county area <span class="src">USDA CDL ${DENSITY.year}</span></div>
+      <div class="bar" style="background:linear-gradient(90deg,${stops})"></div>
+      <div class="n"><span>0%</span><span>${max / 2}%</span><span>${max}%+</span></div>
+      <div class="m"><i></i>Missing data</div>`;
+  }
+}
+function setMode(id) {
+  mode = id;
+  const m = modeOf(id);
+  layersBtn.querySelector('.ico').innerHTML = m.icon;
+  layersBtn.querySelector('b').textContent = m.label;
+  layersBtn.style.setProperty('--crop', m.color || COL.glow);
+  layersMenu.querySelectorAll('[role=radio]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.mode === id)));
+  recolor(); renderLegend(); showTip(null);
+  $('legend').hidden = level === 'globe' && mode === 'yield';
+}
+layersBtn.addEventListener('click', () => openLayers(layersMenu.hidden));
+layersMenu.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-mode]'); if (!b) return;
+  setMode(b.dataset.mode); openLayers(false); layersBtn.focus();
+});
+// flechas para moverse entre opciones; Escape cierra
+layersMenu.addEventListener('keydown', (e) => {
+  const opts = [...layersMenu.querySelectorAll('[role=radio]')], i = opts.indexOf(document.activeElement);
+  if (e.key === 'Escape') { e.stopPropagation(); openLayers(false); layersBtn.focus(); }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); opts[(i + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length].focus(); }
+});
+document.addEventListener('pointerdown', (e) => { if (!layersMenu.hidden && !layersEl.contains(e.target)) openLayers(false); });
+setMode('yield');
 $('crumbs').addEventListener('click', (e) => {
   const go = e.target.dataset && e.target.dataset.go;
   if (go === 'globe') reset();
@@ -739,7 +851,9 @@ window.addEventListener('keydown', (e) => {
 function showTip(c, x, y) {
   const tip = $('tip');
   if (!c || take) { tip.hidden = true; return; }
-  tip.innerHTML = `<b>${c.properties.name} County, ${POSTAL[c.properties.state]}</b> · ${hasCorn(c) ? `Corn ${c.stat.corn_bu_ac} bu/acre` : 'Missing data'}`;
+  const v = valueOf(c), m = MODES.find((x) => x.id === mode);
+  const val = v === null ? 'Missing data' : mode === 'yield' ? `Corn ${v} bu/acre` : `${m.label} ${v}% of county area`;
+  tip.innerHTML = `<b>${c.properties.name} County, ${POSTAL[c.properties.state]}</b> · ${val}`;
   tip.hidden = false;
   const w = tip.offsetWidth, h = tip.offsetHeight;
   tip.style.left = `${Math.min(x + 14, W - w - 8)}px`;

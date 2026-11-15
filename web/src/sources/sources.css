@@ -12,7 +12,7 @@
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--sprout);
+  color: var(--primary);
 }
 .sources h1 {
   margin: 4px 0 8px;
@@ -26,7 +26,7 @@
   max-width: 720px;
 }
 .sources__lead b {
-  color: var(--wheat-gold);
+  color: var(--primary-strong);
 }
 .sources h2 {
   margin: 0 0 14px;
@@ -47,12 +47,13 @@
   background: var(--surface-1);
   border: 1px solid var(--line);
   border-top: 4px solid var(--line-strong);
+  box-shadow: var(--shadow-card);
 }
 .ds--nasa {
-  border-top-color: #4ea8f2;
+  border-top-color: #2f7fd0;
 }
 .ds--usda {
-  border-top-color: var(--sprout);
+  border-top-color: var(--primary);
 }
 .ds__agency {
   font-size: 12px;
@@ -98,7 +99,7 @@
   padding: 12px 14px;
   border-radius: var(--radius-s);
   border: 1px dashed var(--line-strong);
-  background: repeating-linear-gradient(135deg, rgba(246, 241, 228, 0.06) 0 6px, transparent 6px 12px);
+  background: repeating-linear-gradient(135deg, rgba(15, 42, 29, 0.05) 0 6px, transparent 6px 12px);
   color: var(--ink-2);
 }
 .sources__missing b,
@@ -114,6 +115,7 @@
   border-radius: var(--radius-s);
   background: var(--surface-1);
   border-left: 4px solid var(--wheat-gold);
+  box-shadow: var(--shadow-card);
   color: var(--ink-2);
   line-height: 1.5;
 }

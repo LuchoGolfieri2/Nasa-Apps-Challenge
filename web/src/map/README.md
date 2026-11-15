@@ -29,7 +29,7 @@ durante el vuelo y al arrastrar el mapa. En el celular (≤ 760 px) se apoya aba
 - Se cierra con ×, Escape o un clic en mapa vacío; la cámara se queda y la ruta pasa a `#/state/XX`. También se cierra sola si
   te alejás del nivel de condado.
 - "Next season: what to plant →" aparece solo si el modelo cubre el condado (`next-available.json`); si no, se escribe el faltante.
-- "See more": la tarjeta crece hasta cubrir la pantalla (450 ms) y se abre la historia. Al volver, la tarjeta ya está abierta.
+- "See more": la tarjeta crece hasta cubrir la pantalla (260 ms) y se abre la historia; la ficha del condado empieza a bajar al tocar el botón. Al volver, la tarjeta ya está abierta.
 - Con `prefers-reduced-motion` todo es un fundido, sin escala ni desplazamiento.
 - La lógica está en `globe.js` ("tarjeta del condado"): `showCard`, `placeCard` (posición por cuadro), `closeCard`, `openHistory`.
 
@@ -46,6 +46,17 @@ El color de los condados y el número de la tarjeta son **reales**: rinde de ma�
 en bu/acre. Sin dato (Kansas, y dos condados sin rinde publicado): gris rayado y "Missing data".
 "See more" se habilita en los 294 condados con ficha: los 3 con mapa del CDL ("Full history") y el resto de IA, IL e IN
 con rinde y clima. Lo genera `scripts/build_front_data.py` (`stat` en `globe-data.json`).
+
+### "Color by": densidad de cada cultivo
+Abajo a la izquierda, el botón **Color by** (con el ícono del cultivo elegido) abre la lista de capas: rinde de maíz
+(por defecto) o el **% de la superficie del condado sembrado** con maíz, soja, trigo de invierno, avena, alfalfa u otro heno.
+- Dato real: USDA NASS Cropland Data Layer 2025, estadísticas por condado de CropScape (`GetCDLStat`, sin clave).
+  `scripts/build_crop_density.py` baja un CSV por condado a `data/raw/cultivos/cdl_stat/2025/` (si ya está, no lo vuelve a bajar)
+  y escribe `crop-density.json`. El doble cultivo trigo/soja (clase 26) suma a los dos.
+- Al elegir un cultivo los condados se pintan en todo el globo, también de lejos. La rampa va de casi Verde noche (0 %) al color
+  del cultivo; el tope es el percentil 95 de ese cultivo, redondeado, para que la avena o el heno no queden todos oscuros.
+- Sin dato: gris rayado y "Missing data", como en el rinde. El tooltip dice el valor ("Corn 61% of county area").
+- Íconos: `src/ui/icons/crops/*.svg`, dibujados para el proyecto (24 px, trazo 1,75, `currentColor`).
 
 ## Imagen satelital
 Las teselas de Blue Marble se piden en vivo a GIBS (`gibs.earthdata.nasa.gov`). Sin conexión se ve el océano liso con los estados encima.
