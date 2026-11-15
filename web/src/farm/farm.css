@@ -1,0 +1,748 @@
+/* My Farm (F29). Tema claro de la app: tarjetas blancas, verde principal, vidrio solo sobre las ilustraciones.
+   Estilo tomado de docs/referencias-diseno/ (tablero "My Farm", tarjetas con foto, medidor y curva suave). */
+
+.fm {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 24px clamp(16px, 3vw, 40px) 64px;
+  color: var(--ink);
+}
+.fm h1,
+.fm h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+.fm-kicker {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+/* ------------------------------------------------------------------ tablero */
+.fm-dash-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.fm-dash-head h1 {
+  margin: 0;
+  font-size: clamp(30px, 4vw, 46px);
+  font-weight: 800;
+  line-height: 1.02;
+}
+.fm-dash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fm-bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+}
+.fm-card {
+  position: relative;
+  min-width: 0;
+  padding: 20px 22px;
+  border-radius: 24px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+}
+.fm-card h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+}
+.fm-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.fm-hero {
+  grid-column: span 7;
+  min-height: 360px;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.fm-plan-now {
+  grid-column: span 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fm-income {
+  grid-column: span 4;
+}
+.fm-seasons-card {
+  grid-column: span 5;
+}
+.fm-weather {
+  grid-column: span 3;
+}
+.fm-yield {
+  grid-column: span 12;
+}
+
+/* vidrio sobre la ilustración */
+/* vidrio oscuro: el texto blanco se lee igual sobre el cielo claro y sobre el cultivo */
+.fm-glass {
+  background: linear-gradient(135deg, rgba(15, 42, 29, 0.55), rgba(15, 42, 29, 0.32));
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+  color: var(--glass-ink);
+  text-shadow: var(--glass-text-shadow);
+  border-radius: 16px;
+}
+.fm-hero-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.fm-hero-where {
+  position: relative;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 18px;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 15px;
+  border-radius: 999px;
+}
+.fm-hero-stats {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px;
+}
+.fm-hero-stats > div {
+  padding: 12px 14px;
+}
+.fm-hero-stats span {
+  display: block;
+  font-size: 13px;
+  opacity: 0.95;
+}
+.fm-hero-stats b {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 2px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+}
+.fm-prio-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.fm-plan-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.fm-plan-name small {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.fm-gauge {
+  margin: 4px auto 0;
+  width: min(320px, 100%);
+  text-align: center;
+}
+.fm-gauge svg {
+  display: block;
+  width: 100%;
+}
+.fm-gauge-tick {
+  font-size: 11px;
+  fill: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.fm-gauge figcaption {
+  margin-top: -6px;
+  position: relative;
+}
+.fm-gauge-label {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.fm-gauge figcaption b {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.fm-gauge-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 18px;
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.fm-gauge-legend b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.fm-dash-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-3);
+}
+.fm-dash-key::before {
+  content: "";
+  width: 14px;
+  border-top: 2px dashed var(--ink);
+}
+.fm-verdict {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--surface-2);
+}
+.fm-verdict--match {
+  background: var(--primary-soft);
+}
+.fm-verdict p {
+  margin: 0;
+  line-height: 1.45;
+}
+.fm-verdict .ns-icon {
+  vertical-align: -3px;
+  color: var(--primary-strong);
+}
+.fm-reason {
+  margin-top: 6px !important;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.fm-income-big {
+  margin: 10px 0 6px;
+  font-family: var(--font-display);
+  font-size: clamp(36px, 4vw, 48px);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--primary-strong);
+  font-variant-numeric: tabular-nums;
+}
+.fm-income-big small {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.fm-income-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0;
+}
+.fm-income-range span {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.fm-income-range b {
+  display: block;
+  font-size: 18px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.fm-income-alt {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.fm-inputs {
+  margin: 0;
+  padding: 10px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.fm-inputs li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 0;
+}
+.fm-inputs em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.fm-inputs em.you,
+.fm-you {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(233, 185, 73, 0.22);
+  color: var(--wheat-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fm-season-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fm-season-tile {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.fm-season-tile svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.fm-season-empty {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(135deg, var(--surface-2) 0 8px, #e4ebe0 8px 16px);
+}
+.fm-season-tag {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 12px;
+}
+.fm-season-tag b {
+  display: block;
+  font-size: 15px;
+}
+.fm-rot {
+  margin: 12px 0 0;
+  font-weight: 600;
+}
+
+.fm-weather-grid {
+  display: grid;
+  gap: 10px;
+}
+.fm-weather-grid > div {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  align-items: center;
+  column-gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+.fm-weather-grid .ns-icon {
+  grid-row: span 2;
+  color: var(--primary);
+}
+.fm-weather-grid b {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.fm-weather-grid span {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.fm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+}
+.fm-tags span {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fm-area-box {
+  width: 100%;
+}
+.fm-area {
+  display: block;
+}
+.fm-area-year {
+  font-size: 12px;
+  fill: var(--ink-3);
+}
+.fm-area-best {
+  font-size: 11px;
+  font-weight: 700;
+  fill: #fff;
+}
+.fm-area-flag {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+.fm-area-missing {
+  font-size: 14px;
+  fill: var(--ink-3);
+}
+.fm-note {
+  margin: 8px 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.fm-link {
+  font-weight: 700;
+  color: var(--primary-strong);
+}
+
+/* ------------------------------------------------------------------ formulario */
+.fm-form {
+  max-width: 920px;
+  margin: 0 auto;
+}
+.fm-form-head h1 {
+  margin: 0 0 8px;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+  line-height: 1;
+}
+.fm-lede {
+  max-width: 60ch;
+  margin: 0 0 8px;
+  font-size: 17px;
+  color: var(--ink-2);
+}
+.fm-privacy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 18px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+  font-size: 14px;
+  font-weight: 600;
+}
+.fm-step {
+  margin: 0 0 16px;
+  padding: 20px 22px;
+  border-radius: 24px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+}
+.fm-step h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 21px;
+}
+.fm-step h2 em {
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.fm-num {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+}
+.fm-grid2 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.fm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.fm-field > span {
+  font-size: 14px;
+  font-weight: 700;
+}
+.fm-field input,
+.fm-field select {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+.fm-field input:focus-visible,
+.fm-field select:focus-visible,
+.fm-chip:focus-visible,
+.fm-plan-card:focus-visible {
+  outline: 3px solid var(--sprout);
+  outline-offset: 2px;
+}
+.fm-field [aria-invalid="true"] {
+  border-color: var(--alert);
+}
+.fm-field small,
+.fm-help {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.fm-help {
+  margin: -6px 0 12px;
+}
+.fm-err {
+  color: #b42318 !important;
+  font-weight: 600;
+}
+.fm-err--box {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #fde7e7;
+}
+
+.fm-seasons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.fm-season {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.fm-season legend {
+  margin-bottom: 8px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+}
+.fm-season-art {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 10px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: repeating-linear-gradient(135deg, var(--surface-2) 0 8px, #e4ebe0 8px 16px);
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  font-size: 14px;
+}
+.fm-season-art svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.fm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.fm-chip--big {
+  min-height: var(--tap);
+  padding: 0 16px;
+  font-size: 15px;
+}
+.fm-chip.on {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.fm-plan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.fm-plan-card {
+  position: relative;
+  aspect-ratio: 16 / 8;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 3px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  background: var(--surface-2);
+}
+.fm-plan-card svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.fm-plan-card span {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+}
+.fm-plan-card.on {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}
+.fm-plan-card.on span {
+  background: var(--primary);
+  color: #fff;
+}
+.fm-money {
+  display: grid;
+  gap: 14px;
+}
+.fm-money-row {
+  display: grid;
+  grid-template-columns: 110px repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 14px;
+}
+.fm-money-row > b {
+  padding-top: 32px;
+  font-size: 16px;
+}
+.fm-form-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+.fm-save {
+  min-height: 52px;
+  padding: 0 26px;
+  font-size: 17px;
+}
+.fm-delete {
+  margin-left: auto;
+  color: #b42318;
+}
+
+/* ------------------------------------------------------------------ pantallas medianas y chicas */
+@media (max-width: 1080px) {
+  .fm-hero,
+  .fm-plan-now {
+    grid-column: span 12;
+  }
+  .fm-income {
+    grid-column: span 6;
+  }
+  .fm-seasons-card {
+    grid-column: span 12;
+    order: 5;
+  }
+  .fm-weather {
+    grid-column: span 6;
+  }
+}
+@media (max-width: 720px) {
+  .fm-income,
+  .fm-weather {
+    grid-column: span 12;
+  }
+  .fm-hero {
+    min-height: 420px;
+  }
+  .fm-hero-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .fm-hero-stats > div:last-child {
+    grid-column: span 2;
+  }
+  .fm-grid2,
+  .fm-seasons,
+  .fm-plan {
+    grid-template-columns: 1fr;
+  }
+  .fm-money-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .fm-money-row > b {
+    grid-column: span 2;
+    padding-top: 0;
+  }
+  .fm-delete {
+    margin-left: 0;
+  }
+  .fm-dash-actions,
+  .fm-dash-actions .btn {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm * {
+    transition: none !important;
+  }
+}

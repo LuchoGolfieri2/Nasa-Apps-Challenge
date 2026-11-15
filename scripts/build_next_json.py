@@ -11,6 +11,7 @@ Arma los JSON de la pantalla 3 ("Next season") con datos reales:
 Salida:
   web/public/data/next/<fips>.json   uno por condado de IA, IL y KS que tenga datos del modelo
   web/src/map/next-available.json    lista de esos condados (el mapa la usa para el botón "Next season")
+  web/src/farm/usda-prices.json      precio NASS y costo ERS de maíz y soja por estado (valores por defecto de My Farm)
 
 No inventa datos: lo que falta va en null y se muestra como "Missing data".
 Las reglas agronómicas (salud del suelo) van marcadas kind="rule".
@@ -263,6 +264,15 @@ def main():
         written.append(fips)
     written.sort()
     (WEB / "src" / "map" / "next-available.json").write_text(json.dumps(written) + "\n")
+    # My Farm: el productor puede usar su precio y su costo; si no, estos (USDA)
+    prices = load_prices()
+    farm = {}
+    for (st, cult), v in sorted(prices.items()):
+        crop = {"maiz": "corn", "soja": "soy"}.get(cult)
+        if crop:
+            farm.setdefault(st, {})[crop] = {"price": v["price"], "cost": v["cost"], "years": v["years"]}
+    (WEB / "src" / "farm").mkdir(exist_ok=True)
+    (WEB / "src" / "farm" / "usda-prices.json").write_text(json.dumps(farm, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"{len(written)} condados →", OUT)
 
 
