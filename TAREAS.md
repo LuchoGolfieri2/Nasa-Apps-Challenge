@@ -74,7 +74,7 @@ Ejemplo:
 - [ ] **F22** Jerarquía fija: frase sugerida con 2 razones y confianza → 3 opciones en filas con barras p10–p90 en un eje común (bu/acre) → beneficios/riesgos (Model · Rule) y faltantes · Libre
   - Verificar: a 1920×1080 la frase y sus razones se leen en 3 s.
 - [ ] **F23** Años de cada razón clickeables → llevan a Historia en ese año (`years[]` en `next/<fips>.json`) · Libre · Bloquea: F15, F22
-- [ ] **F24** Arcos a condados gemelos en el mapa chico de la derecha, 1 s después de la frase sugerida, como componente aislado · Libre
+- [x] ~~**F24** Arcos a condados gemelos en el mapa chico de la derecha, 1 s después de la frase sugerida, como componente aislado~~ · ✅ Naim
   - Archivos: `web/src/next/TwinArcs*`
 
 ## Pantalla 4 · Fuentes y límites
