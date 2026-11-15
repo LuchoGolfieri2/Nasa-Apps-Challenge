@@ -21,8 +21,11 @@ const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream), NIGHT 
 const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
 const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
 const NEXT_AVAILABLE = NEXT_LIST; // condados con datos del modelo para la pantalla Next season
-const POSTAL = {19: 'IA', 17: 'IL', 20: 'KS'};
-const FIPS_OF = {IA: '19', IL: '17', KS: '20'};
+const POSTAL = {19: 'IA', 17: 'IL', 18: 'IN', 20: 'KS'};
+const FIPS_OF = {IA: '19', IL: '17', IN: '18', KS: '20'};
+// Estados sin salidas del modelo de rinde (hoy Kansas): se siguen mostrando, con el aviso escrito.
+const hasModel = (stateId) => NEXT_AVAILABLE.some((id) => id.startsWith(stateId));
+const NO_MODEL = 'Missing data: no yield model for this state yet';
 
 const rad = Math.PI / 180, clamp01 = (x) => Math.max(0, Math.min(1, x));
 const toFeature = (o) => ({type: 'Feature', id: o.id, properties: {name: o.name, state: o.state},
@@ -562,8 +565,10 @@ function updateUI() {
     const hasNext = NEXT_AVAILABLE.includes(selCounty.id);
     $('p-next').disabled = !hasNext;
     $('p-next').textContent = hasNext ? 'Next season: what to plant →' : 'Next season: Missing data';
-    $('p-stats').innerHTML = `<div class="proto"><span class="tag">Prototype data</span>Invented placeholder values</div><div class="stats"><div><b>${hasCorn(selCounty) ? pct(m.corn) : 'Missing data'}</b><small>Corn share of cropland</small></div><div><b>${m.top}</b><small>Most common crop</small></div><div><b>${rainText(m.rain)}</b><small>Rain per year</small><span class="seg" role="group" aria-label="Rain units"><button type="button" data-unit="in" aria-pressed="${rainUnit === 'in'}">in</button><button type="button" data-unit="mm" aria-pressed="${rainUnit === 'mm'}">mm</button></span></div></div>`;
-    $('p-twins').textContent = twinMode ? '← Back to county' : 'Counties like yours';
+    if (!hasModel(selState.id)) $('p-state').textContent += ' · No yield model yet';
+    $('p-stats').innerHTML = `<div class="proto"><span class="tag">Prototype data</span>Invented placeholder values</div><div class="stats"><div><b>${hasCorn(selCounty) ? pct(m.corn) : 'Missing data'}</b><small>Corn share of cropland</small></div><div><b>${m.top ?? 'Missing data'}</b><small>Most common crop</small></div><div><b>${m.rain == null ? 'Missing data' : rainText(m.rain)}</b><small>Rain per year</small><span class="seg" role="group" aria-label="Rain units"><button type="button" data-unit="in" aria-pressed="${rainUnit === 'in'}">in</button><button type="button" data-unit="mm" aria-pressed="${rainUnit === 'mm'}">mm</button></span></div></div>`;
+    $('p-twins').disabled = !selCounty.twins.length;
+    $('p-twins').textContent = !selCounty.twins.length ? 'Counties like yours: Missing data' : twinMode ? '← Back to county' : 'Counties like yours';
     $('p-twinlist').innerHTML = '<div class="proto"><span class="tag">Prototype data</span>Similar soil and climate</div><div class="twins">' + selCounty.twins.map((x) =>
       `<button type="button" data-fips="${x.f.id}"><b>${x.f.properties.name}, ${stateById[x.f.properties.state].properties.name}</b><small>Similar on ${x.similar.join(' and ')} · ${x.f.mock.top} on ${pct(x.f.mock.corn > 0.42 ? x.f.mock.corn : 0.3 + x.f.mock.soil * 0.2)} of fields</small></button>`).join('') + '</div>';
     panel.hidden = false;
@@ -572,8 +577,10 @@ function updateUI() {
     const demo = Object.keys(DEMO).find((id) => id.startsWith(selState.id));
     $('p-name').textContent = selState.properties.name;
     $('p-state').textContent = `${n} counties`;
-    $('p-status').textContent = `Demo county: ${DEMO[demo]}`; $('p-status').className = 'ok';
-    $('p-open').disabled = false; $('p-open').textContent = `Go to ${DEMO[demo]} County →`;
+    const model = hasModel(selState.id);
+    $('p-status').textContent = !model ? NO_MODEL : demo ? `Demo county: ${DEMO[demo]}` : 'Next-season options ready · pick a county';
+    $('p-status').className = model ? 'ok' : 'missing';
+    $('p-open').disabled = !demo; $('p-open').textContent = demo ? `Go to ${DEMO[demo]} County →` : 'Pick a county on the map';
     panel.hidden = false;
   } else panel.hidden = true;
 }
@@ -600,7 +607,7 @@ $('p-open').addEventListener('click', () => {
   if (selCounty) {
     emit('open', {fips: selCounty.id});
     location.hash = `#/county/${selCounty.id}?play=1`; // la historia arranca reproduciéndose
-  } else if (selState) flyToCounty(Object.keys(DEMO).find((id) => id.startsWith(selState.id)));
+  } else if (selState) { const demo = Object.keys(DEMO).find((id) => id.startsWith(selState.id)); if (demo) flyToCounty(demo); }
 });
 $('p-next').addEventListener('click', () => {
   if (!selCounty) return;
@@ -625,7 +632,7 @@ function showTip(c, x, y) {
 // ---- buscador de estados y condados (combobox accesible)
 const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\bcounty\b/g, '').replace(/\s+/g, ' ').trim();
 const INDEX = [
-  ...STATES.map((s) => ({kind: 'state', id: s.id, label: s.properties.name, sub: 'State', key: norm(s.properties.name), alt: POSTAL[s.id].toLowerCase()})),
+  ...STATES.map((s) => ({kind: 'state', id: s.id, label: s.properties.name, sub: hasModel(s.id) ? 'State' : 'State · no yield model yet', key: norm(s.properties.name), alt: POSTAL[s.id].toLowerCase()})),
   ...COUNTIES.map((c) => ({kind: 'county', id: c.id, label: `${c.properties.name} County`, sub: stateById[c.properties.state].properties.name, key: norm(c.properties.name), alt: c.id})),
 ];
 let results = [], activeIdx = -1;
