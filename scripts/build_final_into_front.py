@@ -10,7 +10,7 @@ Lee `tabla_anual.zip` y los `tabla_mensual_*.zip` y completa `web/public/data/co
   soil_water   por año: anomalía de la humedad de la zona radicular de abril a septiembre (SMAP L4) y su palabra.
   economics    por año (nuevo): precio recibido (NASS, por estado) y margen operativo / costo por acre (ERS, región
                Heartland: el mismo valor para todo el estado) de maíz, soja y trigo de invierno.
-  outlook      del condado (nuevo): aptitud y rinde alcanzable (FAO GAEZ v4) con el clima 1981–2010 y con el escenario
+  outlook      del condado (nuevo): aptitud y rinde alcanzable (FAO GAEZ v4, en materia seca → grano comercial) con el clima 1981–2010 y con el escenario
                RCP8.5 de 2041–2070, para cinco cultivos. Es un escenario, no un pronóstico.
   crops_pct, transitions y common_rotations: solo en condados SIN mapa del CDL (raster null), a partir de las columnas
                pct_* de tabla_anual (CDL, % del área agrícola). Los que tienen mapa conservan lo calculado del ráster.
@@ -36,6 +36,9 @@ import build_front_data as bfd  # noqa: E402
 D = RAIZ / "data" / "fieldshift_final"
 FICHAS = RAIZ / "web" / "public" / "data" / "county"
 KGHA_A_BUAC = {"corn": 62.77, "soy": 67.25, "wheat": 67.25}  # CLAUDE.md: bushel de 56 y 60 lb
+# El rinde alcanzable de GAEZ viene en kg de MATERIA SECA por ha (diccionario.csv): para pasarlo a grano comercial
+# se divide por la fracción seca a la humedad estándar (maíz 15,5 %, soja y trigo 13 %). Sin esto queda 13–15 % bajo.
+MATERIA_SECA = {"corn": 0.845, "soy": 0.87, "wheat": 0.87}
 
 FUENTE_NDVI = "NASA MODIS · MOD13Q1 · ~1 km"
 FUENTE_SMAP = "NASA SMAP · L4 · 9 km"
@@ -124,9 +127,11 @@ def main() -> None:
             if sin_mapa and clave in maiz.index:
                 r = maiz.loc[clave]
                 if pd.notna(r.pct_maiz) and pd.notna(r.pct_soja):
-                    doble = 0.0 if pd.isna(r.pct_doble_trigo_soja) else float(r.pct_doble_trigo_soja)
-                    mezcla = {"corn": r.pct_maiz, "soy": r.pct_soja, "double_wheat_soy": doble,
-                              "wheat": None if pd.isna(r.pct_trigo) else max(0.0, float(r.pct_trigo) - doble),
+                    # Sin pct_doble_trigo_soja no se sabe cuánto del trigo es doble cultivo: ni el trigo ni el doble se
+                    # escriben (la regla del repo: vacío, nunca 0).
+                    doble = None if pd.isna(r.pct_doble_trigo_soja) else float(r.pct_doble_trigo_soja)
+                    trigo = None if doble is None or pd.isna(r.pct_trigo) else max(0.0, float(r.pct_trigo) - doble)
+                    mezcla = {"corn": r.pct_maiz, "soy": r.pct_soja, "double_wheat_soy": doble, "wheat": trigo,
                               "alfalfa": r.pct_alfalfa, "fallow": r.pct_barbecho, "other": r.pct_heno}
                     y["crops_pct"] = {k: round(float(v), 1) for k, v in mezcla.items() if v is not None and not pd.isna(v)}
                     y["area_by_crop"] = None
@@ -165,8 +170,8 @@ def main() -> None:
                     fila = {"suit_now": num(ahora, 0), "suit_future": num(futuro, 0)}
                     kg0, kg1 = e.get(f"rend_alcanzable_{col}_kgha_1981_2010"), e.get(f"rend_alcanzable_{col}_kgha_2041_2070")
                     if c in KGHA_A_BUAC and pd.notna(kg0) and pd.notna(kg1):
-                        fila["attainable_bu_ac_now"] = num(kg0 / KGHA_A_BUAC[c], 0)
-                        fila["attainable_bu_ac_future"] = num(kg1 / KGHA_A_BUAC[c], 0)
+                        fila["attainable_bu_ac_now"] = num(kg0 / MATERIA_SECA[c] / KGHA_A_BUAC[c], 0)
+                        fila["attainable_bu_ac_future"] = num(kg1 / MATERIA_SECA[c] / KGHA_A_BUAC[c], 0)
                     cult[c] = fila
             if cult:
                 ficha["outlook"] = {"crops": cult, "baseline": "1981–2010", "scenario": "2041–2070 (RCP8.5)",
