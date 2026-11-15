@@ -168,3 +168,36 @@ a {
 .btn:hover,.timeline__btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,42,29,.14)}
 .btn:active,.timeline__btn:active:not(:disabled){transform:translateY(0) scale(.97);box-shadow:none}
 .topbar__nav a:hover{background-color:rgba(47,125,79,.08)}
+
+/* My Farm (F29): botón destacado en la cabecera */
+.topbar__nav a.topbar__farm {
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}
+.topbar__nav a.topbar__farm:hover {
+  background: var(--primary-strong);
+  color: #fff;
+}
+.topbar__nav a.topbar__farm {
+  white-space: nowrap;
+}
+/* Celular: con My Farm, la cabecera deja solo el ícono del logo (el nombre sigue para lectores de pantalla) */
+@media (max-width: 480px) {
+  .topbar {
+    padding-inline: 12px;
+  }
+  .topbar .logo > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .topbar__nav a {
+    padding: 0 9px;
+  }
+}

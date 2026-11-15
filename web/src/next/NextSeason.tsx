@@ -35,12 +35,15 @@ const sequence = (label: string) => label.replace(/\s*→\s*/g, ', then ').repla
 export interface NextSeasonProps {
   data: NextData;
   initialPriorities?: Priority[];
+  /** My Farm (F29): el cultivo que el productor piensa sembrar y la opción que coincide con su rotación */
+  initialCrop?: PlanCrop;
+  farmPlanId?: string | null;
   /** F23: clic en un año de una razón → Historia del condado en ese año */
   onYearClick?: (year: number) => void;
 }
 
-export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities = ['risk'], onYearClick}) => {
-  const [crop, setCrop] = useState<PlanCrop>(data.default_crop);
+export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities = ['risk'], initialCrop, farmPlanId = null, onYearClick}) => {
+  const [crop, setCrop] = useState<PlanCrop>(initialCrop && data.crops[initialCrop] ? initialCrop : data.default_crop);
   const [priorities, setPriorities] = useState<Priority[]>(initialPriorities);
   const [focusId, setFocusId] = useState<string | null>(null); // tarjeta que el usuario abrió
   const [twinSel, setTwinSel] = useState<string | null>(null);
@@ -157,7 +160,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
       {/* TRES OPCIONES, EJE COMÚN EN BU/ACRE */}
       <section className="ns-cards" aria-label="Options for next season" style={{['--n' as string]: options.length}}>
         {options.map((o) => (
-          <OptionCard key={o.id} option={o} axis={axis} usual={usual} suggested={winner?.id === o.id} open={focus.id === o.id} note={lead(o)?.text ?? null} onOpen={() => open(o.id, true)} />
+          <OptionCard key={o.id} option={o} axis={axis} usual={usual} suggested={winner?.id === o.id} mine={farmPlanId === o.id} open={focus.id === o.id} note={lead(o)?.text ?? null} onOpen={() => open(o.id, true)} />
         ))}
       </section>
 
@@ -418,10 +421,11 @@ const OptionCard: React.FC<{
   axis: {min: number; max: number; ticks: number[]};
   usual: number | null;
   suggested: boolean;
+  mine?: boolean;
   open: boolean;
   note: string | null;
   onOpen: () => void;
-}> = ({option: o, axis, usual, suggested, open, note, onOpen}) => {
+}> = ({option: o, axis, usual, suggested, mine = false, open, note, onOpen}) => {
   const y = o.yield_bu_ac;
   const px = (v: number) => ((axis.max - v) / (axis.max - axis.min)) * GAUGE_H;
   // las cifras se corren si el rango es angosto, para que no se pisen; la barra queda en su lugar
@@ -437,6 +441,12 @@ const OptionCard: React.FC<{
           <span>
             <Icon name="star" size={14} />
             Top pick
+          </span>
+        ) : null}
+        {mine ? (
+          <span className="ns-card-mine">
+            <Icon name="pin" size={14} />
+            Your farm's plan
           </span>
         ) : null}
       </p>

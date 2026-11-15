@@ -9,6 +9,8 @@ import { useEffect, useState } from "react";
     #/county/20191?year=2021   historia del condado
     #/county/20191/next        próxima campaña
     #/sources                  fuentes y límites
+    #/farm                     My Farm (tablero, o el formulario si no hay campo guardado)
+    #/farm/edit                My Farm, editar
 */
 export type Route =
   | { name: "home" }
@@ -17,6 +19,7 @@ export type Route =
   | { name: "county"; fips: string }
   | { name: "next"; fips: string }
   | { name: "sources" }
+  | { name: "farm"; edit: boolean }
   | { name: "notfound" };
 
 export interface Location {
@@ -38,6 +41,8 @@ export function parseHash(hash: string): Location {
     if (parts.length === 2) route = { name: "county", fips: parts[1] };
     else if (parts[2] === "next" && parts.length === 3) route = { name: "next", fips: parts[1] };
   } else if (parts[0] === "sources" && parts.length === 1) route = { name: "sources" };
+  else if (parts[0] === "farm" && parts.length === 1) route = { name: "farm", edit: false };
+  else if (parts[0] === "farm" && parts[1] === "edit" && parts.length === 2) route = { name: "farm", edit: true };
   return { route, query };
 }
 

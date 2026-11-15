@@ -5,6 +5,7 @@ import { Missing } from "../ui/Missing";
 import { Icon } from "./icons";
 import { NextSeason } from "./NextSeason";
 import type { NextData } from "./types";
+import { farmOption, loadFarm } from "../farm/farm";
 
 
 /** Pantalla 3 · Next season (ruta #/county/<fips>/next). Lee data/next/<fips>.json. */
@@ -25,6 +26,10 @@ export function NextScreen({ fips }: { fips: string }) {
       cancelled = true;
     };
   }, [fips]);
+
+  // My Farm: si el productor guardó un campo en este condado, la pantalla arranca con su cultivo y sus prioridades
+  const saved = loadFarm();
+  const farm = saved && saved.fips === fips ? saved : null;
 
   if (failed) {
     return (
@@ -70,7 +75,13 @@ export function NextScreen({ fips }: { fips: string }) {
           <span aria-hidden="true"> · </span>Next season
         </span>
       </nav>
-      <NextSeason data={data} onYearClick={(y) => (window.location.hash = `#/county/${data.fips}?year=${y}`)} />
+      <NextSeason
+        data={data}
+        initialCrop={farm?.plan}
+        initialPriorities={farm?.priorities}
+        farmPlanId={farm ? farmOption(data, farm)?.id ?? null : null}
+        onYearClick={(y) => (window.location.hash = `#/county/${data.fips}?year=${y}`)}
+      />
     </div>
   );
 }
