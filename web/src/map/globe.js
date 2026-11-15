@@ -16,7 +16,7 @@ export function setMapActive(on) {
 export function initGlobe() {
 const COL = {night: '#0F2A1D', leaf: '#2F7D4F', glow: '#8ED081', cream: '#F6F1E4'}; // identidad
 const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream);
+const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream), NIGHT = hex(COL.night);
 const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
 const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
 const NEXT_AVAILABLE = ['20191']; // condados con pantalla Next season
@@ -44,6 +44,23 @@ const hasCorn = (c) => c.mock.corn !== null && c.mock.corn !== undefined && c.mo
 for (const c of COUNTIES) c.rgb = hasCorn(c) ? rampColor(c.mock.corn) : [70, 70, 70];
 const MISSING = COUNTIES.filter((c) => !hasCorn(c));
 for (const c of COUNTIES) c.twins = c._twins.map((t) => ({f: countyById[t.id], similar: t.similar}));
+// lugar libre alrededor del centroide, en grados: hasta el borde por izquierda/derecha (a su latitud)
+// y por abajo/arriba (a su longitud). Sirve para saber si el nombre entra adentro del condado.
+function room(rings, [cx, cy], axis) {
+  const hits = [], u = axis, v = 1 - axis, c0 = [cx, cy][v];
+  for (const ring of rings) for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[j], b = ring[i];
+    if ((a[v] > c0) !== (b[v] > c0)) hits.push(a[u] + ((c0 - a[v]) / (b[v] - a[v])) * (b[u] - a[u]));
+  }
+  hits.sort((x, y) => x - y);
+  const m = [cx, cy][u];
+  for (let i = 0; i + 1 < hits.length; i += 2) if (m >= hits[i] && m <= hits[i + 1]) return Math.min(m - hits[i], hits[i + 1] - m);
+  return 0; // el centroide cae afuera (forma muy irregular): no hay lugar
+}
+for (const c of COUNTIES) {
+  const g = c.geometry, rings = g.type === 'Polygon' ? g.coordinates : g.coordinates.flat();
+  c.roomX = room(rings, c.centroid, 0); c.roomY = room(rings, c.centroid, 1);
+}
 const DEMO = D.demo, START = D.start, HOME = D.home;
 const ARGENTINA = [{type: 'Feature', properties: {}, geometry: D.argentina}];
 const COUNTY_K = 3.2;
@@ -262,11 +279,20 @@ function buildLayers(a) {
         getLineColor: [selState && selState.id], getLineWidth: [selState && selState.id, hoverState && hoverState.id]}}),
   ];
   if (a > 0.01) {
+    // con el mapa lejos (gemelos) los condados miden pocos px: el borde se afina para no tapar el color
+    const countyPx = base * R.k * rad * 0.45, edge = Math.max(1.5, Math.min(3, countyPx / 12));
     layers.push(
       new GeoJsonLayer({id: 'counties', data: COUNTIES, opacity: a, filled: true, stroked: true,
-        pickable: R.k > COUNTY_K + 0.6, lineWidthUnits: 'pixels', getLineWidth: 1, getLineColor: [...CREAM, 150],
-        getFillColor: (f) => [...f.rgb, twinSet && f !== selCounty && !twinSet.has(f) ? 70 : 255],
-        updateTriggers: {getFillColor: [twinMode, selCounty && selCounty.id]}}),
+        pickable: R.k > COUNTY_K + 0.6, lineWidthUnits: 'pixels', getLineWidth: edge, getLineColor: NIGHT,
+        updateTriggers: {getFillColor: [twinMode, selCounty && selCounty.id], getLineWidth: edge},
+        getFillColor: (f) => [...f.rgb, twinSet && f !== selCounty && !twinSet.has(f) ? 70 : 255]}),
+      // borde doble: Papel fino sobre Verde noche, así siempre contrasta uno de los dos con la rampa
+      new GeoJsonLayer({id: 'county-lines', data: COUNTIES, opacity: a, filled: false, stroked: true,
+        lineWidthUnits: 'pixels', getLineWidth: edge / 3, getLineColor: CREAM, updateTriggers: {getLineWidth: edge}}),
+      new GeoJsonLayer({id: 'state-edge-dark', data: STATES, opacity: a, filled: false, stroked: true,
+        lineWidthUnits: 'pixels', getLineWidth: 5, getLineColor: NIGHT}),
+      new GeoJsonLayer({id: 'state-edge', data: STATES, opacity: a, filled: false, stroked: true,
+        lineWidthUnits: 'pixels', getLineWidth: 3, getLineColor: CREAM}),
       new GeoJsonLayer({id: 'county-hover', data: one('hover', hoverCounty), filled: true, stroked: true,
         lineWidthUnits: 'pixels', getFillColor: [255, 255, 255, 64], getLineColor: CREAM, getLineWidth: 1.5}),
       new GeoJsonLayer({id: 'county-selected', data: one('sel', selCounty), filled: false, stroked: true,
@@ -292,20 +318,23 @@ function buildLayers(a) {
     for (const s of STATES) if (front(s.centroid))
       LABELS.push({p: s.centroid, text: s.properties.name.toUpperCase(), size, alpha: al, caps: true});
   }
-  if (a > 0.3) for (const id of Object.keys(DEMO)) {
-    const c = countyById[id]; if (!front(c.centroid)) continue;
-    LABELS.push({p: c.centroid, text: c.properties.name, size: R.k > 20 ? 20 : 15, alpha: clamp01((a - 0.3) / 0.3), county: c});
+  // nombres de condado centrados en su centroide. Prioridad: seleccionado, gemelos, demo, el resto.
+  // Seleccionado, gemelos y demo se muestran siempre; el resto solo si entra adentro de su condado.
+  // Con gemelos solo se nombran el seleccionado y sus gemelos, debajo del punto donde llega el arco.
+  if (a > 0.3) {
+    const size = R.k > 20 ? 20 : 15, alpha = clamp01((a - 0.3) / 0.3);
+    const add = (c, prio) => { if (front(c.centroid)) LABELS.push({p: c.centroid, text: c.properties.name, size, alpha, county: c, prio, dy: twinMode ? 14 : 0}); };
+    if (twinMode && selCounty) { add(selCounty, 0); for (const x of selCounty.twins) add(x.f, 1); }
+    else {
+      if (selCounty) add(selCounty, 0);
+      for (const id of Object.keys(DEMO)) if (countyById[id] !== selCounty) add(countyById[id], 2);
+      for (const c of COUNTIES) if (c !== selCounty && !DEMO[c.id]) add(c, 3);
+    }
+    LABELS.sort((x, y) => (x.prio ?? -1) - (y.prio ?? -1));
   }
-  if (twinMode && selCounty) for (const x of [{f: selCounty}, ...selCounty.twins])
-    if (!DEMO[x.f.id]) LABELS.push({p: x.f.centroid, text: x.f.properties.name, size: 15, alpha: 1, dy: -18});
   return layers;
 }
 
-function halfHeightPx(c) {
-  if (!viewport) return 10;
-  const [[x0, y0], [x1, y1]] = c.bounds;
-  return Math.abs(viewport.project([x0, y0])[1] - viewport.project([x1, y1])[1]) / 2;
-}
 function globeRadiusPx() {
   if (!viewport || R.k > 8) return base * R.k;
   let best = 0;
@@ -347,15 +376,42 @@ function label(c, text, x, y, size, fill, weight = 700, family = 'DM Sans') {
   c.textAlign = 'center'; c.textBaseline = 'middle'; c.letterSpacing = '0px';
   shadowText(c, text, x, y, fill);
 }
+const textW = new Map();
+function measure(c, text, size) {
+  const key = size + '|' + text;
+  if (!textW.has(key)) textW.set(key, c.measureText(text).width);
+  return textW.get(key);
+}
+function screenRect(f) { // caja del condado en pantalla
+  const [[x0, y0], [x1, y1]] = f.bounds, [ax, ay] = viewport.project([x0, y0]), [bx, by] = viewport.project([x1, y1]);
+  return [Math.min(ax, bx), Math.min(ay, by), Math.max(ax, bx), Math.max(ay, by)];
+}
+const overlaps = (r, s) => r[0] < s[2] && r[2] > s[0] && r[1] < s[3] && r[3] > s[1];
 function drawLabels(c) {
+  const placed = [], selBox = selCounty && R.k > COUNTY_K ? screenRect(selCounty) : null;
+  // los nombres que quedarían debajo de la barra de arriba o del panel no se dibujan
+  const cover = ['top', 'panel', 'legend'].map((id) => $(id)).filter((el) => el && !el.hidden && el.offsetWidth)
+    .map((el) => { const q = el.getBoundingClientRect(); return [q.left, q.top, q.right, q.bottom]; });
   for (const l of LABELS) {
-    const [x, y] = viewport.project(l.p);
-    const dy = l.county ? -(halfHeightPx(l.county) + 16) : l.dy || 0;
-    c.globalAlpha = l.alpha;
+    const [x, y0] = viewport.project(l.p), y = y0 + (l.dy || 0);
     c.font = `700 ${l.size}px "DM Sans", system-ui, sans-serif`;
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.letterSpacing = l.caps ? `${(l.size * 0.08).toFixed(1)}px` : '0px';
-    shadowText(c, l.text, x, y + dy, COL.cream);
+    if (l.county) {
+      const w = measure(c, l.text, l.size), h = l.size * 1.1, f = l.county, [cx, cy] = f.centroid;
+      if (l.prio === 3) { // el resto: solo si entra en el condado, con 15 % de aire
+        const rx = Math.abs(viewport.project([cx + f.roomX, cy])[0] - viewport.project([cx - f.roomX, cy])[0]);
+        const ry = Math.abs(viewport.project([cx, cy + f.roomY])[1] - viewport.project([cx, cy - f.roomY])[1]);
+        if (w > rx * 0.85 || h > ry * 0.85) continue;
+      }
+      const r = [x - w / 2 - 2, y - h / 2, x + w / 2 + 2, y + h / 2];
+      if (r[0] < 0 || r[2] > W || cover.some((s) => overlaps(r, s))) continue;
+      if (placed.some((s) => overlaps(r, s))) continue; // choca con uno de más prioridad: se oculta
+      if (selBox && f !== selCounty && overlaps(r, selBox)) continue; // no tapa el contorno del seleccionado
+      placed.push(r);
+    }
+    c.globalAlpha = l.alpha;
+    shadowText(c, l.text, x, y, COL.cream);
   }
   c.globalAlpha = 1; c.letterSpacing = '0px';
 }
