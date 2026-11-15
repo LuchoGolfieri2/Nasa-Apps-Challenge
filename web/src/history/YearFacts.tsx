@@ -119,3 +119,52 @@ export function YearFacts({ county, y }: { county: County; y: CountyYear }) {
     </dl>
   );
 }
+
+/**
+ * Rinde y clima del año en dos líneas, para la columna junto al mapa. El detalle (y lo que falta) está en
+ * YearFacts, más abajo. Lo que no hay se escribe como faltante.
+ */
+export function YearLines({ county, y }: { county: County; y: CountyYear }) {
+  const crops = y.yield ? (Object.keys(YIELD_NAME) as (keyof typeof YIELD_NAME)[]).filter((c) => y.yield!.crops[c]) : [];
+  return (
+    <div className="lines">
+      {y.yield && crops.length ? (
+        <p>
+          {crops.map((c, i) => {
+            const v = y.yield!.crops[c]!;
+            return (
+              <span key={c}>
+                {i ? " · " : null}
+                {YIELD_NAME[c]} <b>{v.bu_ac}</b> bu/acre
+                {v.vs_usual ? ` (${VS_USUAL[v.vs_usual].toLowerCase()})` : null}
+              </span>
+            );
+          })}
+        </p>
+      ) : (
+        <Missing
+          inline
+          what={
+            county.years.some((v) => v.yield)
+              ? `no county yield for ${y.year}`
+              : `county yield (USDA NASS) is not loaded for ${county.name} County yet`
+          }
+        />
+      )}
+      {y.weather ? (
+        <p>
+          <b>{y.weather.season_rain_in}</b> in of rain, April to September · July highs <b>{y.weather.july_tmax_f}</b> °F
+        </p>
+      ) : (
+        <Missing
+          inline
+          what={
+            county.years.some((v) => v.weather)
+              ? `no weather record for ${y.year}`
+              : `rain and temperature (NASA POWER) are not loaded for ${county.name} County yet`
+          }
+        />
+      )}
+    </div>
+  );
+}
