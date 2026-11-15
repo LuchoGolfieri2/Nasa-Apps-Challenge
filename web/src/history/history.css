@@ -505,6 +505,12 @@
   background: var(--surface-1);
   border-block: 1px solid var(--line);
 }
+/* Red de seguridad en pantallas bajas: si el escenario no entra, la línea de tiempo queda pegada abajo */
+@media (min-width: 1101px) {
+  .history__bar {
+    bottom: 0;
+  }
+}
 .timeline {
   flex: 1;
   min-width: 0;

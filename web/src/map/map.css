@@ -24,14 +24,6 @@
 .maplayer #home svg{height:26px;width:auto}
 .maplayer #home b{font:800 21px/1 var(--display);letter-spacing:-.01em}
 .maplayer #home b span{font-weight:500}
-.maplayer #nav{display:flex;align-items:center;font-size:14px}
-body[data-level="globe"] .maplayer #nav{display:none}
-.maplayer #back,.maplayer #crumbs button{min-height:44px;padding:0 8px;background:none;border:0;color:var(--ink-2)}
-.maplayer #back{font-weight:700;color:#fff;margin-right:8px;padding:0 14px;border-radius:999px;background:var(--glass-bg);border:1px solid var(--glass-line);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:var(--glass-shadow);text-shadow:var(--glass-text-shadow)}
-.maplayer #crumbs{text-shadow:var(--glass-text-shadow)}
-.maplayer #crumbs{display:flex;align-items:center}
-.maplayer #crumbs i{font-style:normal;color:var(--ink-3)}
-.maplayer #crumbs span{padding:0 8px;font-weight:700}
 
 /* Tarjeta del condado: nace del punto del clic y queda al lado del condado. #card se mueve con el mapa
    (un transform por cuadro, desde globe.js); #card-box es la superficie que escala y se desvanece.
@@ -79,12 +71,17 @@ body[data-level="globe"] .maplayer #nav{display:none}
 .maplayer .btn:disabled{background:rgba(15,42,29,.06);border-color:transparent;color:var(--ink-3);cursor:not-allowed}
 .maplayer .btn:not(:disabled):active{transform:scale(.96)}
 
-/* Buscador: un campo sólido en la barra de arriba, con su lista debajo. */
+/* Buscador: arriba a la derecha, un botón redondo con la lupa. Al tocarlo (foco) se abre hacia la
+   izquierda en un campo; con texto escrito queda abierto. */
 .maplayer .sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-.maplayer #search{position:relative;width:280px}
-.maplayer #q{width:100%;min-height:40px;padding:0 16px;border:1px solid var(--glass-line);border-radius:999px;background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:var(--glass-shadow);color:#fff;font:500 14px var(--text);text-shadow:var(--glass-text-shadow)}
-.maplayer #q::placeholder{color:rgba(255,255,255,.82)}
-.maplayer #q-list{position:absolute;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px 0;list-style:none;max-height:320px;overflow:auto;overscroll-behavior:contain;background:#fff;border:1px solid var(--rule);border-radius:16px;box-shadow:var(--shadow-card)}
+.maplayer #search{position:relative;order:2;margin-left:auto;display:flex;justify-content:flex-end}
+.maplayer #search .q-ico{position:absolute;z-index:1;right:12px;top:50%;transform:translateY(-50%);color:#fff;pointer-events:none;filter:drop-shadow(var(--glass-text-shadow))}
+.maplayer #q{width:44px;min-height:44px;padding:0 0 0 44px;border:1px solid var(--glass-line);border-radius:999px;background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:var(--glass-shadow);color:#fff;font:500 14px var(--text);text-shadow:var(--glass-text-shadow);cursor:pointer;transition:width .22s cubic-bezier(.4,0,.2,1),padding .22s cubic-bezier(.4,0,.2,1)}
+.maplayer #q::placeholder{color:transparent}
+.maplayer #q::-webkit-search-cancel-button{display:none}
+.maplayer #q:focus,.maplayer #q:not(:placeholder-shown){width:280px;padding:0 44px 0 16px;cursor:text}
+.maplayer #q:focus::placeholder{color:rgba(255,255,255,.82)}
+.maplayer #q-list{position:absolute;right:0;width:280px;top:calc(100% + 4px);margin:0;padding:4px 0;list-style:none;max-height:320px;overflow:auto;overscroll-behavior:contain;background:#fff;border:1px solid var(--rule);border-radius:16px;box-shadow:var(--shadow-card)}
 .maplayer #q-list[hidden]{display:none}
 .maplayer #q-list li{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:40px;padding:10px 12px;font-size:14px;cursor:pointer}
 .maplayer #q-list li small{flex:none;font-size:12px;color:var(--ink-2)}
@@ -114,7 +111,7 @@ body:not([data-level="globe"]) .maplayer #start{opacity:0;pointer-events:none}
 body.landing .maplayer #landing{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .4s ease-out,visibility 0s}
 .maplayer #landing .logo{display:flex;align-items:center;gap:clamp(14px,2.2vw,28px)}
 .maplayer #landing svg{height:clamp(52px,8vw,104px);width:auto}
-.maplayer #landing h1{margin:0;font:800 clamp(44px,7.5vw,104px)/1 var(--display);letter-spacing:-.02em}
+.maplayer #landing h1{margin:0;color:#fff;font:800 clamp(44px,7.5vw,104px)/1 var(--display);letter-spacing:-.02em}
 .maplayer #landing h1 span{font-weight:500}
 .maplayer #landing p{margin:0;font-size:clamp(18px,2vw,26px);color:var(--ink-2)}
 .maplayer #enter{margin-top:12px;min-height:52px;padding:0 36px;font-size:17px}
@@ -124,8 +121,7 @@ body.landing .maplayer #landing{opacity:1;visibility:visible;pointer-events:auto
 body.landing .maplayer .ui:not(#landing){opacity:0;pointer-events:none;transition:none}
 
 @media (hover:hover){
-  .maplayer #home:hover b,.maplayer #crumbs button:hover{color:var(--sprout)}
-  .maplayer #back:hover{background:rgba(255,255,255,.34)}
+  .maplayer #home:hover b{color:var(--sprout)}
   .maplayer .btn:not(:disabled):hover{border-color:rgba(15,42,29,.4)}
   .maplayer .btn.primary:not(:disabled):hover{background:#1F5B3A}
   .maplayer #c-close:hover{color:var(--paper);background-color:rgba(15,42,29,.06)}
@@ -142,14 +138,16 @@ body.landing .maplayer .ui:not(#landing){opacity:0;pointer-events:none;transitio
 }
 /* al volver de otra pantalla el mapa aparece ya armado, sin fundidos */
 body.map-now .maplayer .ui,body.map-now .maplayer #landing{transition:none!important}
-body.recording .maplayer .ui:not(#top),body.recording .maplayer #nav{display:none!important}
+body.recording .maplayer .ui:not(#top){display:none!important}
 body.recording .maplayer #home{pointer-events:none}
 @media (max-width:760px){
   .maplayer #top{padding:10px 16px 28px;gap:8px 12px;flex-wrap:wrap}
-  .maplayer #search{order:3;width:100%}
+  /* fijo en la esquina: abierto tapa la barra mientras se escribe, en vez de bajar a otra fila */
+  .maplayer #search{position:absolute;top:10px;right:16px;z-index:1}
+  .maplayer #top{padding-right:68px}
+  .maplayer #q:focus,.maplayer #q:not(:placeholder-shown){width:min(280px,calc(100vw - 32px))}
+  .maplayer #q-list{width:min(280px,calc(100vw - 32px))}
   .maplayer #home b{font-size:18px;white-space:nowrap}
-  .maplayer #crumbs{display:none}
-  .maplayer #back{white-space:nowrap}
   .maplayer #legend{display:none}
   /* la tarjeta se apoya abajo, a todo el ancho (nace igual del punto tocado) */
   .maplayer #card{right:0;top:auto;bottom:0;width:auto;transform:none!important}
@@ -170,18 +168,17 @@ body.recording .maplayer #home{pointer-events:none}
 .maplayer #card-box,.maplayer #legend,.maplayer #tip,.maplayer #q-list{
   --paper:#12271B;--ink-2:rgba(18,39,27,.74);--ink-3:rgba(18,39,27,.56);--rule:rgba(15,42,29,.12);color:#12271B}
 
-/* Selector "Color by" (globe.js): botón de vidrio abajo a la izquierda; la lista de capas se abre hacia arriba.
-   La leyenda sube para dejarle lugar. */
-.maplayer #legend{bottom:100px}
-.maplayer #layers{left:24px;bottom:36px;z-index:3}
+/* Abajo a la izquierda, apilados (globe.js los mete en #dock): el selector "Color by" arriba y la leyenda
+   debajo. Los dos son cuadros blancos; la lista de capas se abre hacia arriba. */
+.maplayer #dock{left:24px;bottom:36px;z-index:3;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.maplayer #dock>.ui{position:relative;left:auto;bottom:auto}
 .maplayer #layers-btn{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px 0 8px;border-radius:999px;
-  background:var(--glass-bg);border:1px solid var(--glass-line);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
-  box-shadow:var(--glass-shadow);color:#fff;font:inherit;cursor:pointer;transition:background-color .15s ease-out,transform .15s ease-out}
+  background:#fff;border:1px solid rgba(15,42,29,.12);box-shadow:var(--shadow-card);color:#12271B;font:inherit;cursor:pointer;transition:background-color .15s ease-out,transform .15s ease-out}
 .maplayer #layers-btn:active{transform:scale(.97)}
 .maplayer #layers-btn .ico{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--crop,#8ED081);color:#0F2A1D}
 .maplayer #layers-btn .ico svg,.maplayer #layers-menu .ico svg{width:22px;height:22px}
-.maplayer #layers-btn .txt{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;text-shadow:var(--glass-text-shadow)}
-.maplayer #layers-btn small{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.maplayer #layers-btn .txt{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.maplayer #layers-btn small{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:rgba(18,39,27,.56)}
 .maplayer #layers-btn b{font-size:15px;font-weight:700}
 .maplayer #layers-btn .chev{margin-left:2px;transition:transform .2s ease-out}
 .maplayer #layers-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
@@ -200,14 +197,12 @@ body.recording .maplayer #home{pointer-events:none}
 .maplayer #layers-menu [aria-checked="true"] .ico{background:var(--crop);box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--crop)}
 .maplayer #layers-menu [role=radio]:focus-visible,.maplayer #layers-btn:focus-visible{outline:3px solid var(--sprout,#8ED081);outline-offset:2px}
 @media (hover:hover){
-  .maplayer #layers-btn:hover{background:rgba(255,255,255,.34)}
+  .maplayer #layers-btn:hover{background:#F3F5F1}
   .maplayer #layers-menu [role=radio]:hover{background:rgba(15,42,29,.05)}
 }
 @media (max-width:760px){
-  .maplayer #layers{left:12px;bottom:16px}
+  .maplayer #dock{left:12px;bottom:16px}
   .maplayer #layers-btn .txt small{display:none}
 }
 @media (prefers-reduced-motion:reduce){.maplayer #layers-menu{animation:none}}
 .maplayer #legend .t.wrap{flex-wrap:wrap;white-space:normal;row-gap:2px}
-/* con la lista abierta la leyenda se aparta (si no, quedan una sobre otra) */
-.maplayer:has(#layers-menu:not([hidden])) #legend{opacity:0;pointer-events:none;transition:opacity .12s ease-out}

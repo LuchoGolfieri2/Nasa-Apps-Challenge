@@ -37,12 +37,13 @@ function rgb(hex: string): [number, number, number] {
 }
 
 /** Tabla clase -> color (ABGR, como lo espera ImageData). Lo no resaltado se funde con el fondo. */
-export function buildLut(highlight: CropId | null, dimAll = false): Uint32Array {
+export function buildLut(highlight: CropId | readonly CropId[] | null, dimAll = false): Uint32Array {
+  const lit = highlight === null ? null : typeof highlight === "string" ? [highlight] : highlight;
   const lut = new Uint32Array(256);
   CLASS_ORDER.forEach((cls, i) => {
     if (cls === "nodata") return; // transparente
     let [r, g, b] = rgb(cls === "non_ag" ? NON_AG_COLOR : CROP_COLOR[cls]);
-    if (cls !== "non_ag" && (dimAll || (highlight && cls !== highlight))) {
+    if (cls !== "non_ag" && (dimAll || (lit && !lit.includes(cls)))) {
       const k = 0.82;
       r = Math.round(r + (NIGHT[0] - r) * k);
       g = Math.round(g + (NIGHT[1] - g) * k);
@@ -63,7 +64,8 @@ interface Props {
   index: number;
   playing: boolean;
   between: boolean;
-  highlight: CropId | null;
+  /** Cultivo (o grupo, como "Other crops") que queda encendido; el resto se funde con el fondo. */
+  highlight: CropId | readonly CropId[] | null;
   countyName: string;
   /** Controles extra sobre el mapa (la guía de lectura). */
   overlay?: React.ReactNode;
@@ -471,6 +473,8 @@ export function CdlMap({
       </div>
       {placement ? controls : null}
       {placement ? tipEl : null}
+      {/* Sobre el globo no va epígrafe: la fuente ya figura en "Acres by crop" */}
+      {placement ? null : (
       <figcaption>
         <span>
           {showChanges
@@ -491,6 +495,7 @@ export function CdlMap({
         </button>
         <SourceChip source={info.source} />
       </figcaption>
+      )}
     </figure>
   );
 }

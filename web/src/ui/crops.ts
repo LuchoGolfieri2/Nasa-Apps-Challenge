@@ -53,6 +53,21 @@ export const CROP_LABEL: Record<CropId, string> = {
   other: "Other crops",
 };
 
+/** Un cultivo tiene fila propia en "Acres by crop" si alguna vez pasó este % de la superficie con cultivo. */
+export const CHART_MIN_PCT = 2;
+
+/**
+ * Filas de "Acres by crop": los cultivos que alguna vez pasaron CHART_MIN_PCT van solos; el resto
+ * (y siempre la clase "other" del CDL) se suma en la fila "Other crops".
+ */
+export function splitChartCrops(years: { crops_pct?: Partial<Record<CropId, number>> | null }[]): {
+  main: CropId[];
+  grouped: CropId[];
+} {
+  const main = CROPS.filter((c) => c !== "other" && years.some((y) => (y.crops_pct?.[c] ?? 0) >= CHART_MIN_PCT));
+  return { main, grouped: CROPS.filter((c) => !main.includes(c)) };
+}
+
 export const CROP_NOTE: Partial<Record<CropId, string>> = {
   double_wheat_soy: "Two crops in one year: winter wheat, then soybeans.",
   fallow: "Cropland left unplanted that year.",

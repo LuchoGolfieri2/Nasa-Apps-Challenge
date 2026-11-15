@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { replaceQuery } from "../app/router";
 import { loadCounty } from "../data/load";
 import type { County, CountyYear, RasterInfo } from "../data/types";
 import type { CropId } from "../ui/crops";
-import { CROPS, CROP_COLOR, CROP_LABEL } from "../ui/crops";
+import { CROPS, CROP_COLOR, CROP_LABEL, splitChartCrops } from "../ui/crops";
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 import { BarRace } from "./BarRace";
@@ -39,6 +39,29 @@ export function HistoryScreen({
   const slot = useRef<HTMLDivElement>(null);
   const [cdlView, setCdlView] = useState<CdlView>({ k: 1, x: 0, y: 0 });
   const autoplay = useRef(query.get("play") === "1");
+  /** La línea de tiempo tiene que verse al cargar: se mide lo que hay arriba y abajo del escenario y él ocupa el resto */
+  const page = useRef<HTMLElement>(null);
+  const eyebrow = useRef<HTMLElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const main = page.current;
+    const top = eyebrow.current;
+    const bottom = bar.current;
+    if (!main || !top || !bottom) return;
+    const fit = () => {
+      const above = top.getBoundingClientRect().bottom + window.scrollY;
+      main.style.setProperty("--chrome", `${Math.ceil(above + bottom.offsetHeight + 12)}px`);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(top);
+    ro.observe(bottom);
+    window.addEventListener("resize", fit);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", fit);
+    };
+  }, [county]);
   const stepMs = useMemo(() => {
     const s = Number(query.get("speed"));
     return (s >= 0.2 && s <= 10 ? s : DEFAULT_STEP_S) * 1000;
@@ -134,6 +157,9 @@ export function HistoryScreen({
   );
 
   const lit = highlight ?? pinned;
+  // "Other crops" del gráfico enciende en el mapa todos los cultivos que suma
+  const grouped = splitChartCrops(county.years).grouped;
+  const mapLit = lit === "other" ? grouped : lit;
   // Con la ubicación del ráster, el mapa del CDL va sobre el globo; sin ella, como antes.
   const onGlobe = !!county.raster?.origin;
   const rewind = () => {
@@ -203,8 +229,8 @@ export function HistoryScreen({
   );
 
   return (
-    <main className="history">
-      <nav className="history__eyebrow" aria-label="County">
+    <main className="history" ref={page}>
+      <nav className="history__eyebrow" aria-label="County" ref={eyebrow}>
         <a
           className="history__back solid-btn"
           href={`#/map/${county.fips}`}
@@ -252,7 +278,7 @@ export function HistoryScreen({
                   index={index}
                   playing={playing}
                   between={between}
-                  highlight={lit}
+                  highlight={mapLit}
                   countyName={county.name}
                   overlay={guide}
                   placement={placement}
@@ -278,7 +304,7 @@ export function HistoryScreen({
               index={index}
               playing={playing}
               between={between}
-              highlight={lit}
+              highlight={mapLit}
               countyName={county.name}
               overlay={guide}
             />
@@ -305,7 +331,6 @@ export function HistoryScreen({
               ))}
             </ul>
           </div>
-          <YearTiles county={county} y={current} />
           {county.raster ? (
             <div className="story-card">
               <BarRace
@@ -321,10 +346,11 @@ export function HistoryScreen({
               />
             </div>
           ) : null}
+          <YearTiles county={county} y={current} />
         </div>
       </div>
 
-      <div className="history__bar">
+      <div className="history__bar" ref={bar}>
         <Timeline
           years={years}
           pb={pb}
