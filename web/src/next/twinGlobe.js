@@ -1,8 +1,8 @@
 // Pantalla 3 · globo chico de "Counties like yours": el mismo globo deck.gl del mapa (GlobeView + Blue Marble
 // de la NASA), enfocado en el condado y sus condados parecidos, con un arco hacia cada uno.
 // Es una instancia aparte del globo de la pantalla 1 (src/map/globe.js no se toca). La geometría de los
-// condados sale de src/map/globe-data.json; de ese archivo NO se usan los valores de prueba (color, gemelos):
-// los condados parecidos son los reales de data/next/<fips>.json y llegan por update().
+// condados sale de src/map/globe-data.json (solo los contornos); los condados parecidos son los reales de
+// data/next/<fips>.json y llegan por update().
 import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
 import {ArcLayer, BitmapLayer, GeoJsonLayer, SolidPolygonLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
@@ -40,7 +40,9 @@ function fit(points, width, height) {
   // En GlobeView, a zoom z y latitud φ, un grado de arco mide 512·2^z / (360·cos φ) px (GlobeViewport: scaleAdjust).
   // El conjunto ocupa cerca de la mitad del cuadro, así entran los nombres y la curva de los arcos.
   const pxPerDeg = (512 / 360) / Math.cos((lat * Math.PI) / 180);
-  const z = Math.min(Math.log2((width * 0.5) / (pxPerDeg * spanX)), Math.log2((height * 0.36) / (pxPerDeg * spanY)));
+  // En pantallas angostas el grupo ocupa menos ancho: el nombre del condado va a su izquierda y si no, se corta
+  const fx = Math.min(0.5, Math.max(0.3, (width - 240) / width));
+  const z = Math.min(Math.log2((width * fx) / (pxPerDeg * spanX)), Math.log2((height * 0.36) / (pxPerDeg * spanY)));
   return {longitude: lon, latitude: lat, zoom: Math.max(2.5, Math.min(7, z))};
 }
 

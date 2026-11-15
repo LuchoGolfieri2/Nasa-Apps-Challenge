@@ -40,6 +40,7 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, allTwins, twins, vi
   const pointsRef = useRef(points);
   pointsRef.current = points;
   const [ready, setReady] = useState(false);
+  const readyRef = useRef(false); // onFrame corre en cada cuadro: el estado se toca una sola vez
 
   useEffect(() => {
     if (!gl || !box.current) return;
@@ -55,7 +56,10 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, allTwins, twins, vi
           el.style.display = xy ? '' : 'none';
           if (xy) el.style.transform = `translate(${xy[0].toFixed(1)}px, ${xy[1].toFixed(1)}px)`;
         });
-        setReady(true);
+        if (!readyRef.current) {
+          readyRef.current = true;
+          setReady(true);
+        }
       },
     });
     globe.current = g;
