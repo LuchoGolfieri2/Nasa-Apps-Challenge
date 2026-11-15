@@ -4,7 +4,7 @@ import { MapLayer } from "../map/MapLayer";
 import { NextScreen } from "../next/NextScreen";
 import { SourcesScreen } from "../sources/SourcesScreen";
 import { FarmScreen } from "../farm/FarmScreen";
-import { ArgentinaScreen } from "../argentina/ArgentinaScreen";
+import { DeptScreen } from "../argentina/DeptScreen";
 import { useLocation } from "./router";
 import "./app.css";
 
@@ -38,9 +38,6 @@ export function App() {
             <Logo />
             <nav className="topbar__nav" aria-label="Main">
               <a href="#/map">Map</a>
-              <a href="#/argentina" aria-current={route.name === "argentina" ? "page" : undefined}>
-                Argentina
-              </a>
               <a href="#/sources" className="topbar__sources">
                 Sources<span className="topbar__long"> &amp; limits</span>
               </a>
@@ -56,8 +53,8 @@ export function App() {
             <NextScreen key={route.fips} fips={route.fips} />
           ) : route.name === "sources" ? (
             <SourcesScreen />
-          ) : route.name === "argentina" ? (
-            <ArgentinaScreen id={route.id} />
+          ) : route.name === "depto" ? (
+            <DeptScreen key={route.id} id={route.id} />
           ) : route.name === "farm" ? (
             <FarmScreen edit={route.edit} />
           ) : (

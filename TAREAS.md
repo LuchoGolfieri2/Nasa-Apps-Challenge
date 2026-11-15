@@ -87,7 +87,7 @@ Ejemplo:
 ## Pantalla 1 · Mapa
 
 - [x] ~~**F39** Argentina en la interfaz: pantalla `#/argentina` con el mapa de los 219 departamentos por zona, la ficha de cada uno (rinde del MAGyP contra sus análogos de EE. UU., clima de Buenos Aires, suelo) y enlaces a los condados análogos. Sin predicción, según `docs/argentina-front.md`~~ · ✅ Lucho/Claude
-  - Hecho (15/11): `web/src/argentina/`. Mapa plano (SVG, sin WebGL) de los 219 departamentos, pintado por zona o por rinde ÷ análogos de EE. UU. (maíz, soja, trigo); selector por provincia; ficha con zona y aviso, "No yield estimate", rinde contra el rango p10–p90 de los 3 análogos, serie del MAGyP 2001–2025, clima de Buenos Aires (octubre–marzo), suelo SoilGrids contra el primer análogo y enlaces a la historia de los análogos. Entradas: "Argentina" en la barra de arriba y en el globo. Revisado a 1920×1080 y 390×844: sin scroll horizontal y axe AA sin fallas.
+  - Hecho (15/11), rehecho a pedido de Lucho: **Argentina entra al globo igual que EE. UU.**, sin botón ni pantalla aparte. Las 5 provincias se encienden como los estados; al tocar una baja la cámara y aparecen sus departamentos pintados por rinde de maíz (MAGyP, escala propia) o por superficie sembrada; cada departamento abre su tarjeta y "See more" (`#/depto/<id>`). Datos del globo: `scripts/build_globe_argentina.py`. Detalle en `docs/argentina-front.md`.
 - [x] ~~**F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar~~ · ✅ Naim
   - Archivos: `web/src/map/globe.js` (deck.gl + Blue Marble de GIBS)
   - Sin latido: el resaltado es fijo, porque un latido parece un dato en vivo y no lo es. Gira solo a 3°/s tras 3 s sin tocarlo.
