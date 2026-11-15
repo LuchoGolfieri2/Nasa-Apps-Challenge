@@ -94,7 +94,7 @@ El nombre en inglés de cada pantalla es el que va en la interfaz; el español e
 
 ## 4. Contrato de datos
 
-**Dónde:** ML escribe todo en `data/ml/front/`. El front lo copia o lo sirve como archivos estáticos.
+**Dónde:** ML escribe todo en `backend/Datos/front/`. El front lo copia o lo sirve como archivos estáticos.
 No hay API en vivo.
 
 **Reglas de todos los archivos (FIRME):**
@@ -222,7 +222,7 @@ Fuentes previstas para la idea 1:
 ### 4.6 `escenarios_rotacion.json` y `clima_condado/` (PROVISORIO)
 
 - `escenarios_rotacion.json`: una fila por `fips`, `rotacion`, `cultivo` y `anio_clima`, con `pred`,
-  `p10` y `p90` en bu/ac. Son las mismas columnas que `data/ml/escenarios_rotacion.csv` del CLAUDE.md
+  `p10` y `p90` en bu/ac. Son las mismas columnas que `backend/Datos/escenarios_rotacion.csv` del CLAUDE.md
   de ML. Los ids de `rotacion` todavía no están definidos.
 - `clima_condado/<fips>.json`: sin formato todavía. Maquetá la franja con datos de prueba.
 
@@ -345,7 +345,7 @@ visible sale de `textos.json`.
 | Versión | Fecha | Cambio |
 |---|---|---|
 | 0.2 | 2026-11-14 | La interfaz va en inglés (firme). `textos.json` solo en inglés. |
-| 0.2 | 2026-11-14 | Nuevo `data/ml/front/anomalias.json` (punto 4: rinde contra un año normal, causa y titular por año). Regla 5: la app sugiere según prioridades; los textos de ML no recomiendan. |
+| 0.2 | 2026-11-14 | Nuevo `backend/Datos/front/anomalias.json` (punto 4: rinde contra un año normal, causa y titular por año). Regla 5: la app sugiere según prioridades; los textos de ML no recomiendan. |
 | 0.1 | 2026-11-14 | Primera versión: lotes, sectores, fuentes y datos de prueba. Ficha del sector, escenarios y clima, provisorios. |
 
 ### Pedidos del front

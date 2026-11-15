@@ -6,7 +6,7 @@ Notebook: [`punto4_anomalias.ipynb`](punto4_anomalias.ipynb). Corresponde al uso
 
 > "In 2012, corn in this county yielded about {X} % less than in a normal year. July heat tends to explain most of it."
 
-En la historia de su condado, los años que se salieron de lo normal, para mejor o para peor, con el motivo más probable. Ayuda a entender el riesgo: qué tipo de año le pega y cuánto. Va en la pantalla 2 del front (historia del condado): titular por año, marcas de año y rinde contra lo habitual. Sale en `data/ml/front/anomalias.json`.
+En la historia de su condado, los años que se salieron de lo normal, para mejor o para peor, con el motivo más probable. Ayuda a entender el riesgo: qué tipo de año le pega y cuánto. Va en la pantalla 2 del front (historia del condado): titular por año, marcas de año y rinde contra lo habitual. Sale en `backend/Datos/front/anomalias.json`.
 
 ## Cómo funciona, en simple
 
@@ -26,8 +26,8 @@ En la historia de su condado, los años que se salieron de lo normal, para mejor
 | 5 | Aporte de cada grupo de clima, causa principal y años marcados | Funciona |
 | 6 | Chequeo: ¿reconoce 2012 (sequía) y 2019 (primavera húmeda)? | Funciona |
 | 7 | Ejemplo: la historia de Story, Iowa | Funciona |
-| 8 | Guarda `data/ml/anomalias_anio.csv` | Funciona |
-| 9 | Arma `data/ml/front/anomalias.json` para la línea de tiempo del front, con titular según el año sea mejor o peor | Funciona |
+| 8 | Guarda `backend/Datos/anomalias_anio.csv` | Funciona |
+| 9 | Arma `backend/Datos/front/anomalias.json` para la línea de tiempo del front, con titular según el año sea mejor o peor | Funciona |
 
 Se corre **una vez por cultivo**; las salidas de maíz y soja se juntan en el mismo archivo.
 
@@ -37,15 +37,15 @@ Se corre **una vez por cultivo**; las salidas de maíz y soja se juntan en el mi
 
 | Archivo | Qué tiene | De quién |
 |---|---|---|
-| `modelos/punto2_rotaciones_<cultivo>.joblib` | Modelo, tendencia, promedios de rotación y features | Punto 2 (correr su notebook primero; no va a Git) |
-| `data/ml/tabla_modelado.csv` | Rinde y features de cada condado y año | Punto 2 |
+| `backend/ML/modelos/punto2_rotaciones_<cultivo>.joblib` | Modelo, tendencia, promedios de rotación y features | Punto 2 (correr su notebook primero; no va a Git) |
+| `backend/Datos/tabla_modelado.csv` | Rinde y features de cada condado y año | Punto 2 |
 
 **Sale:**
 
 | Archivo | Columnas | Para quién |
 |---|---|---|
-| `data/ml/anomalias_anio.csv` | `fips, anio, estado, cultivo, rend_bu_ac, rend_anio_normal_bu_ac, rend_predicho_bu_ac, diferencia_bu_ac, diferencia_pct, explicado_clima_bu_ac, no_explicado_bu_ac, causa_principal, efecto_causa_bu_ac, marcado, direccion, ef_<grupo>_bu_ac` | Revisión del equipo. Detalle de cada columna en el paso 8 de la notebook |
-| `data/ml/front/anomalias.json` | `counties[fips][corn\|soy][anio]` → `bu_ac, usual_bu_ac, diff_bu_ac, diff_pct, vs_usual (above/similar/below), flagged, cause, cause_bu_ac, headline, text, basis, source`. Arriba: `version_contrato` 0.2, `years`, `threshold_pct`, `cause_labels` | Script del front (`scripts/build_front_data.py`), que lo pega en cada año de `county/<fips>.json`: `vs_usual` para el rinde (F20), `headline` para el titular (F19) y las marcas de año (F07) |
+| `backend/Datos/anomalias_anio.csv` | `fips, anio, estado, cultivo, rend_bu_ac, rend_anio_normal_bu_ac, rend_predicho_bu_ac, diferencia_bu_ac, diferencia_pct, explicado_clima_bu_ac, no_explicado_bu_ac, causa_principal, efecto_causa_bu_ac, marcado, direccion, ef_<grupo>_bu_ac` | Revisión del equipo. Detalle de cada columna en el paso 8 de la notebook |
+| `backend/Datos/front/anomalias.json` | `counties[fips][corn\|soy][anio]` → `bu_ac, usual_bu_ac, diff_bu_ac, diff_pct, vs_usual (above/similar/below), flagged, cause, cause_bu_ac, headline, text, basis, source`. Arriba: `version_contrato` 0.2, `years`, `threshold_pct`, `cause_labels` | Script del front (`scripts/build_front_data.py`), que lo pega en cada año de `county/<fips>.json`: `vs_usual` para el rinde (F20), `headline` para el titular (F19) y las marcas de año (F07) |
 
 **Titulares** (`headline`), según el año rindió menos (`peor`) o más (`mejor`) que uno normal:
 
@@ -76,7 +76,7 @@ Para el agua se dice "water stress" y no "dry": SHAP dice que el agua de julio r
 ## Depende de / lo usan
 
 - **Depende de:** el punto 2 (modelo guardado y `tabla_modelado.csv`). Si el punto 2 cambia de modelo o de features, hay que volver a correr esta notebook.
-- **Lo usan:** el front (línea de tiempo del condado), con `data/ml/front/anomalias.json`.
+- **Lo usan:** el front (línea de tiempo del condado), con `backend/Datos/front/anomalias.json`.
 
 ## Cómo se valida
 
@@ -109,7 +109,7 @@ Con los datos reales (entrega v1.2, 2026-11-14), años 2009–2023:
 
 ## Qué falta
 
-- [x] Archivo para la línea de tiempo: `data/ml/front/anomalias.json` (paso 9).
+- [x] Archivo para la línea de tiempo: `backend/Datos/front/anomalias.json` (paso 9).
 - [x] Titular y frase para cada `causa_principal`, según el año sea mejor o peor.
 - [ ] Que el script del front (`scripts/build_front_data.py`) lea `anomalias.json` (tarea del front; ver `README.md`, "Avisos para el front").
 - [ ] Predicciones fuera del fold (reentrenando sin cada año), para que el año que se explica no esté en el entrenamiento del modelo.

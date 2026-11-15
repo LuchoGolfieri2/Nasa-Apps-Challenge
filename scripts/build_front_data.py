@@ -4,7 +4,7 @@ build_front_data.py — Arma los JSON y PNG estáticos que lee el front (tareas 
 
 Entradas (lee lo que exista; lo que falta queda en null = "Missing data"):
   cdl_fieldshift.zip           superficie, transiciones y rasters del CDL (2015–2025)
-  data/ml/tabla_modelado.csv   rinde NASS y clima POWER por condado y año (opcional)
+  backend/Datos/tabla_modelado.csv   rinde NASS y clima POWER por condado y año (opcional)
 
 Salidas, en web/public/data/:
   meta.json                    años, condados de demo, clases de cultivo y fuentes
@@ -32,7 +32,7 @@ from PIL import Image
 
 RAIZ = Path(__file__).resolve().parent.parent
 ZIP_CDL = RAIZ / "cdl_fieldshift.zip"
-TABLA_ML = RAIZ / "data" / "ml" / "tabla_modelado.csv"
+TABLA_ML = RAIZ / "backend" / "Datos" / "tabla_modelado.csv"
 SALIDA = RAIZ / "web" / "public" / "data"
 
 CONDADOS = {

@@ -1,7 +1,7 @@
 # Seguridad de la web de Field Rewind
 
 La app es un **sitio estático**: HTML, JS y archivos JSON/PNG propios. No tiene servidor, base de datos,
-login, cookies ni formularios, y no llama a APIs de datos en vivo (spec §3: lee JSON derivados de `data/processed/` y `data/ml/`). La única conexión externa son las teselas de imagen Blue Marble del globo (NASA GIBS), que no llevan clave.
+login, cookies ni formularios, y no llama a APIs de datos en vivo (spec §3: lee JSON derivados de `data/processed/` y `backend/Datos/`). La única conexión externa son las teselas de imagen Blue Marble del globo (NASA GIBS), que no llevan clave.
 Por eso varias recomendaciones típicas no aplican. Estado de cada una:
 
 | Recomendación | Estado | Detalle |

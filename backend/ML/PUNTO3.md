@@ -28,14 +28,14 @@ Son las razones que van debajo de cada opción de la pantalla **"Próxima campa�
 | 0 | Librerías. No hace falta `shap`: LightGBM da los mismos valores con `pred_contrib=True` |
 | 1 | Parámetros: grupos de variables, umbrales, fuentes, plantillas |
 | 2 | Carga `tabla_modelado.csv`, `efecto_rotacion.csv`, `escenarios_rotacion_resumen.csv`, `experimentos.csv` |
-| 3 | Carga `modelos/punto2_rotaciones_<cultivo>.joblib` o, si no está (no va a Git), **lo regenera con la receta exacta del paso 13 del punto 2** y lo avisa |
+| 3 | Carga `backend/ML/modelos/punto2_rotaciones_<cultivo>.joblib` o, si no está (no va a Git), **lo regenera con la receta exacta del paso 13 del punto 2** y lo avisa |
 
 ### Parte A: SHAP por grupo (pasos 4 a 6), funciona
 
 | Paso | Qué hace | Estado |
 |---|---|---|
 | 4 | SHAP por condado y año; verifica base + suma = predicción | Funciona |
-| 5 | Suma por grupo → `data/ml/explicaciones_shap_grupos.csv` | Funciona |
+| 5 | Suma por grupo → `backend/Datos/explicaciones_shap_grupos.csv` | Funciona |
 | 6 | Resumen por condado: suelo fijo, años malos por factor, qué mueve el rango | Funciona |
 
 Resultado real (maíz, Story IA 2012, la sequía): calor de julio −39 bu/ac; es el grupo que más resta, como documenta `PUNTO2.md`.
@@ -55,25 +55,25 @@ Resultado real (maíz, Story IA 2012, la sequía): calor de julio −39 bu/ac; e
 
 | Archivo | Qué tiene | De quién |
 |---|---|---|
-| `data/ml/tabla_modelado.csv` | La tabla que usó el modelo del punto 2 | Punto 2 (ya está) |
-| `data/ml/efecto_rotacion.csv` | Efecto de rotar, efectos fijos | Punto 2 (ya está) |
-| `data/ml/escenarios_rotacion_resumen.csv` | Mediana entre climas por opción | Punto 2 (ya está) |
-| `data/ml/experimentos.csv` | Lista exacta de features del modelo elegido | Punto 2 (ya está) |
-| `modelos/punto2_rotaciones_<cultivo>.joblib` | Modelo entrenado. Si no está, se regenera | Punto 2 (fuera de Git) |
+| `backend/Datos/tabla_modelado.csv` | La tabla que usó el modelo del punto 2 | Punto 2 (ya está) |
+| `backend/Datos/efecto_rotacion.csv` | Efecto de rotar, efectos fijos | Punto 2 (ya está) |
+| `backend/Datos/escenarios_rotacion_resumen.csv` | Mediana entre climas por opción | Punto 2 (ya está) |
+| `backend/Datos/experimentos.csv` | Lista exacta de features del modelo elegido | Punto 2 (ya está) |
+| `backend/ML/modelos/punto2_rotaciones_<cultivo>.joblib` | Modelo entrenado. Si no está, se regenera | Punto 2 (fuera de Git) |
 
 **Sale:**
 
 | Archivo | Columnas | Para quién |
 |---|---|---|
-| `data/ml/explicaciones.csv` | `fips, cultivo, rotacion, orden, tipo, grupo, valor_bu_ac, anios, texto_en, fuente, fuente_label, basis, confianza` | Front y revisión del equipo |
-| `data/ml/front/explicaciones.json` | `counties[fips][cultivo][rotacion]` → `reasons[]`, `benefits[]`, `risks[]`, `range_driver`, `confidence{level, reason}`, `n_years` | El script del front, para `next/<fips>.json` |
-| `data/ml/explicaciones_shap_grupos.csv` | `fips, cultivo, anio` + un SHAP por grupo (bu/ac) | Punto 4 (años raros) y línea de tiempo |
+| `backend/Datos/explicaciones.csv` | `fips, cultivo, rotacion, orden, tipo, grupo, valor_bu_ac, anios, texto_en, fuente, fuente_label, basis, confianza` | Front y revisión del equipo |
+| `backend/Datos/front/explicaciones.json` | `counties[fips][cultivo][rotacion]` → `reasons[]`, `benefits[]`, `risks[]`, `range_driver`, `confidence{level, reason}`, `n_years` | El script del front, para `next/<fips>.json` |
+| `backend/Datos/explicaciones_shap_grupos.csv` | `fips, cultivo, anio` + un SHAP por grupo (bu/ac) | Punto 4 (años raros) y línea de tiempo |
 
 Cada razón trae: `type` (`rotation`, `soil`, `climate_bad_years`, `range_driver`), `group`, `text` (inglés), `value_bu_ac`, `years` (para F23: años clickeables), `basis: "model"`, `source` (id de `fuentes.json`) y `source_label`.
 
 ## Depende de / lo usan
 
-- **Depende de:** las salidas del punto 2 en `data/ml/`.
+- **Depende de:** las salidas del punto 2 en `backend/Datos/`.
 - **Lo usan:** el front (pantalla "Próxima campaña") y el punto 4.
 
 ## Cómo se valida

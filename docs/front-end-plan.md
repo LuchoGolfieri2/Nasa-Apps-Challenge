@@ -89,7 +89,7 @@ web/
     data/         # tipos TS y carga de JSON
   public/data/    # JSON estáticos generados (sección 7)
 scripts/
-  build_front_data.py   # CSV de data/processed + zip CDL + data/ml -> web/public/data
+  build_front_data.py   # CSV de data/processed + zip CDL + backend/Datos -> web/public/data
 ```
 
 `build_front_data.py` lee lo que exista y escribe `null` donde falte. La app nunca calcula nada pesado: solo lee y dibuja.

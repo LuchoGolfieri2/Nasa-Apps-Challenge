@@ -26,7 +26,7 @@ Son dos piezas, cada una para lo que hace bien:
 | 2 | Carga `tabla_anual`, `tabla_mensual` y el diccionario de la entrega |
 | 3 | Cuántos condados tienen rinde por año y estado |
 | 4 | Tabla de modelado: una fila por condado y año. Avisa qué features no vinieron |
-| 5 | Folds: desarrollo 2009–2023 (un año afuera por vez) y prueba 2024–2025. Los guarda en `data/ml/folds.csv` |
+| 5 | Folds: desarrollo 2009–2023 (un año afuera por vez) y prueba 2024–2025. Los guarda en `backend/Datos/folds.csv` |
 | 6 | Tendencia por estado (dentro del fold) y los 3 baselines |
 | 7 | Los dos modelos: Ridge y LightGBM poco profundo |
 | 8 | Validación: deja cada año afuera, predice y mide importancias |
@@ -34,17 +34,17 @@ Son dos piezas, cada una para lo que hace bien:
 | 10 | ¿Sirve en un estado que no vio? |
 | 11 | Qué variables pesan y si son estables entre años |
 | 12 | Banda de incertidumbre p10–p90 y su cobertura por estado |
-| 13 | Modelo final (se guarda en `modelos/`) y prueba 2024–2025, apagada con `MIRAR_PRUEBA` |
+| 13 | Modelo final (se guarda en `backend/ML/modelos/`) y prueba 2024–2025, apagada con `MIRAR_PRUEBA` |
 | 14 | **Efecto de la rotación con efectos fijos** (mismo condado + mismo estado y año + clima) |
 | 15 | **Escenarios de rotación** (`actual`, `rotado`, `continuo`): la salida para la app |
 | 16 | Chequeo agronómico: efecto negativo, cerca de los experimentos, y rotado > continuo |
-| 17 | Registra la corrida en `data/ml/experimentos.csv` |
+| 17 | Registra la corrida en `backend/Datos/experimentos.csv` |
 
 La notebook se corre **una vez por cultivo**. Las salidas de maíz y soja se juntan en los mismos archivos.
 
 ## Datos
 
-**Entra:** la parte `condado/` de la entrega `data/fieldshift_datos_v1.2/` (no va a Git; detalle en la sección 3 del `CLAUDE.md`). La v1.2 es igual a la v1.1 en las tablas del condado; solo suma `extras/teledeteccion_anual.csv`.
+**Entra:** la parte `condado/` de la entrega `backend/Datos/entregas/fieldshift_datos_v1.2/` (no va a Git; detalle en la sección 3 del `CLAUDE.md`). La v1.2 es igual a la v1.1 en las tablas del condado; solo suma `extras/teledeteccion_anual.csv`.
 
 | Archivo | Qué se usa |
 |---|---|
@@ -94,13 +94,13 @@ La notebook se corre **una vez por cultivo**. Las salidas de maíz y soja se jun
 
 | Archivo | Columnas | Para quién |
 |---|---|---|
-| `data/ml/escenarios_rotacion.csv` | `fips, rotacion, cultivo, anio_clima, pred, p10, p90` | Front (`INFO.md` 4.6). `p10`/`p90` = error del modelo + incertidumbre del efecto de rotar |
-| `data/ml/escenarios_rotacion_resumen.csv` | `fips, rotacion, cultivo, mediana_clima, p10_clima, p90_clima` | Front. Cómo varía el rinde **entre climas** |
-| `data/ml/folds.csv` | `fips, anio, estado, cultivo, bloque, fold_anio, fold_estado` | Repetir la validación |
-| `data/ml/experimentos.csv` | Una fila por corrida | Comparar corridas |
-| `data/ml/efecto_rotacion.csv` | `cultivo, columna, bu_ac_por_punto, ic95_bajo, ic95_alto, p, n, rinde_medio_bu_ac, continuo_vs_rotado_pct, version_datos` | Punto 3 y front: el efecto de rotar (paso 14) |
-| `data/ml/tabla_modelado.csv` | `fips, anio, estado, cultivo, rend_bu_ac` + las features crudas | Puntos 3 y 4: la misma tabla que usó el modelo |
-| `modelos/punto2_rotaciones_<cultivo>.joblib` | Modelo, tendencia, promedios de rotación, features y banda | Puntos 3 y 4. No va a Git: se regenera corriendo esta notebook |
+| `backend/Datos/escenarios_rotacion.csv` | `fips, rotacion, cultivo, anio_clima, pred, p10, p90` | Front (`INFO.md` 4.6). `p10`/`p90` = error del modelo + incertidumbre del efecto de rotar |
+| `backend/Datos/escenarios_rotacion_resumen.csv` | `fips, rotacion, cultivo, mediana_clima, p10_clima, p90_clima` | Front. Cómo varía el rinde **entre climas** |
+| `backend/Datos/folds.csv` | `fips, anio, estado, cultivo, bloque, fold_anio, fold_estado` | Repetir la validación |
+| `backend/Datos/experimentos.csv` | Una fila por corrida | Comparar corridas |
+| `backend/Datos/efecto_rotacion.csv` | `cultivo, columna, bu_ac_por_punto, ic95_bajo, ic95_alto, p, n, rinde_medio_bu_ac, continuo_vs_rotado_pct, version_datos` | Punto 3 y front: el efecto de rotar (paso 14) |
+| `backend/Datos/tabla_modelado.csv` | `fips, anio, estado, cultivo, rend_bu_ac` + las features crudas | Puntos 3 y 4: la misma tabla que usó el modelo |
+| `backend/ML/modelos/punto2_rotaciones_<cultivo>.joblib` | Modelo, tendencia, promedios de rotación, features y banda | Puntos 3 y 4. No va a Git: se regenera corriendo esta notebook |
 
 ## Depende de / lo usan
 
@@ -122,8 +122,8 @@ Hay **dos fuentes de explicación distintas**, y no se mezclan:
 
 | Qué explica | De dónde sale | Archivo |
 |---|---|---|
-| Cómo el **clima y el suelo** mueven el rinde de un condado en un año | Valores SHAP del modelo de ML | `modelos/punto2_rotaciones_<cultivo>.joblib` + `data/ml/tabla_modelado.csv` |
-| Cuánto cambia el rinde por **rotar o no rotar** | Efectos fijos (paso 14) | `data/ml/efecto_rotacion.csv` |
+| Cómo el **clima y el suelo** mueven el rinde de un condado en un año | Valores SHAP del modelo de ML | `backend/ML/modelos/punto2_rotaciones_<cultivo>.joblib` + `backend/Datos/tabla_modelado.csv` |
+| Cuánto cambia el rinde por **rotar o no rotar** | Efectos fijos (paso 14) | `backend/Datos/efecto_rotacion.csv` |
 
 **Importante: la rotación nunca se explica con SHAP.** Las columnas `pct_*_media` y `pct_*_desvio` del modelo de ML miden sobre todo qué tipo de condado es (los más productivos hacen más maíz sobre maíz), no el efecto de rotar. Para la rotación se usa solo `efecto_rotacion.csv`.
 
@@ -131,13 +131,13 @@ Va en su propia notebook (`punto3_explicaciones.ipynb`) con su `PUNTO3.md`, así
 
 ### Qué hay que tener antes
 
-1. La entrega descomprimida en `data/fieldshift_datos_v1.2/` (ver `README.md`).
-2. Haber corrido `punto2_rotaciones.ipynb` con `CULTIVO = "maiz"` y con `"soja"`. Eso crea los `.joblib` en `modelos/`, que no están en Git.
+1. La entrega descomprimida en `backend/Datos/entregas/fieldshift_datos_v1.2/` (ver `README.md`).
+2. Haber corrido `punto2_rotaciones.ipynb` con `CULTIVO = "maiz"` y con `"soja"`. Eso crea los `.joblib` en `backend/ML/modelos/`, que no están en Git.
 3. Nada más: no hace falta instalar `shap`. LightGBM calcula los mismos valores con `pred_contrib=True`.
 
 ### Qué tiene el modelo guardado
 
-`joblib.load("modelos/punto2_rotaciones_maiz.joblib")` devuelve un diccionario:
+`joblib.load("backend/ML/modelos/punto2_rotaciones_maiz.joblib")` devuelve un diccionario:
 
 | Clave | Qué es |
 |---|---|
@@ -162,8 +162,8 @@ RAIZ = next(p for p in [Path.cwd(), *Path.cwd().parents] if (p / ".git").exists(
 CULTIVO = "maiz"   # o "soja"
 
 # 1. Cargar el modelo y la tabla que guardó el punto 2
-paquete = joblib.load(RAIZ / "modelos" / f"punto2_rotaciones_{CULTIVO}.joblib")
-tabla = pd.read_csv(RAIZ / "data" / "ml" / "tabla_modelado.csv", dtype={"fips": str, "estado": str})
+paquete = joblib.load(RAIZ / "backend" / "ML" / "modelos" / f"punto2_rotaciones_{CULTIVO}.joblib")
+tabla = pd.read_csv(RAIZ / "backend" / "Datos" / "tabla_modelado.csv", dtype={"fips": str, "estado": str})
 tabla = tabla[tabla["cultivo"] == CULTIVO].reset_index(drop=True)
 
 
@@ -244,7 +244,7 @@ Para la rotación, la frase sale de `efecto_rotacion.csv` (`continuo_vs_rotado_p
 
 ### Qué falta definir con el front
 
-- ~~Dónde van las explicaciones por condado.~~ Resuelto: `data/ml/front/explicaciones.json` (punto 3), que lee el script del front.
+- ~~Dónde van las explicaciones por condado.~~ Resuelto: `backend/Datos/front/explicaciones.json` (punto 3), que lee el script del front.
 - Cuántos grupos mostrar por condado (2 o 3, como los "rasgos" de los sectores).
 
 ## Cómo se valida
@@ -308,7 +308,7 @@ Las primeras pruebas del código se hicieron con datos inventados (en una carpet
 
 ## Qué falta
 
-- [ ] Acordar con el front los ids de `rotacion` (`actual`, `rotado`, `continuo`) y generar `data/ml/front/escenarios_rotacion.json`.
+- [ ] Acordar con el front los ids de `rotacion` (`actual`, `rotado`, `continuo`) y generar `backend/Datos/front/escenarios_rotacion.json`.
 - [ ] Cuando llegue la v2: repetir el paso 14 con la humedad del suelo de NLDAS como control extra, y pasar los escenarios a US$/acre con `economia` (rinde × precio − costos, en un paso aparte).
 - [ ] Comprobar el efecto de la rotación a escala de lote con `lotes/` (NDVI por píxel según el cultivo anterior).
 - [ ] Sacar pares de features con |r| > 0,9.

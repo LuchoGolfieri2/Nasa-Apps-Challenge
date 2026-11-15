@@ -23,7 +23,7 @@ Cambio de regla: antes era "se compara, no se recomienda". **Ahora la app sugier
 ## 3. Conexión front ↔ back
 
 - La app lee **JSON estáticos** (contrato en `docs/front-end-plan.md` §7, con los cambios de abajo). `null` = "Missing data"; `"prototype": true` en un bloque = sello "Prototype data".
-- **Quién genera los JSON: a confirmar con el equipo.** Propuesta por defecto: `scripts/build_front_data.py` del front, que lee CSV de `data/processed/`, el zip del CDL, `data/ml/` y el dataset de costos.
+- **Quién genera los JSON: a confirmar con el equipo.** Propuesta por defecto: `scripts/build_front_data.py` del front, que lee CSV de `data/processed/`, el zip del CDL, `backend/Datos/` y el dataset de costos.
 - Pedidos a otros equipos:
   - **ML:** el rango de cada opción es **rinde en bu/acre** (p10, mediana, p90), no NDVI. Además, para cada opción: confianza + motivo, y la lista de gemelos con en qué se parecen. Necesita NASS de rinde por condado.
   - **Datos:** NASS rinde y superficie de todos los condados de IA, IL, KS (gemelos y mapa de estado); POWER de los centroides; rasters CDL por año ya existen.

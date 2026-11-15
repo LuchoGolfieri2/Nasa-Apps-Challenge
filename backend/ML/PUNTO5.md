@@ -78,19 +78,19 @@ Con IMERG, los gemelos ganan en las 6 opciones. Con POWER perdían en 2 (avena y
 
 | Archivo | Qué tiene | De quién |
 |---|---|---|
-| `data/ml/tabla_modelado.csv` | Suelo, calor y rotación por condado y año | Punto 2 (ya está) |
-| `data/ml/escenarios_rotacion_resumen.csv` | Rango del modelo por opción, para el chequeo del paso 16 | Punto 2 (ya está) |
-| `data/fieldshift_datos_v1.3/condado/` | `referencia/condados.csv` (nombre, centroide), `tabla_mensual.csv` (`prec_imerg_mm`), `tabla_anual.csv` (rinde de trigo y avena, superficie sembrada) | Pipeline de datos (ya está; no va a Git) |
+| `backend/Datos/tabla_modelado.csv` | Suelo, calor y rotación por condado y año | Punto 2 (ya está) |
+| `backend/Datos/escenarios_rotacion_resumen.csv` | Rango del modelo por opción, para el chequeo del paso 16 | Punto 2 (ya está) |
+| `backend/Datos/entregas/fieldshift_datos_v1.3/condado/` | `referencia/condados.csv` (nombre, centroide), `tabla_mensual.csv` (`prec_imerg_mm`), `tabla_anual.csv` (rinde de trigo y avena, superficie sembrada) | Pipeline de datos (ya está; no va a Git) |
 
 **Sale:**
 
 | Archivo | Columnas | Para quién |
 |---|---|---|
-| `data/ml/gemelos_vecinos.csv` | `fips`, `orden`, `fips_vecino`, `distancia`, `mismo_estado`, `km`, `similar_on`, `similar_on_es` | Revisión |
-| `data/ml/gemelos.csv` | `fips`, `cultivo`, `rotacion`, `orden`, `fips_gemelo`, `distancia`, `similar_on`, `pct_sobre_si_mismo`, `pct_area`, `rend_tipico_bu_ac` | Revisión |
-| `data/ml/gemelos_rango.csv` | `fips`, `cultivo`, `rotacion`, `n_gemelos`, `n_anios`, `p10`, `mediana`, `p90`, `confianza`, `motivo`, `condado_ya_lo_hace`, `usar_como_rango` | Revisión |
-| `data/ml/gemelos_control.csv` | Errores de los controles de los pasos 9 y 19 | Este documento |
-| `data/ml/front/gemelos.json` | Ver abajo | El script que arma `web/public/data/next/<fips>.json` |
+| `backend/Datos/gemelos_vecinos.csv` | `fips`, `orden`, `fips_vecino`, `distancia`, `mismo_estado`, `km`, `similar_on`, `similar_on_es` | Revisión |
+| `backend/Datos/gemelos.csv` | `fips`, `cultivo`, `rotacion`, `orden`, `fips_gemelo`, `distancia`, `similar_on`, `pct_sobre_si_mismo`, `pct_area`, `rend_tipico_bu_ac` | Revisión |
+| `backend/Datos/gemelos_rango.csv` | `fips`, `cultivo`, `rotacion`, `n_gemelos`, `n_anios`, `p10`, `mediana`, `p90`, `confianza`, `motivo`, `condado_ya_lo_hace`, `usar_como_rango` | Revisión |
+| `backend/Datos/gemelos_control.csv` | Errores de los controles de los pasos 9 y 19 | Este documento |
+| `backend/Datos/front/gemelos.json` | Ver abajo | El script que arma `web/public/data/next/<fips>.json` |
 
 **`gemelos.json` (`version_contrato` 0.2)** sigue los tipos de `web/src/next/types.ts`:
 
