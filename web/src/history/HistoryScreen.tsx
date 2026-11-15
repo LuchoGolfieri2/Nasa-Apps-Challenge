@@ -8,11 +8,10 @@ import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 import { BarRace } from "./BarRace";
 import { CdlMap } from "./CdlMap";
-import { CountyTwins } from "./CountyTwins";
-import { Player } from "./Player";
+import { Timeline } from "./Timeline";
 import { usePlayback } from "./usePlayback";
 import { useRasters } from "./useRasters";
-import { YearFacts, YearLines } from "./YearFacts";
+import { YearFacts } from "./YearFacts";
 import "./history.css";
 
 /**
@@ -27,18 +26,6 @@ const DEMO = [
   { fips: "17113", label: "McLean, IL" },
 ];
 
-/** Una etiqueta por producto: si dos fuentes nombran el mismo, queda la que da más detalle. */
-function uniqueSources(sources: (string | undefined)[]): string[] {
-  const byProduct = new Map<string, string>();
-  for (const s of sources) {
-    if (!s) continue;
-    const product = s.split(" · ")[0];
-    const seen = byProduct.get(product);
-    if (!seen || s.length > seen.length) byProduct.set(product, s);
-  }
-  return [...byProduct.values()];
-}
-
 export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchParams }) {
   const [county, setCounty] = useState<County | null>(null);
   const [failed, setFailed] = useState(false);
@@ -52,6 +39,7 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
   }, [query]);
 
   const years = useMemo(() => county?.years.map((y) => y.year) ?? [], [county]);
+  // Reloj único: una posición continua mueve el mapa, las barras, las cifras y la línea de tiempo.
   const { pb, index, playing, between } = usePlayback(years.length, stepMs);
 
   useEffect(() => {
@@ -92,19 +80,13 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
     }
   }, [canPlay, pb]);
 
-  // Espacio: play o pausa. Flechas: año anterior o siguiente. Salvo que el foco esté en un control que las usa.
+  // Barra espaciadora: play o pausa, salvo que el foco esté en un control.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (e.code === "Space") {
-        if (!canPlay || target.closest("button, a, input, select, textarea, summary, [role=slider]")) return;
-        e.preventDefault();
-        pb.toggle();
-      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        if (e.altKey || e.ctrlKey || e.metaKey || target.closest("input, select, textarea, [role=slider]")) return;
-        e.preventDefault();
-        pb.step(e.key === "ArrowLeft" ? -1 : 1);
-      }
+      if (e.code !== "Space" || !canPlay) return;
+      if ((e.target as HTMLElement).closest("button, a, input, select, textarea, summary, [role=slider]")) return;
+      e.preventDefault();
+      pb.toggle();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -133,25 +115,23 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
 
   const current = county.years[index];
   const marks = Object.fromEntries(county.years.filter((y) => y.weather?.tags.length).map((y) => [y.year, y.weather!.tags]));
+
   const lit = highlight ?? pinned;
+  const rewind = () => {
+    pb.reset(0);
+    pb.play();
+  };
   const pickYear = (y: number) => pb.goTo(years.indexOf(y));
-  const sources = uniqueSources([county.raster?.source ?? "USDA CDL", current.yield?.source, current.weather?.source]);
 
   const guide = (
     <div className={guideOpen ? "guide guide--open" : "guide"}>
-      <button
-        type="button"
-        className="guide__btn"
-        aria-expanded={guideOpen}
-        aria-label="How to read this map"
-        title="How to read this map"
-        onClick={() => setGuideOpen((o) => !o)}
-      >
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <button type="button" className="guide__btn" aria-expanded={guideOpen} onClick={() => setGuideOpen((o) => !o)}>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
           <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
           <path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2 1-1.2 1.8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           <circle cx="12" cy="17" r="1.2" fill="currentColor" />
         </svg>
+        How to read
       </button>
       {guideOpen ? (
         <div className="guide__panel">
@@ -160,19 +140,17 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
               <b>Each square is 30 meters of land</b>, colored by the crop the USDA satellite map found there that year.
             </li>
             <li>
-              <b>Numbers are for the whole county</b>, not for a single field. Percentages are shares of the county's cropland.
+              <b>Numbers are for the whole county</b>, not for a single field.
             </li>
             <li>
-              <b>Only whole years are data.</b> The change you see between two years is an animation: fields don't switch in that order.
+              <b>Only whole years are data.</b> The change you see between two years is an animation: fields don't switch in
+              that order.
             </li>
             <li>
               <b>The map is right about 9 times in 10</b> for corn and soybeans, and less often for minor crops.
             </li>
           </ul>
-          <p>
-            Tap a crop in the list to keep it lit on the map. Scroll or double-click to zoom in. Space plays or pauses; the
-            arrow keys change the year.
-          </p>
+          <p>Scroll or double-click to zoom in. Point at a year to peek at it. Press space to play.</p>
         </div>
       ) : null}
     </div>
@@ -202,10 +180,19 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
       </p>
 
       <div className="history__stage">
-        <div
-          className="history__video"
-          style={{ "--ar": county.raster ? county.raster.width / county.raster.height : 1 } as React.CSSProperties}
-        >
+        <BarRace
+          years={county.years}
+          pb={pb}
+          index={index}
+          between={between}
+          highlight={lit}
+          onHighlight={setHighlight}
+          pinned={pinned}
+          onPin={(c) => setPinned((p) => (p === c ? null : c))}
+          source={county.raster?.source ?? "USDA CDL"}
+        />
+
+        <div className="history__map">
           {county.raster ? (
             <CdlMap
               info={county.raster}
@@ -222,60 +209,45 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
           ) : (
             <Missing what="the crop map (USDA CDL) is not loaded for this county" />
           )}
-          <Player
-            years={years}
-            pb={pb}
-            index={index}
-            playing={playing}
-            loaded={county.raster ? rasters.settled : 1}
-            total={county.raster ? rasters.total : 1}
-            marks={marks}
-          />
         </div>
 
         <div className="history__story">
           {/* aria-live apagado durante el play para no leer once titulares seguidos */}
           <div className="headline" aria-live={playing ? "off" : "polite"}>
             <h1>
-              <span className="headline__year" key={current.year}>
-                {current.year}
-              </span>
+              <span className="headline__year">{current.year}</span>
               <span className="visually-hidden"> in {county.name} County: </span>
             </h1>
-            <ul key={current.year}>
+            <ul>
               {current.headline.map((h) => (
-                <li key={h.text} title={`Source: ${h.source}`}>
-                  {h.text}
+                <li key={h.text}>
+                  {h.text} <span className="headline__src">({h.source})</span>
                 </li>
               ))}
             </ul>
           </div>
-          <YearLines county={county} y={current} />
-          <BarRace
-            years={county.years}
-            pb={pb}
-            index={index}
-            between={between}
-            highlight={lit}
-            onHighlight={setHighlight}
-            pinned={pinned}
-            onPin={(c) => setPinned((p) => (p === c ? null : c))}
-          />
-          <p className="history__sources">
-            {sources.map((s) => (
-              <SourceChip key={s} source={s} />
-            ))}
-          </p>
-          <a className="btn history__next" href={`#/county/${county.fips}/next`}>
-            Options for next season →
-          </a>
+          <YearFacts county={county} y={current} />
         </div>
       </div>
 
-      <section className="history__more" aria-labelledby="detail-title">
-        <h2 id="detail-title">{current.year} in detail</h2>
-        <YearFacts county={county} y={current} />
+      <div className="history__bar">
+        <Timeline
+          years={years}
+          pb={pb}
+          index={index}
+          playing={playing}
+          loaded={county.raster ? rasters.settled : 1}
+          total={county.raster ? rasters.total : 1}
+          marks={marks}
+          data={county.years}
+          onRewind={rewind}
+        />
+        <a className="btn btn--primary history__next" href={`#/county/${county.fips}/next`}>
+          Options for next season →
+        </a>
+      </div>
 
+      <section className="history__more" aria-labelledby="more-title">
         <h2 id="more-title">
           {years.length} years in {county.name} County
         </h2>
@@ -318,7 +290,7 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
             </p>
           </div>
         </div>
-        <CountyTwins fips={county.fips} name={county.name} />
+        {/* En pantallas angostas el botón sale de la barra fija, que si no tapa media pantalla. */}
         <a className="btn btn--primary history__next history__next--end" href={`#/county/${county.fips}/next`}>
           Options for next season →
         </a>
