@@ -3,6 +3,7 @@ import { dataUrl } from "../data/load";
 import { Missing } from "../ui/Missing";
 import { NextSeason } from "./NextSeason";
 import type { NextData } from "./types";
+import { Icon } from "../ui/Icon";
 
 const STATE_NAME: Record<string, string> = { KS: "Kansas", IA: "Iowa", IL: "Illinois" };
 
@@ -33,7 +34,8 @@ export function NextScreen({ fips }: { fips: string }) {
           <Missing what={`next-season options are not loaded for county ${fips} yet`} />
           <p>
             <a className="btn" href={`#/county/${fips}`}>
-              ← Back to the county history
+              <Icon name="arrowLeft" size={18} />
+              Back to the county history
             </a>{" "}
             <a className="btn btn--primary" href="#/county/20191/next">
               See Sumner County, KS
@@ -55,8 +57,15 @@ export function NextScreen({ fips }: { fips: string }) {
     <div className="fr-next-wrap">
       <nav className="fr-next fr-next--crumbs" aria-label="Breadcrumb" style={{ paddingBottom: 0, minHeight: 0 }}>
         <p className="fr-crumbs">
-          <a href={`#/map/${data.fips}`}>← Map</a> · <a href={`#/state/${data.state}`}>{STATE_NAME[data.state] ?? data.state}</a> ›{" "}
-          <a href={`#/county/${data.fips}`}>{data.name} County history</a> › <b>Next season</b>
+          <a href={`#/map/${data.fips}`}>
+            <Icon name="arrowLeft" size={16} />
+            Map
+          </a>{" "}
+          · <a href={`#/state/${data.state}`}>{STATE_NAME[data.state] ?? data.state}</a>
+          <Icon name="caretRight" size={14} className="fr-sep" />
+          <a href={`#/county/${data.fips}`}>{data.name} County history</a>
+          <Icon name="caretRight" size={14} className="fr-sep" />
+          <b>Next season</b>
         </p>
       </nav>
       <NextSeason data={data} onYearClick={(y) => (window.location.hash = `#/county/${data.fips}?year=${y}`)} />

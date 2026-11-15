@@ -5,6 +5,7 @@ import type { County } from "../data/types";
 import type { CropId } from "../ui/crops";
 import { CROP_COLOR } from "../ui/crops";
 import { Missing } from "../ui/Missing";
+import { Icon } from "../ui/Icon";
 import { SourceChip } from "../ui/SourceChip";
 import { BarRace } from "./BarRace";
 import { CdlMap } from "./CdlMap";
@@ -141,10 +142,13 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
       <div className="history__stage">
         <div className="history__story">
           <p className="history__eyebrow">
-            <a href={`#/map/${county.fips}`}>← Map</a>
+            <a href={`#/map/${county.fips}`}>
+              <Icon name="arrowLeft" size={16} />
+              Map
+            </a>
             <span aria-hidden="true"> · </span>
             <a href={`#/state/${county.state}`}>{county.state_name}</a>
-            <span aria-hidden="true"> › </span>
+            <Icon name="caretRight" size={14} className="history__sep" />
             {county.name} County
           </p>
 
@@ -195,26 +199,19 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
             <summary>How to read this</summary>
             <ul>
               <li>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4z" fill="currentColor" opacity=".45" />
-                  <path d="M13 13h7v7h-7z" fill="currentColor" />
-                </svg>
+                <Icon name="pixels" size={22} />
                 <span>
                   <b>Each square is 30 meters of land</b>, colored by the crop the USDA satellite map found there that year.
                 </span>
               </li>
               <li>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 6l10-2 6 4-1 11-12 1z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-                </svg>
+                <Icon name="county" size={22} />
                 <span>
                   <b>Numbers are for the whole county</b>, not for a single field.
                 </span>
               </li>
               <li>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 13l5 5L20 6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                <Icon name="accuracy" size={22} />
                 <span>
                   <b>The map is right about 9 times in 10</b> for corn and soybeans, and less often for minor crops.
                 </span>
@@ -240,7 +237,8 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
           onRewind={rewind}
         />
         <a className="btn btn--primary history__next" href={`#/county/${county.fips}/next`}>
-          Options for next season →
+          Options for next season
+          <Icon name="arrowRight" size={18} />
         </a>
       </div>
 

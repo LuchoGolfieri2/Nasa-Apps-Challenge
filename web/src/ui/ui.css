@@ -56,3 +56,14 @@
 .logo__field {
   font-weight: 500;
 }
+
+/* Íconos (Icon.tsx / iconHTML): heredan el color del texto */
+.ico {
+  display: inline-flex;
+  flex: none;
+  vertical-align: -0.15em;
+}
+.ico svg {
+  width: 100%;
+  height: 100%;
+}

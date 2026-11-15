@@ -3,6 +3,8 @@ import type { CountyYear } from "../data/types";
 import { CROPS, CROP_COLOR, CROP_LABEL, CROP_NOTE, type CropId } from "../ui/crops";
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
+import { Icon } from "../ui/Icon";
+import { CROP_ICON } from "../ui/icons";
 
 const ROW = 42;
 const fmt = new Intl.NumberFormat("en-US");
@@ -62,7 +64,10 @@ export function BarRace({ years, current, highlight, onHighlight, pinned, onPin,
                 title={CROP_NOTE[c]}
                 onClick={() => onPin(c)}
               >
-              <span className="race__label">{CROP_LABEL[c]}</span>
+              <span className="race__label">
+                {CROP_ICON[c] ? <Icon name={CROP_ICON[c]!} size={16} /> : <span className="race__noicon" aria-hidden="true" />}
+                {CROP_LABEL[c]}
+              </span>
               <span className="race__track" aria-hidden="true">
                 <span
                   className="race__bar"

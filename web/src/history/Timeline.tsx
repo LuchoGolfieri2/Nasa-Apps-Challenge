@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { CountyYear } from "../data/types";
 import { CROPS, CROP_COLOR, CROP_LABEL } from "../ui/crops";
+import { Icon } from "../ui/Icon";
 
 interface Props {
   years: number[];
@@ -101,9 +102,7 @@ export function Timeline({ years, year, playing, loaded, total, marks, onYear, o
           aria-label={`Rewind: play again from ${years[0]}`}
           title={`Play again from ${years[0]}`}
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-            <path d="M11 6v12L2.5 12zM21.5 6v12L13 12z" fill="currentColor" />
-          </svg>
+          <Icon name="rewind" size={22} />
         </button>
         <button
           type="button"
@@ -112,13 +111,7 @@ export function Timeline({ years, year, playing, loaded, total, marks, onYear, o
           disabled={!ready}
           aria-label={playing ? "Pause" : "Play the years"}
         >
-          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-            {playing ? (
-              <path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor" />
-            ) : (
-              <path d="M7 4.5v15l13-7.5z" fill="currentColor" />
-            )}
-          </svg>
+          <Icon name={playing ? "pause" : "play"} size={22} />
           <span className="timeline__play-label">{playing ? "Pause" : "Play"}</span>
         </button>
       </div>

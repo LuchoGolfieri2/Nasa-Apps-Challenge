@@ -39,7 +39,10 @@
 .fr-chip.on small{color:rgba(18,40,28,.75)}
 .fr-chip:focus-visible,.fr-row:focus-visible,.fr-year:focus-visible,.fr-twins-list button:focus-visible{outline:3px solid var(--c);outline-offset:2px}
 .fr-arrow{opacity:.6}
-.fr-check{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;font-size:12px;line-height:1}
+.fr-cropicon{display:inline-flex;vertical-align:-3px}
+.fr-sep{margin:0 4px;vertical-align:-2px;opacity:.7}
+.fr-crumbs a .ico{margin-right:4px;vertical-align:-3px}
+.fr-check{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor}
 .fr-control-note{margin-top:10px!important;font-size:13.5px;color:var(--m)}
 
 /* 2 · frase sugerida */
@@ -175,3 +178,4 @@
 .fr-crumbs{margin:0 0 6px!important;font-size:15px;color:var(--m)}
 .fr-crumbs a{color:var(--g)}
 .fr-next-empty{max-width:640px;margin:80px auto;text-align:center;display:grid;gap:16px;justify-items:center}
+.fr-chip.on .fr-cropicon{color:inherit!important}

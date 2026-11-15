@@ -22,6 +22,8 @@ import {CROP_COLOR, CROP_LABEL} from '../ui/crops';
 import {PRIORITY_LABEL} from './types';
 import type {CropId, NextData, NextOption, Priority} from './types';
 import './next.css';
+import {Icon} from '../ui/Icon';
+import {CROP_ICON} from '../ui/icons';
 
 const PRIORITIES: Priority[] = ['risk', 'income', 'soil', 'water'];
 
@@ -31,7 +33,17 @@ const Step: React.FC<{n: number}> = ({n}) => (
   </span>
 );
 
-const CropDot: React.FC<{crop: CropId}> = ({crop}) => <i className="fr-cropdot" style={{background: CROP_COLOR[crop]}} />;
+/** Punto de color del cultivo; maíz, soja y trigo suman su ícono, en el mismo color. */
+const CropDot: React.FC<{crop: CropId}> = ({crop}) => {
+  const icon = CROP_ICON[crop];
+  return icon ? (
+    <span className="fr-cropicon" style={{color: CROP_COLOR[crop]}}>
+      <Icon name={icon} size={16} />
+    </span>
+  ) : (
+    <i className="fr-cropdot" style={{background: CROP_COLOR[crop]}} />
+  );
+};
 
 /** Colores de cultivo más oscuros, para texto grande sobre la tarjeta clara de la sugerencia (contraste AA) */
 const CROP_INK: Partial<Record<CropId, string>> = {corn: '#8a5a00', soy: '#0f7a55', wheat: '#b01f52', sorghum: '#5b35d5'};
@@ -99,7 +111,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
                   >
                     {r.sequence.map((c, i) => (
                       <React.Fragment key={i}>
-                        {i > 0 ? <span className="fr-arrow">→</span> : null}
+                        {i > 0 ? <Icon name="arrowRight" size={14} className="fr-arrow" /> : null}
                         <CropDot crop={c} />
                         {CROP_LABEL[c]}
                       </React.Fragment>
@@ -117,7 +129,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
                 {PRIORITIES.map((p) => (
                   <button key={p} type="button" aria-pressed={priorities.includes(p)} className={`fr-chip ${priorities.includes(p) ? 'on' : ''}`} onClick={() => toggle(p)}>
                     <span className="fr-check" aria-hidden="true">
-                      {priorities.includes(p) ? '✓' : '+'}
+                      <Icon name={priorities.includes(p) ? 'check' : 'plus'} size={12} />
                     </span>
                     {PRIORITY_LABEL[p]}
                   </button>

@@ -1,17 +1,21 @@
 import type { County, CountyYear } from "../data/types";
 import { Missing, PrototypeStamp } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
+import { Icon } from "../ui/Icon";
+import type { IconName } from "../ui/icons";
 
 const YIELD_NAME = { corn: "Corn", soy: "Soybeans", wheat: "Wheat" } as const;
 const VS_USUAL = { above: "Above usual", similar: "Similar to usual", below: "Below usual" } as const;
 
 function Fact({
   label,
+  icon,
   source,
   prototype,
   children,
 }: {
   label: string;
+  icon: IconName;
   source?: string;
   prototype?: boolean;
   children: React.ReactNode;
@@ -19,7 +23,10 @@ function Fact({
   return (
     <div className="fact">
       <dt>
-        {label}
+        <span className="fact__label">
+          <Icon name={icon} size={18} />
+          {label}
+        </span>
         {prototype ? <PrototypeStamp /> : null}
       </dt>
       <dd>
@@ -37,7 +44,7 @@ export function YearFacts({ county, y }: { county: County; y: CountyYear }) {
 
   return (
     <dl className="facts">
-      <Fact label="Yield" source={y.yield?.source} prototype={y.yield?.prototype}>
+      <Fact label="Yield" icon="yield" source={y.yield?.source} prototype={y.yield?.prototype}>
         {y.yield ? (
           <>
             <span className="fact__value">
@@ -68,7 +75,7 @@ export function YearFacts({ county, y }: { county: County; y: CountyYear }) {
         )}
       </Fact>
 
-      <Fact label="Weather" source={y.weather?.source} prototype={y.weather?.prototype}>
+      <Fact label="Weather" icon="rain" source={y.weather?.source} prototype={y.weather?.prototype}>
         {y.weather ? (
           <span className="fact__value">
             {y.weather.tags.length ? (
@@ -100,6 +107,7 @@ export function YearFacts({ county, y }: { county: County; y: CountyYear }) {
 
       <Fact
         label="Greenness and soil water"
+        icon="greenness"
         source={y.greenness?.source ?? y.soil_water?.source}
         prototype={y.greenness?.prototype || y.soil_water?.prototype}
       >

@@ -6,6 +6,7 @@ import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
 import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer, ArcLayer, ScatterplotLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
 import D from './globe-data.json';
+import {iconHTML} from '../ui/icons';
 
 let active = true;
 /** MapLayer avisa si el mapa está a la vista; oculto no dibuja */
@@ -512,12 +513,12 @@ function updateUI() {
     $('p-status').textContent = full ? 'Full history · 2015–2025' : 'Missing data: history not loaded for this county yet';
     $('p-status').className = full ? 'ok' : 'missing';
     $('p-open').disabled = !full;
-    $('p-open').textContent = full ? '▶ Rewind 2015–2025' : 'Open county history →';
+    $('p-open').innerHTML = full ? `${iconHTML('play')}Rewind 2015–2025` : `Open county history${iconHTML('arrowRight')}`;
     const hasNext = NEXT_AVAILABLE.includes(selCounty.id);
     $('p-next').disabled = !hasNext;
-    $('p-next').textContent = hasNext ? 'Next season: what to plant →' : 'Next season: Missing data';
-    $('p-stats').innerHTML = `<div class="proto"><span class="tag">Prototype data</span>Invented placeholder values</div><div class="stats"><div><b>${hasCorn(selCounty) ? pct(m.corn) : 'Missing data'}</b><small>Corn share of cropland</small></div><div><b>${m.top}</b><small>Most common crop</small></div><div><b>${rainText(m.rain)}</b><small>Rain per year</small><span class="seg" role="group" aria-label="Rain units"><button type="button" data-unit="in" aria-pressed="${rainUnit === 'in'}">in</button><button type="button" data-unit="mm" aria-pressed="${rainUnit === 'mm'}">mm</button></span></div></div>`;
-    $('p-twins').textContent = twinMode ? '← Back to county' : 'Counties like yours';
+    $('p-next').innerHTML = hasNext ? `Next season: what to plant${iconHTML('arrowRight')}` : 'Next season: Missing data';
+    $('p-stats').innerHTML = `<div class="proto"><span class="tag">Prototype data</span>Invented placeholder values</div><div class="stats"><div><b>${hasCorn(selCounty) ? pct(m.corn) : 'Missing data'}</b><small>${iconHTML('corn', 14)}Corn share of cropland</small></div><div><b>${m.top}</b><small>${iconHTML('crop', 14)}Most common crop</small></div><div><b>${rainText(m.rain)}</b><small>${iconHTML('rain', 14)}Rain per year</small><span class="seg" role="group" aria-label="Rain units"><button type="button" data-unit="in" aria-pressed="${rainUnit === 'in'}">in</button><button type="button" data-unit="mm" aria-pressed="${rainUnit === 'mm'}">mm</button></span></div></div>`;
+    $('p-twins').innerHTML = twinMode ? `${iconHTML('arrowLeft')}Back to county` : `${iconHTML('twins')}Counties like yours`;
     $('p-twinlist').innerHTML = '<div class="proto"><span class="tag">Prototype data</span>Similar soil and climate</div><div class="twins">' + selCounty.twins.map((x) =>
       `<button type="button" data-fips="${x.f.id}"><b>${x.f.properties.name}, ${stateById[x.f.properties.state].properties.name}</b><small>Similar on ${x.similar.join(' and ')} · ${x.f.mock.top} on ${pct(x.f.mock.corn > 0.42 ? x.f.mock.corn : 0.3 + x.f.mock.soil * 0.2)} of fields</small></button>`).join('') + '</div>';
     panel.hidden = false;
@@ -527,7 +528,7 @@ function updateUI() {
     $('p-name').textContent = selState.properties.name;
     $('p-state').textContent = `${n} counties`;
     $('p-status').textContent = `Demo county: ${DEMO[demo]}`; $('p-status').className = 'ok';
-    $('p-open').disabled = false; $('p-open').textContent = `Go to ${DEMO[demo]} County →`;
+    $('p-open').disabled = false; $('p-open').innerHTML = `Go to ${DEMO[demo]} County${iconHTML('arrowRight')}`;
     panel.hidden = false;
   } else panel.hidden = true;
 }
@@ -545,6 +546,8 @@ $('p-twinlist').addEventListener('click', (e) => { const b = e.target.closest('b
 $('enter').addEventListener('click', () => { location.hash = '#/map'; });
 // Botón de entrada: vuela directo al condado de demo y abre su panel en el mapa
 $('cta').addEventListener('click', () => flyToCounty(START));
+$('cta').innerHTML = `Go to Sumner County, KS${iconHTML('arrowRight')}`;
+$('p-close').innerHTML = iconHTML('x', 20);
 $('p-open').addEventListener('click', () => {
   if (selCounty) {
     emit('open', {fips: selCounty.id});
