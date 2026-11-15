@@ -10,6 +10,21 @@ El PR #34 ya resolvió parte de esta lista (puntos 3, 5 y 6 con la entrega nueva
 Este archivo lista lo que hay que cambiar en **las otras partes** para que sigan andando con el punto 2 nuevo. No
 toqué esas notebooks. Lo marcado **Obligatorio** rompe algo o da números mal si no se hace.
 
+> **Estado al 15/11 (rama `ml/10-estados`): todo lo de esta lista está aplicado y corrido con la entrega de 10 estados
+> (`fieldshift_datos_todo_10estados_20261115`, suma Kansas).**
+>
+> - **Punto 2:** lee `unido_10_estados/`. Maíz: MAE 15,3 bu/ac, le gana a la tendencia del condado en los 10 estados
+>   (Kansas: 18,3 contra 22,5). Soja: 4,3 contra 5,1, gana en los 10. Continuo contra rotado: −19,1 % en maíz y −9,7 %
+>   en soja (612 condados en la zona maíz-soja). Los 3 chequeos agronómicos pasan.
+> - **Punto 3:** 2.a, 2.b y 2.e (Missouri con confianza baja) aplicados. Fuera de la zona maíz-soja, la razón de
+>   rotación ya no dice "the other two options". 895 condados, 6 chequeos OK.
+> - **Punto 4:** 3.a y 3.b aplicados, maíz y soja. "No explicado por el clima" en maíz baja a 67 % de los años marcados
+>   (antes 74 %). 2012: 81 % de los condados marcados como peor, 89 % por calor o falta de agua.
+> - **Punto 5:** 4.b aplicado (motivo y texto distintos fuera de la zona) y entrega de 10 estados: 895 condados.
+> - **Punto 6:** lee la entrega de 10 estados (mismos lotes, sin cambios).
+> - **Front:** 5.a y 5.b aplicados. `precios_costos.csv` tiene los 10 estados; `web/public/data/next/` tiene 895 condados.
+>   Sumner (KS) ya tiene datos reales: está fuera de la zona maíz-soja, así que solo tiene la opción "actual" con rango.
+
 ---
 
 ## 0. Datos
