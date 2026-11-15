@@ -83,10 +83,13 @@ export function Timeline({ years, pb, index, playing, loaded, total, marks, onRe
   const onYear = (y: number) => pb.goTo(years.indexOf(y));
   // La barra dorada sigue la posición del reloj, cuadro a cuadro, sin pasar por React.
   const fill = useRef<HTMLSpanElement>(null);
+  const cursor = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (!ready) return;
     return pb.subscribe((pos) => {
       if (fill.current) fill.current.style.width = `${((pos + 0.5) / n) * 100}%`;
+      // El marcador (el aro del año elegido) viaja con el mismo reloj: se desliza de un año al otro.
+      if (cursor.current) cursor.current.style.transform = `translateX(${pos * 100}%)`;
     });
   }, [pb, n, ready]);
   const peeked = peek === null ? null : (data.find((d) => d.year === peek) ?? null);
@@ -141,6 +144,9 @@ export function Timeline({ years, pb, index, playing, loaded, total, marks, onRe
         <div className="timeline__years" role="group" aria-label="Year" onKeyDown={onKey}>
           <span className="timeline__rail" aria-hidden="true">
             <span ref={fill} className={playing ? "timeline__fill timeline__fill--playing" : "timeline__fill"} />
+          </span>
+          <span ref={cursor} className="timeline__cursor" style={{ width: `${100 / n}%` }} aria-hidden="true">
+            <i />
           </span>
           {years.map((y, i) => {
             const mix = data[i]?.crops_pct;

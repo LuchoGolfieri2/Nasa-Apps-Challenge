@@ -648,7 +648,29 @@
   height: 44px;
   opacity: 1;
   filter: none;
-  box-shadow: 0 0 0 2px var(--primary);
+}
+/* Aro que se desliza hasta el año elegido (lo mueve el reloj de la historia, ver Timeline.tsx) */
+.timeline__cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 46px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 3px;
+  pointer-events: none;
+  z-index: 1;
+  will-change: transform;
+}
+.timeline__cursor i {
+  display: block;
+  width: min(100%, 40px);
+  height: 44px;
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 2px var(--primary),
+    0 4px 12px rgba(47, 125, 79, 0.3);
 }
 .timeline__year:hover .timeline__mix,
 .timeline__year:focus-visible .timeline__mix {
