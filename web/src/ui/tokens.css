@@ -38,6 +38,14 @@
   --glass-ink: #ffffff;
   --glass-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 
+  /* Botón blanco sobre imágenes (15/11, reemplaza al vidrio en la historia): fondo blanco, recuadro con
+     sombra que lo oscurece alrededor e ícono negro. */
+  --solid-bg: #ffffff;
+  --solid-bg-hover: #f1f4ef;
+  --solid-line: rgba(15, 42, 29, 0.12);
+  --solid-shadow: 0 1px 2px rgba(15, 42, 29, 0.14), 0 6px 18px rgba(15, 42, 29, 0.18);
+  --solid-ink: #0b130e;
+
   /* Texto */
   --ink: #12271b;
   --ink-2: rgba(18, 39, 27, 0.74);
@@ -51,6 +59,28 @@
   --radius: 14px;
   --radius-s: 8px;
   --tap: 48px;
+}
+
+/* Botón blanco: controles sobre el mapa de la historia y el botón de volver */
+.solid-btn {
+  display: inline-grid;
+  place-items: center;
+  background: var(--solid-bg);
+  border: 1px solid var(--solid-line);
+  box-shadow: var(--solid-shadow);
+  color: var(--solid-ink);
+  cursor: pointer;
+  transition: background-color 0.15s ease-out, transform 0.15s ease-out;
+}
+.solid-btn:hover:not(:disabled) {
+  background: var(--solid-bg-hover);
+}
+.solid-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.solid-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* Vidrio: botones y buscadores que flotan sobre una imagen (mapa, globo) */

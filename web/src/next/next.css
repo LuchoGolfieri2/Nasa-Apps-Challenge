@@ -231,8 +231,8 @@
 .fr-twinglobe{position:relative;width:100%;aspect-ratio:16/10;background:#0e2e5c;border-radius:26px;overflow:hidden}
 .fr-twinglobe-canvas{position:absolute;inset:0}
 .fr-twinglobe-labels{position:absolute;inset:0;pointer-events:none}
-.fr-twinglobe-label{position:absolute;white-space:nowrap;font:700 13px var(--font-body,system-ui);color:#f6f1e4;text-shadow:0 0 3px #0b2217,0 0 3px #0b2217,0 1px 4px rgba(0,0,0,.8);animation:fr-twin-pop .3s ease-out}
-.fr-twinglobe-label.is-origin{font:800 14px var(--font-display,system-ui);color:#8ed081}
+.fr-twinglobe-label{position:absolute;white-space:nowrap;font:700 14px var(--font-body,system-ui);color:#f6f1e4;text-shadow:0 0 3px #0b2217,0 0 3px #0b2217,0 1px 4px rgba(0,0,0,.8);animation:fr-twin-pop .3s ease-out}
+.fr-twinglobe-label.is-origin{font:800 16px var(--font-display,system-ui);color:#8ed081}
 .fr-twinglobe-label.is-hot{color:#e9b949}
 .fr-twinglobe-label.is-dim{opacity:.75}
 @media (prefers-reduced-motion:reduce){.fr-twinglobe-label{animation:none}}
@@ -242,3 +242,101 @@
 .ns-missing{color:var(--ink)}
 .ns-card.open{border-color:var(--field)}
 .fr-conf--high{color:var(--field)}.fr-conf--medium{color:#7a570c}.fr-conf--low{color:#b3261e}
+
+/* ------------------------------------------------------------------ rediseño 15/11 (íconos, respuesta primero, gemelos) */
+.ns-icon{flex:none}
+
+/* volver: botón blanco con ícono, igual que en la historia */
+.ns-top{display:flex;align-items:center;gap:12px;padding:8px 96px 0;font-size:15px;color:var(--ink-2)}
+.ns-back.solid-btn{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:999px;text-decoration:none;flex:none}
+.ns-top-where b{color:var(--ink);font-weight:700}
+
+/* elecciones con ícono */
+.ns-chip .ns-icon{color:var(--primary)}
+.ns-chip.on .ns-icon{color:var(--dark)}
+.ns-picks{max-width:640px}
+
+/* la respuesta primero: la sugerida en cuatro cifras */
+.ns-answer{margin:26px var(--pad) 0;display:grid;grid-template-columns:minmax(240px,auto) minmax(0,1fr);gap:24px;align-items:center;padding:16px;border-radius:28px;background:var(--surface-1);border:1px solid transparent;box-shadow:var(--shadow-card)}
+.ns-answer-pick{display:flex;gap:14px;align-items:flex-start;padding:4px 4px 4px 8px}
+.ns-answer-badge{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--wheat-gold);color:var(--dark);flex:none}
+.ns-answer-kicker{font-size:13.5px;font-weight:700;color:var(--wheat-ink)}
+.ns-answer h2{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:800;margin:2px 0 2px}
+.ns-answer-why{min-height:32px;padding:0;border:0;background:none;color:var(--primary-strong)!important;font-weight:700!important;font-size:15px!important;text-decoration:underline;text-underline-offset:3px}
+.ns-answer-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ns-tile{display:flex;flex-direction:column;gap:3px;min-width:0;min-height:104px;padding:12px;border-radius:12px;background:var(--surface-2);font-variant-numeric:tabular-nums}
+.ns-tile > .ns-icon{color:var(--primary);margin-bottom:4px}
+.ns-tile-value{order:1;font:700 22px/1.15 var(--font-display);letter-spacing:-.01em;color:var(--ink)}
+.ns-tile-value.neg{color:#b3261e}
+.ns-tile-value--conf{font:inherit;font-size:15px}
+.ns-tile-value--conf .fr-conf{white-space:normal;flex-wrap:wrap}
+.ns-tile-label{order:2;font-size:13px;font-weight:500;color:var(--ink-2)}
+.ns-tile small{order:3;font-size:12.5px;color:var(--ink-3)}
+.ns-tile .ns-missing{font:700 16px var(--font-body)}
+
+/* tarjetas: ícono en la marca de sugerida y en el ingreso */
+.ns-card-tag span{gap:5px}
+.ns-card-income .ns-icon{vertical-align:-3px;margin-right:6px;color:var(--primary)}
+
+/* detalle: a favor y en contra, cada razón con el ícono de su tema */
+.ns-detail-h{display:flex;align-items:center;gap:10px}
+.ns-detail-h--pro .ns-icon{color:var(--field)}
+.ns-detail-h--con .ns-icon{color:#b3261e}
+.ns-reason{display:grid;grid-template-columns:32px minmax(0,1fr);column-gap:12px;align-items:start}
+.ns-reason > p,.ns-reason > .ns-meta{grid-column:2}
+.ns-reason--none{display:block}
+.ns-reason-icon{grid-row:span 2;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:rgba(47,125,79,.14);color:var(--field)}
+.ns-reason--con .ns-reason-icon{background:rgba(229,72,77,.12);color:#b3261e}
+
+/* títulos de tramo con ícono */
+.ns-sec-h{display:flex;align-items:center;gap:12px}
+.ns-sec-h .ns-icon{color:var(--primary)}
+
+/* gemelos: más arriba y en su propia tarjeta; mapa más chico y, a su derecha, la lista con el porqué */
+.ns-twins{padding-top:64px}
+.ns-twins .ns-world{grid-template-columns:minmax(0,1.2fr) minmax(340px,1fr);gap:24px;padding:16px;border-radius:30px;background:var(--surface-1);border:1px solid transparent;box-shadow:var(--shadow-card)}
+.ns-twins .ns-world-map{position:sticky;top:16px}
+.ns-twins .fr-twinglobe{border-radius:14px}
+.ns-open.solid-btn{display:inline-flex;gap:8px;background:var(--solid-bg);color:var(--solid-ink)}
+.ns-side{padding:6px 6px 6px 0}
+.ns-side h3{font-size:24px}
+.ns-twin-list{display:grid;gap:8px;list-style:none;margin:0;padding:0}
+.ns-side .ns-twin-list li{border-top:0}
+.ns-twins .ns-twin{display:grid;gap:10px;width:100%;margin:0;padding:12px 14px;border-radius:14px;background:var(--surface-2);border:1px solid transparent;text-align:left;transition:background-color .15s ease-out,border-color .15s ease-out}
+.ns-twins .ns-twin.on{background:rgba(233,185,73,.18);border-color:var(--wheat-gold)}
+/* nombre arriba; el porqué y lo que siembran lado a lado, así la lista no se alarga más que el mapa */
+.ns-twins .ns-twin{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:16px;align-items:start}
+.ns-twin-name{grid-column:1 / -1;font-family:var(--font-display);font-size:18px;color:var(--ink-2)}
+.ns-twin-name b{color:var(--ink);font-size:inherit}
+.ns-twin-why{display:grid;gap:5px;min-width:0}
+.ns-twin-label{font-size:12.5px;font-weight:700;color:var(--ink-3)}
+.ns-twin-reasons{display:flex;flex-wrap:wrap;gap:6px}
+.ns-why{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 10px;border-radius:999px;background:var(--surface-1);border:1px solid var(--line);font-size:13.5px;font-weight:500;color:var(--ink)}
+.ns-why .ns-icon{color:var(--primary)}
+.ns-twins .ns-twin small{font-size:13.5px}
+.ns-twins .ns-split{max-width:none;margin-top:2px}
+@media (hover:hover){
+  .ns-twins .ns-twin:hover{background:#e3ebdf}
+  .ns-twins .ns-twin.on:hover{background:rgba(233,185,73,.26)}
+  .ns-answer-why:hover{color:var(--primary)!important}
+}
+
+@media (max-width:1180px){
+  .ns-top{padding-left:40px;padding-right:40px}
+  .ns-answer{grid-template-columns:1fr}
+  .ns-twins .ns-world{grid-template-columns:1fr}
+  .ns-twins .ns-world-map{position:relative;top:auto}
+  .ns-twin-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:860px){
+  .ns-top{padding-left:16px;padding-right:16px}
+  .ns-answer{margin-top:20px;padding:12px;border-radius:24px}
+  .ns-answer h2{font-size:24px}
+  .ns-answer-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ns-twins{padding-top:48px}
+  .ns-twins .ns-world{padding:10px;border-radius:24px}
+  .ns-twin-list{grid-template-columns:1fr}
+}
+@media (max-width:420px){
+  .ns-twins .ns-twin{grid-template-columns:1fr;row-gap:10px}
+}

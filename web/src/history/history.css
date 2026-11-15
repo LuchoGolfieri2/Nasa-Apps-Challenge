@@ -85,31 +85,25 @@
   max-width: 1640px;
   margin: 0 auto;
   padding: 0 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 15px;
   font-weight: 500;
   color: var(--ink-2);
 }
-.history__eyebrow a {
-  color: inherit;
+/* Volver: rectángulo de esquinas redondeadas, más ancho que alto */
+.history__back {
+  flex: none;
+  width: 60px;
+  height: 44px;
+  border-radius: 12px;
+  text-decoration: none;
 }
-.history__switch select {
-  min-height: 36px;
-  padding: 0 30px 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  background: var(--surface-1)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2312271B' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E")
-    no-repeat right 10px center / 12px;
+.history__where {
+  margin: 0;
+  font: 700 16px var(--font-body);
   color: var(--ink);
-  font: 700 15px var(--font-body);
-  appearance: none;
-  cursor: pointer;
-}
-.history__switch select:hover {
-  border-color: var(--ink);
-}
-.history__switch option {
-  background: #fff;
 }
 
 /* Titular del año */
@@ -295,7 +289,7 @@
   background: var(--surface-2);
 }
 
-/* Guía de lectura: un botón chico y translúcido sobre el mapa, que abre un cuadro. */
+/* Guía de lectura: un botón chico blanco (borde con sombra suave y texto negro) sobre el mapa, que abre un cuadro. */
 .guide {
   position: absolute;
   top: 10px;
@@ -303,27 +297,19 @@
   z-index: 2;
   max-width: calc(100% - 80px);
 }
-.guide__btn {
+/* Doble clase: le gana al inline-grid de .solid-btn sin depender del orden de carga del CSS */
+.guide__btn.solid-btn {
   display: flex;
   align-items: center;
   gap: 6px;
   min-height: 34px;
   padding: 0 12px 0 9px;
   border-radius: 999px;
-  border: 1px solid var(--glass-line);
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-shadow);
-  text-shadow: var(--glass-text-shadow);
-  color: #fff;
   font: 500 13px var(--font-body);
-  cursor: pointer;
 }
-.guide__btn:hover,
+/* Blanco, borde y sombra vienen de .solid-btn; abierto se ve apretado. */
 .guide--open .guide__btn {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.34);
+  background: var(--solid-bg-hover);
 }
 .guide__panel {
   margin-top: 8px;
@@ -417,25 +403,13 @@
   align-items: flex-end;
   gap: 6px;
 }
+/* Botones blancos de .solid-btn: acá solo tamaño, radio y letra. */
 .cdl__zoom button {
-  display: grid;
-  place-items: center;
   min-width: var(--tap);
   height: var(--tap);
   padding: 0 12px;
   border-radius: 12px;
-  border: 1px solid var(--glass-line);
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-shadow);
-  text-shadow: var(--glass-text-shadow);
-  color: #fff;
   font: 700 14px var(--font-body);
-  cursor: pointer;
-}
-.cdl__zoom button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.34);
 }
 .cdl__zoom button:disabled {
   opacity: 0.4;

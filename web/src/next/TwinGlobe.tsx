@@ -40,8 +40,18 @@ const rad = Math.PI / 180;
 const ARC_MS = 700;
 const INTRO_MS = 1100;
 const INTRO_ZOOM = 1.6;
+/** Al cambiar de opción la cámara viaja al nuevo encuadre en este tiempo */
+const MOVE_MS = 800;
 const STAGGER_MS = 120;
-const LABEL_FONT = '700 12px "DM Sans", system-ui, sans-serif';
+const LABEL_FONT = '700 14px "DM Sans", system-ui, sans-serif';
+/** Líneas cortadas de los arcos: largo del trazo y del hueco (km sobre el suelo) y velocidad hacia tu condado */
+const DASH_KM = 34;
+const GAP_KM = 22;
+const FLOW_KM_S = 90;
+/** Latido de los recuadros: un ciclo cada PULSE_MS */
+const PULSE_MS = 1800;
+/** Encuadre mínimo (km de ancho): con gemelos muy cerca, el zoom no se pasa de largo */
+const MIN_SPAN_KM = 260;
 // las capas no escriben profundidad: entre ellas manda el orden (ver la nota en map/globe.js)
 const SURFACE = {depthWriteEnabled: false, depthCompare: 'always' as const};
 
@@ -54,49 +64,79 @@ const asFeature = (o: {id: string; name: string; geometry: unknown}): Feature =>
 const STATES = (D.states as Array<{id: string; name: string; geometry: unknown}>).map(asFeature);
 const COUNTIES = (D.counties as Array<{id: string; name: string; geometry: unknown}>).map(asFeature);
 const countyById = new Map(COUNTIES.map((f) => [f.id, f]));
-// límites de cada estado (id = 2 dígitos del fips), para encuadrar los estados donde caen el condado y sus gemelos
-const STATE_BOUNDS = new Map(
-  (D.states as unknown as Array<{id: string; bounds: [Pt, Pt]}>).map((st) => [st.id, st.bounds] as const),
+// límites de cada condado, para encuadrar de cerca el condado y los gemelos de la opción abierta
+const COUNTY_BOUNDS = new Map(
+  (D.counties as unknown as Array<{id: string; bounds: [Pt, Pt]}>).map((c) => [c.id, c.bounds] as const),
 );
 /** Márgenes del encuadre, en fracción del contenedor: arriba hay más lugar para los rótulos. */
-const PAD = {x: 0.07, top: 0.12, bottom: 0.08};
+const PAD = {x: 0.1, top: 0.16, bottom: 0.1};
+
+const groundKm = (a: Pt, b: Pt) => Math.hypot((b[0] - a[0]) * Math.cos(((a[1] + b[1]) / 2) * rad), b[1] - a[1]) * 111.32;
 
 /** Arco levantado sobre la esfera: 48 puntos [lon, lat, altura en m]; la altura crece con la distancia. */
 function arcPath(a: Pt, b: Pt): number[][] {
-  const km = Math.hypot((b[0] - a[0]) * Math.cos(((a[1] + b[1]) / 2) * rad), b[1] - a[1]) * 111.32;
-  const top = Math.max(60, km * 0.28) * 1000;
+  const top = Math.max(40, groundKm(a, b) * 0.22) * 1000;
   return Array.from({length: 48}, (_, i) => {
     const t = i / 47;
     return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, Math.sin(Math.PI * t) * top];
   });
 }
-/** El tramo inicial del arco hasta la fracción `p` (para dibujarlo de a poco). */
-function partial(path: number[][], p: number): number[][] {
-  if (p >= 1) return path;
-  const n = Math.max(2, Math.ceil(p * (path.length - 1)) + 1);
-  return path.slice(0, n);
+/** Punto del arco en la fracción `t` (0 = gemelo, 1 = tu condado), interpolando entre los puntos guardados. */
+function pointAt(path: number[][], t: number): number[] {
+  const x = Math.max(0, Math.min(1, t)) * (path.length - 1);
+  const i = Math.min(path.length - 2, Math.floor(x));
+  const f = x - i;
+  const [a, b] = [path[i], path[i + 1]];
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+}
+/** Tramo del arco entre las fracciones a y b. */
+function slice(path: number[][], a: number, b: number): number[][] {
+  const n = path.length - 1;
+  const out = [pointAt(path, a)];
+  for (let i = Math.ceil(a * n); i < b * n; i++) if (i / n > a) out.push(path[i]);
+  out.push(pointAt(path, b));
+  return out;
+}
+/**
+ * Arco en líneas cortadas que avanzan hacia tu condado: `shift` (km) corre los trazos; `reach` (0..1) es cuánto
+ * del arco ya se dibujó (entra de a poco desde el gemelo).
+ */
+function dashes(path: number[][], km: number, shift: number, reach: number): number[][][] {
+  const period = (DASH_KM + GAP_KM) / km;
+  const dash = DASH_KM / km;
+  const out: number[][][] = [];
+  const phase = ((shift / km) % period + period) % period;
+  for (let s = phase - period; s < reach; s += period) {
+    const a = Math.max(0, s);
+    const b = Math.min(reach, s + dash);
+    if (b - a > 0.002) out.push(slice(path, a, b));
+  }
+  return out;
 }
 
 /**
- * Vista quieta, proporcional a lo que hay que mostrar: entran enteros los estados donde caen el condado y sus
- * gemelos, y todos los arcos posibles (con su altura), dentro de los márgenes PAD. Así el encuadre no salta al
- * cambiar de opción y los arcos quedan centrados. Se mide con la proyección real del globo (varias pasadas:
- * cada una corrige centro y zoom).
+ * Vista quieta y cercana: entran el condado y los gemelos de la opción abierta (sus contornos y sus arcos, con la
+ * altura) dentro de los márgenes PAD. Al cambiar de opción, la cámara viaja al encuadre nuevo. Se mide con la
+ * proyección real del globo (varias pasadas: cada una corrige centro y zoom).
  */
 function fitView(w: number, h: number, origin: Pt, twins: Twin[], fipsList: string[]) {
   const probe: number[][] = [];
-  for (const id of new Set(fipsList.map((f) => f.slice(0, 2)))) {
-    const bounds = STATE_BOUNDS.get(id);
+  for (const id of fipsList) {
+    const bounds = COUNTY_BOUNDS.get(id);
     if (!bounds) continue;
     const [[west, south], [east, north]] = bounds;
-    for (let i = 0; i <= 6; i++) {
-      const lon = west + ((east - west) * i) / 6;
-      probe.push([lon, south], [lon, north]);
-    }
-    probe.push([west, (south + north) / 2], [east, (south + north) / 2]);
+    probe.push([west, south], [east, south], [west, north], [east, north]);
   }
   probe.push(origin);
-  for (const t of twins) for (const p of arcPath(origin, t.centroid)) probe.push(p);
+  for (const t of twins) for (const p of arcPath(t.centroid, origin)) probe.push(p);
+  // ancho mínimo alrededor del centro, para no acercarse de más cuando todo está en dos o tres condados
+  const lonsAll = probe.map((p) => p[0]);
+  const latsAll = probe.map((p) => p[1]);
+  const cLon = (Math.min(...lonsAll) + Math.max(...lonsAll)) / 2;
+  const cLat = (Math.min(...latsAll) + Math.max(...latsAll)) / 2;
+  const halfLon = MIN_SPAN_KM / 2 / (111.32 * Math.cos(cLat * rad));
+  const halfLat = (MIN_SPAN_KM * 0.6) / 2 / 111.32;
+  probe.push([cLon - halfLon, cLat], [cLon + halfLon, cLat], [cLon, cLat - halfLat], [cLon, cLat + halfLat]);
 
   const lons = probe.map((p) => p[0]);
   const lats = probe.map((p) => p[1]);
@@ -140,13 +180,30 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
   const [progress, setProgress] = useState<number[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
   const [hover, setHover] = useState<string | null>(null);
-  /** 0 → 1: la cámara baja hacia los estados al aparecer (la mueve la app, no el usuario) */
-  const [intro, setIntro] = useState(0);
+  /** Cámara: la mueve la app, no el usuario. `settled` = llegó al encuadre (recién ahí van los rótulos). */
+  const [view, setView] = useState<{longitude: number; latitude: number; zoom: number} | null>(null);
+  const viewRef = useRef<{longitude: number; latitude: number; zoom: number} | null>(null);
+  const [settled, setSettled] = useState(false);
+  /** ms desde que se montó: mueve el latido y los trazos */
+  const [clock, setClock] = useState(0);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
 
   const on = useMemo(() => twins.filter((t) => highlight.includes(t.fips)), [twins, highlight]);
-  const arcs = useMemo(() => on.map((t) => ({twin: t, path: arcPath(origin.centroid, t.centroid)})), [on, origin.centroid]);
+  // del gemelo hacia tu condado: los trazos avanzan en ese sentido
+  const arcs = useMemo(
+    () => on.map((t) => ({twin: t, path: arcPath(t.centroid, origin.centroid), km: Math.max(1, groundKm(t.centroid, origin.centroid))})),
+    [on, origin.centroid],
+  );
+  // solo se dibujan los condados de los estados que entran en juego: el resto del mapa queda limpio
+  const stateKey = useMemo(
+    () => [...new Set([origin.fips, ...on.map((t) => t.fips)].map((f) => f.slice(0, 2)))].sort().join(','),
+    [origin.fips, on],
+  );
+  const localCounties = useMemo(() => {
+    const ids = new Set(stateKey.split(','));
+    return COUNTIES.filter((f) => ids.has(f.id.slice(0, 2)));
+  }, [stateKey]);
 
   // el deck se crea una vez; se suelta al desmontar
   useEffect(() => {
@@ -175,7 +232,20 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
     };
   }, []);
 
-  // arcos que se dibujan de a uno, `delayMs` después de cada cambio de opción
+  // reloj continuo para el latido de los recuadros y el avance de los trazos; quieto con movimiento reducido
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      setClock(now - start);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // arcos que entran de a uno desde el gemelo, `delayMs` después de cada cambio de opción
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce || !arcs.length) {
@@ -198,38 +268,52 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
   const fit = useMemo(
     () =>
       size[0] && size[1]
-        ? fitView(size[0], size[1], origin.centroid, twins, [origin.fips, ...twins.map((t) => t.fips)])
+        ? fitView(size[0], size[1], origin.centroid, on, [origin.fips, ...on.map((t) => t.fips)])
         : null,
-    [size, origin.centroid, origin.fips, twins],
+    [size, origin.centroid, origin.fips, on],
   );
-  const hasFit = fit !== null;
+  // cámara: la primera vez baja hacia el encuadre; después viaja de un encuadre al otro
   useEffect(() => {
-    if (!hasFit) return;
+    if (!fit) return;
+    const first = viewRef.current === null;
+    const from = viewRef.current ?? {...fit, zoom: fit.zoom - INTRO_ZOOM, longitude: fit.longitude + 6};
+    const land = () => {
+      viewRef.current = fit;
+      setView(fit);
+      setSettled(true);
+    };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setIntro(1);
+      land();
       return;
     }
+    const ms = first ? INTRO_MS : MOVE_MS;
+    setSettled(false);
     const start = performance.now();
     let raf = 0;
     const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / INTRO_MS);
-      setIntro(t);
-      if (t < 1) raf = requestAnimationFrame(tick);
+      const t = Math.min(1, (now - start) / ms);
+      if (t >= 1) {
+        land();
+        return;
+      }
+      const e = 1 - Math.pow(1 - t, 3);
+      const v = {
+        longitude: from.longitude + (fit.longitude - from.longitude) * e,
+        latitude: from.latitude + (fit.latitude - from.latitude) * e,
+        zoom: from.zoom + (fit.zoom - from.zoom) * e,
+      };
+      viewRef.current = v;
+      setView(v);
+      raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     // si el navegador frena los cuadros (pestaña oculta), la cámara igual termina en su lugar
-    const done = window.setTimeout(() => setIntro(1), INTRO_MS + 300);
+    const done = window.setTimeout(land, ms + 300);
     return () => {
       cancelAnimationFrame(raf);
       window.clearTimeout(done);
     };
-  }, [hasFit]);
-  const view = useMemo(() => {
-    if (!fit) return null;
-    const e = 1 - Math.pow(1 - intro, 3);
-    return {...fit, zoom: fit.zoom - INTRO_ZOOM * (1 - e), longitude: fit.longitude + 6 * (1 - e)};
-  }, [fit, intro]);
-  const settled = intro >= 1;
+  }, [fit]);
 
   // capas
   useEffect(() => {
@@ -237,8 +321,31 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
     if (!deck || !view) return;
     const hot = hover ?? selected ?? null;
     const originFeature = countyById.get(origin.fips) ?? null;
+    const originList = originFeature ? [originFeature] : [];
     const onFeatures = on.map((t) => countyById.get(t.fips)).filter(Boolean) as Feature[];
-    const shown = arcs.map((a, i) => ({...a, path: partial(a.path, progress[i] ?? 0), done: (progress[i] ?? 0) >= 1}));
+    // latido 0 → 1 → 0
+    const pulse = (1 - Math.cos((2 * Math.PI * clock) / PULSE_MS)) / 2;
+    const shift = (clock / 1000) * FLOW_KM_S;
+    type Dash = {fips: string; path: number[][]};
+    const track: Dash[] = arcs
+      .map((a, i) => ({fips: a.twin.fips, path: (progress[i] ?? 0) > 0 ? slice(a.path, 0, progress[i] ?? 0) : []}))
+      .filter((d) => d.path.length > 1);
+    const dashed: Dash[] = arcs.flatMap((a, i) =>
+      dashes(a.path, a.km, shift, progress[i] ?? 0).map((path) => ({fips: a.twin.fips, path})),
+    );
+    const outline = (id: string, data: Feature[], color: RGB, width: number, opacity: number) =>
+      new GeoJsonLayer({
+        id,
+        data: data as unknown as GeoFeatures,
+        filled: false,
+        stroked: true,
+        lineWidthUnits: 'pixels',
+        getLineWidth: width,
+        getLineColor: [...color, 255],
+        lineJointRounded: true,
+        opacity,
+        parameters: SURFACE,
+      });
     const layers: Layer[] = [
       new SolidPolygonLayer({
         id: 'ocean',
@@ -271,45 +378,39 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
         id: 'veil',
         data: [[[-180, 90], [0, 90], [180, 90], [180, -90], [0, -90], [-180, -90]]],
         getPolygon: (d: number[][]) => d as unknown as number[],
-        getFillColor: [...NIGHT, 70],
+        getFillColor: [...NIGHT, 90],
         parameters: SURFACE,
       }),
       new GeoJsonLayer({
         id: 'counties',
-        data: (COUNTIES) as unknown as GeoFeatures,
+        data: localCounties as unknown as GeoFeatures,
         filled: false,
         stroked: true,
         lineWidthUnits: 'pixels',
-        getLineWidth: 0.6,
-        getLineColor: [...CREAM, 55],
+        getLineWidth: 0.7,
+        getLineColor: [...CREAM, 60],
         parameters: SURFACE,
       }),
       new GeoJsonLayer({
         id: 'twin-counties',
-        data: (onFeatures) as unknown as GeoFeatures,
+        data: onFeatures as unknown as GeoFeatures,
         filled: true,
-        stroked: true,
-        lineWidthUnits: 'pixels',
-        getFillColor: (f: GeoFeatures[number]) => [...(f.id === hot ? GOLD : CREAM), f.id === hot ? 150 : 95],
-        getLineColor: (f: GeoFeatures[number]) => [...(f.id === hot ? GOLD : CREAM), 230],
-        getLineWidth: (f: GeoFeatures[number]) => (f.id === hot ? 2 : 1.2),
-        updateTriggers: {getFillColor: [hot], getLineColor: [hot], getLineWidth: [hot]},
+        stroked: false,
+        getFillColor: (f: GeoFeatures[number]) => [...(f.id === hot ? GOLD : CREAM), f.id === hot ? 130 : 70],
+        updateTriggers: {getFillColor: [hot]},
         parameters: SURFACE,
       }),
       new GeoJsonLayer({
         id: 'origin-county',
-        data: (originFeature ? [originFeature] : []) as unknown as GeoFeatures,
+        data: originList as unknown as GeoFeatures,
         filled: true,
-        stroked: true,
-        lineWidthUnits: 'pixels',
-        getFillColor: [...GLOW, 170],
-        getLineColor: [...GLOW, 255],
-        getLineWidth: 2,
+        stroked: false,
+        getFillColor: [...GLOW, 120],
         parameters: SURFACE,
       }),
       new GeoJsonLayer({
         id: 'state-edge-dark',
-        data: (STATES) as unknown as GeoFeatures,
+        data: STATES as unknown as GeoFeatures,
         filled: false,
         stroked: true,
         lineWidthUnits: 'pixels',
@@ -319,7 +420,7 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
       }),
       new GeoJsonLayer({
         id: 'state-edge',
-        data: (STATES) as unknown as GeoFeatures,
+        data: STATES as unknown as GeoFeatures,
         filled: false,
         stroked: true,
         lineWidthUnits: 'pixels',
@@ -327,13 +428,18 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
         getLineColor: CREAM,
         parameters: SURFACE,
       }),
-      // brillo de los arcos (el glow va solo en la atmósfera y en los arcos: spec 4.1)
+      // recuadros que laten: blancos en los parecidos, verde en el tuyo (el halo late, el borde queda fijo)
+      outline('twin-halo', onFeatures, CREAM, 9, 0.12 + 0.3 * pulse),
+      outline('twin-edge', onFeatures, CREAM, 2, 0.95),
+      outline('origin-halo', originList, GLOW, 12, 0.2 + 0.5 * pulse),
+      outline('origin-edge', originList, GLOW, 2.6, 1),
+      // huella tenue del arco entero, para que las líneas cortadas se lean como un solo camino
       new PathLayer({
-        id: 'arc-glow',
-        data: shown,
-        getPath: (d: (typeof shown)[number]) => d.path as unknown as number[],
-        getColor: (d: (typeof shown)[number]) => [...(d.twin.fips === hot ? GOLD : CREAM), d.twin.fips === hot ? 90 : 45],
-        getWidth: (d: (typeof shown)[number]) => (d.twin.fips === hot ? 9 : 6),
+        id: 'arc-track',
+        data: track,
+        getPath: (d: Dash) => d.path as unknown as number[],
+        getColor: (d: Dash) => [...(d.fips === hot ? GOLD : CREAM), d.fips === hot ? 70 : 38],
+        getWidth: (d: Dash) => (d.fips === hot ? 5 : 4),
         widthUnits: 'pixels',
         capRounded: true,
         jointRounded: true,
@@ -341,11 +447,11 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
         parameters: SURFACE,
       }),
       new PathLayer({
-        id: 'arcs',
-        data: shown,
-        getPath: (d: (typeof shown)[number]) => d.path as unknown as number[],
-        getColor: (d: (typeof shown)[number]) => [...(d.twin.fips === hot ? GOLD : CREAM), 255],
-        getWidth: (d: (typeof shown)[number]) => (d.twin.fips === hot ? 3.2 : 2.2),
+        id: 'arc-dashes',
+        data: dashed,
+        getPath: (d: Dash) => d.path as unknown as number[],
+        getColor: (d: Dash) => [...(d.fips === hot ? GOLD : CREAM), 255],
+        getWidth: (d: Dash) => (d.fips === hot ? 3.4 : 2.6),
         widthUnits: 'pixels',
         capRounded: true,
         jointRounded: true,
@@ -354,18 +460,17 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
       }),
       new ScatterplotLayer({
         id: 'twin-dots',
-        data: twins,
+        data: on,
         pickable: true,
         getPosition: (t: Twin) => t.centroid,
-        getRadius: (t: Twin) => (t.fips === hot ? 7 : highlight.includes(t.fips) ? 5 : 3.5),
+        getRadius: (t: Twin) => (t.fips === hot ? 7 : 5),
         radiusUnits: 'pixels',
         stroked: true,
         lineWidthUnits: 'pixels',
         getLineWidth: 1.5,
         getLineColor: [...NIGHT, 255],
-        getFillColor: (t: Twin) =>
-          t.fips === hot ? [...GOLD, 255] : highlight.includes(t.fips) ? [...CREAM, 255] : [...CREAM, 110],
-        updateTriggers: {getRadius: [hot, highlight], getFillColor: [hot, highlight]},
+        getFillColor: (t: Twin) => (t.fips === hot ? [...GOLD, 255] : [...CREAM, 255]),
+        updateTriggers: {getRadius: [hot], getFillColor: [hot]},
         parameters: SURFACE,
         onHover: ({object}) => setHover(object ? (object as Twin).fips : null),
         onClick: ({object}) => {
@@ -378,7 +483,7 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
         id: 'origin-dot',
         data: [origin],
         getPosition: (o: typeof origin) => o.centroid,
-        getRadius: 6,
+        getRadius: 7,
         radiusUnits: 'pixels',
         stroked: true,
         lineWidthUnits: 'pixels',
@@ -389,7 +494,7 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
       }),
     ];
     deck.setProps({viewState: view, layers});
-  }, [view, arcs, progress, on, twins, highlight, hover, selected, origin]);
+  }, [view, arcs, progress, on, localCounties, hover, selected, origin, clock]);
 
   // rótulos en HTML (nítidos y con la tipografía de la app), ubicados donde no pisan nada
   useEffect(() => {

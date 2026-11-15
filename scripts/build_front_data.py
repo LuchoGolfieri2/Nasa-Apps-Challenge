@@ -185,22 +185,23 @@ def escribir_png(z: zipfile.ZipFile, fips: str, anios: list[int]) -> dict | None
         lut[k] = v * PASO_GRIS
     carpeta = SALIDA / "cdl" / fips
     carpeta.mkdir(parents=True, exist_ok=True)
-    escritos, tam = [], None
+    escritos, tam, origen = [], None, None
     for anio in anios:
         nombre = f"interim/{fips}/cdl_grupos_{anio}.tif"
         if nombre not in z.namelist():
             continue
         with rasterio.open(io.BytesIO(z.read(nombre))) as r:
             a = r.read(1)
+            esquina = [r.transform.c, r.transform.f]
         desconocidos = set(np.unique(a).tolist()) - set(ID_GRUPO_A_INDICE)
         if desconocidos:
             raise ValueError(f"{nombre}: ids de grupo sin mapear {desconocidos}")
         img = Image.fromarray(lut[a], mode="L")
         img.save(carpeta / f"{anio}.png", optimize=True)
         if tam is None:
-            tam = [img.width, img.height]
-        elif tam != [img.width, img.height]:
-            raise ValueError(f"{nombre}: tamaño distinto al del primer año")
+            tam, origen = [img.width, img.height], esquina
+        elif tam != [img.width, img.height] or origen != esquina:
+            raise ValueError(f"{nombre}: tamaño o ubicación distintos a los del primer año")
         escritos.append(anio)
     if not escritos:
         return None
@@ -212,6 +213,8 @@ def escribir_png(z: zipfile.ZipFile, fips: str, anios: list[int]) -> dict | None
         "encoding": f"gray value = class index × {PASO_GRIS} (see meta.json classes)",
         "gray_step": PASO_GRIS,
         "crs": "EPSG:5070",
+        # esquina de arriba a la izquierda del raster (m, EPSG:5070): ubica el mapa sobre el globo
+        "origin": origen,
         "pixel_m": 30,
         "source": FUENTE_CDL,
         "prototype": False,

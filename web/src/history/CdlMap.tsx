@@ -4,6 +4,7 @@ import { CLASS_LABEL, CLASS_ORDER, CROP_COLOR, NON_AG_COLOR, type ClassId, type 
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 import { createRenderer, type CdlRenderer, type Frame } from "./cdlRenderer";
+import type { CdlView, Placement } from "./CountyGlobe";
 import type { Playback } from "./usePlayback";
 import type { Rasters } from "./useRasters";
 
@@ -66,13 +67,35 @@ interface Props {
   countyName: string;
   /** Controles extra sobre el mapa (la guía de lectura). */
   overlay?: React.ReactNode;
+  /**
+   * Sobre el globo (CountyGlobe): el marco va justo sobre el condado, girado como el ráster, sin recorte; los
+   * controles y el epígrafe quedan sobre el globo, y cada zoom se avisa con `onView` para mover la cámara.
+   */
+  placement?: Placement;
+  onView?: (view: CdlView) => void;
 }
+
+/** Duración del zoom animado (botones, doble clic, "Whole county"). */
+const ZOOM_MS = 250;
 
 /**
  * El condado pintado píxel a píxel (30 m) con el CDL (F17). Entre dos años los lotes cambian de cultivo de a
  * poco: eso es animación, no un dato. Solo un año exacto muestra el CDL tal cual (ver cdlRenderer.ts).
  */
-export function CdlMap({ info, years, rasters, pb, index, playing, between, highlight, countyName, overlay }: Props) {
+export function CdlMap({
+  info,
+  years,
+  rasters,
+  pb,
+  index,
+  playing,
+  between,
+  highlight,
+  countyName,
+  overlay,
+  placement,
+  onView,
+}: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const renderer = useRef<CdlRenderer | null>(null);
   const [epoch, setEpoch] = useState(0);
@@ -87,6 +110,62 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
   const viewRef = useRef(view);
   viewRef.current = view;
   const drag = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
+  const fig = useRef<HTMLElement>(null);
+  const tween = useRef(0);
+  const placementRef = useRef(placement);
+  placementRef.current = placement;
+
+  /**
+   * Punto del puntero en px del marco sin zoom (x hacia la derecha del ráster, y hacia abajo) y tamaño del marco;
+   * fx, fy: el mismo punto en px de la figura, para el cartel. Sobre el globo el marco está girado: se deshace el giro.
+   */
+  const local = useCallback((clientX: number, clientY: number) => {
+    const p = placementRef.current;
+    if (p && fig.current) {
+      const box = fig.current.getBoundingClientRect();
+      const dx = clientX - box.left - p.left;
+      const dy = clientY - box.top - p.top;
+      const cos = Math.cos(p.angle);
+      const sin = Math.sin(p.angle);
+      return {
+        mx: cos * dx + sin * dy,
+        my: -sin * dx + cos * dy,
+        w: p.width,
+        h: p.height,
+        fx: clientX - box.left,
+        fy: clientY - box.top,
+      };
+    }
+    const box = frame.current!.getBoundingClientRect();
+    const mx = clientX - box.left;
+    const my = clientY - box.top;
+    return { mx, my, w: box.width, h: box.height, fx: mx, fy: my };
+  }, []);
+
+  /** Cambia el zoom. Sobre el globo se anima cuadro a cuadro, así la cámara lo sigue sin despegarse. */
+  const goTo = useCallback((next: View, animate: boolean) => {
+    cancelAnimationFrame(tween.current);
+    if (!placementRef.current || !animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setSmooth(animate && !placementRef.current);
+      setView(next);
+      return;
+    }
+    setSmooth(false);
+    const from = viewRef.current;
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / ZOOM_MS);
+      const e = 1 - Math.pow(1 - t, 3);
+      // el zoom avanza en escala logarítmica y el corrimiento lo acompaña, así el punto elegido queda quieto
+      const k = from.k * Math.pow(next.k / from.k, e);
+      const a = next.k === from.k ? e : (k - from.k) / (next.k - from.k);
+      setView({ k, x: from.x + (next.x - from.x) * a, y: from.y + (next.y - from.y) * a });
+      if (t < 1) tween.current = requestAnimationFrame(step);
+    };
+    tween.current = requestAnimationFrame(step);
+  }, []);
+  useEffect(() => () => cancelAnimationFrame(tween.current), []);
+  useEffect(() => onView?.(view), [view, onView]);
 
   const year = years[index];
   const status = rasters.status[year];
@@ -160,7 +239,7 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
     [pb],
   );
 
-  useEffect(() => setView(HOME), [info]);
+  useEffect(() => setView(HOME), [info, placement?.width, placement?.height]);
 
   // El dibujante vive mientras no cambie el ráster (otro condado) ni se pierda el contexto de la placa.
   useEffect(() => {
@@ -232,28 +311,32 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
     draw(pb.pos);
   }, [lut, settled, draw, pb, epoch]);
 
-  const zoomBy = useCallback((factor: number, mx?: number, my?: number, animate = true) => {
-    const box = frame.current?.getBoundingClientRect();
-    if (!box) return;
-    setSmooth(animate);
-    setView((v) => zoomAt(v, mx ?? box.width / 2, my ?? box.height / 2, factor, box.width, box.height));
-  }, []);
+  const zoomBy = useCallback(
+    (factor: number, mx?: number, my?: number, animate = true) => {
+      const p = placementRef.current;
+      const box = frame.current?.getBoundingClientRect();
+      if (!box) return;
+      const w = p ? p.width : box.width;
+      const h = p ? p.height : box.height;
+      goTo(zoomAt(viewRef.current, mx ?? w / 2, my ?? h / 2, factor, w, h), animate);
+    },
+    [goTo],
+  );
 
   // La rueda acerca y aleja. Con el mapa entero, alejar deja pasar el scroll de la página.
   useEffect(() => {
     const el = frame.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
-      const box = el.getBoundingClientRect();
       const v = viewRef.current;
       if (v.k === 1 && e.deltaY > 0) return;
       e.preventDefault();
-      setSmooth(false);
-      setView(zoomAt(v, e.clientX - box.left, e.clientY - box.top, Math.exp(-e.deltaY * 0.0022), box.width, box.height));
+      const { mx, my, w, h } = local(e.clientX, e.clientY);
+      goTo(zoomAt(v, mx, my, Math.exp(-e.deltaY * 0.0022), w, h), false);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, []);
+  }, [local, goTo]);
 
   // El cartel del píxel solo existe en un año exacto: en una transición no hay dato que nombrar.
   useEffect(() => {
@@ -261,30 +344,31 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
   }, [still]);
 
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const box = e.currentTarget.getBoundingClientRect();
+    const { mx, my, w, h, fx, fy } = local(e.clientX, e.clientY);
     if (drag.current) {
       const d = drag.current;
       setTip(null);
-      setView((v) => clampView({ k: v.k, x: d.x + e.clientX - d.px, y: d.y + e.clientY - d.py }, box.width, box.height));
+      cancelAnimationFrame(tween.current);
+      setView((v) => clampView({ k: v.k, x: d.x + mx - d.px, y: d.y + my - d.py }, w, h));
       return;
     }
     if (!still || !classes || (e.target as HTMLElement).closest("button, .guide")) return setTip(null);
-    const mx = e.clientX - box.left;
-    const my = e.clientY - box.top;
-    const px = Math.floor(((mx - view.x) / view.k / box.width) * info.width);
-    const py = Math.floor(((my - view.y) / view.k / box.height) * info.height);
+    const px = Math.floor(((mx - view.x) / view.k / w) * info.width);
+    const py = Math.floor(((my - view.y) / view.k / h) * info.height);
     if (px < 0 || py < 0 || px >= info.width || py >= info.height) return setTip(null);
     const i = py * info.width + px;
     const cls = CLASS_ORDER[classes[i]] ?? "nodata";
     if (cls === "nodata") return setTip(null);
     const was = showChanges && prevClasses![i] !== classes[i] ? (CLASS_ORDER[prevClasses![i]] ?? null) : null;
-    setTip({ x: mx, y: my, cls, was: was === "nodata" ? null : was });
+    setTip({ x: fx, y: fy, cls, was: was === "nodata" ? null : was });
   };
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (view.k === 1 || (e.target as HTMLElement).closest("button, .guide")) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     setSmooth(false);
-    drag.current = { px: e.clientX, py: e.clientY, x: view.x, y: view.y };
+    cancelAnimationFrame(tween.current);
+    const { mx, my } = local(e.clientX, e.clientY);
+    drag.current = { px: mx, py: my, x: view.x, y: view.y };
   };
   const zoomed = view.k > 1;
   const viewStyle: React.CSSProperties = {
@@ -294,12 +378,57 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
   };
   const frameClass = ["cdl__frame", zoomed ? "cdl__frame--zoomed" : "", playing ? "cdl__frame--playing" : ""].filter(Boolean).join(" ");
 
+  const frameStyle: React.CSSProperties = placement
+    ? {
+        position: "absolute",
+        left: placement.left,
+        top: placement.top,
+        width: placement.width,
+        height: placement.height,
+        transform: `rotate(${placement.angle}rad)`,
+        transformOrigin: "0 0",
+      }
+    : { aspectRatio: `${info.width} / ${info.height}` };
+  const controls = (
+    <>
+      {overlay}
+      <div className="cdl__zoom">
+        <button type="button" className="solid-btn" onClick={() => zoomBy(1.8)} disabled={view.k >= MAX_ZOOM} aria-label="Zoom in" title="Zoom in">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+        <button type="button" className="solid-btn" onClick={() => zoomBy(1 / 1.8)} disabled={!zoomed} aria-label="Zoom out" title="Zoom out">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+        {zoomed ? (
+          <button type="button" className="cdl__zoom-reset solid-btn" onClick={() => goTo(HOME, true)}>
+            Whole county
+          </button>
+        ) : null}
+      </div>
+    </>
+  );
+  const tipEl = tip ? (
+    <div className="cdl__tip" style={{ left: tip.x, top: tip.y }}>
+      <i
+        style={{
+          background: tip.cls === "non_ag" || tip.cls === "nodata" ? NON_AG_COLOR : CROP_COLOR[tip.cls],
+        }}
+      />
+      {CLASS_LABEL[tip.cls]} in {year}
+      {tip.was ? <span className="cdl__was">{`, ${CLASS_LABEL[tip.was].toLowerCase()} in ${prevYear}`}</span> : null}
+    </div>
+  ) : null;
+
   return (
-    <figure className="cdl">
+    <figure ref={fig} className={placement ? "cdl cdl--globe" : "cdl"}>
       <div
         ref={frame}
         className={frameClass}
-        style={{ aspectRatio: `${info.width} / ${info.height}` }}
+        style={frameStyle}
         onPointerMove={onMove}
         onPointerDown={onDown}
         onPointerUp={() => (drag.current = null)}
@@ -307,8 +436,8 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
         onPointerLeave={() => setTip(null)}
         onDoubleClick={(e) => {
           if ((e.target as HTMLElement).closest("button, .guide")) return;
-          const box = e.currentTarget.getBoundingClientRect();
-          zoomBy(2, e.clientX - box.left, e.clientY - box.top);
+          const { mx, my } = local(e.clientX, e.clientY);
+          zoomBy(2, mx, my);
         }}
       >
         <div className="cdl__clip">
@@ -337,43 +466,11 @@ export function CdlMap({ info, years, rasters, pb, index, playing, between, high
         ) : !classes ? (
           <div className="cdl__state cdl__state--loading">Loading the {year} crop map…</div>
         ) : null}
-        {overlay}
-        <div className="cdl__zoom">
-          <button type="button" onClick={() => zoomBy(1.8)} disabled={view.k >= MAX_ZOOM} aria-label="Zoom in" title="Zoom in">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-          <button type="button" onClick={() => zoomBy(1 / 1.8)} disabled={!zoomed} aria-label="Zoom out" title="Zoom out">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <path d="M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-          {zoomed ? (
-            <button
-              type="button"
-              className="cdl__zoom-reset"
-              onClick={() => {
-                setSmooth(true);
-                setView(HOME);
-              }}
-            >
-              Whole county
-            </button>
-          ) : null}
-        </div>
-        {tip ? (
-          <div className="cdl__tip" style={{ left: tip.x, top: tip.y }}>
-            <i
-              style={{
-                background: tip.cls === "non_ag" || tip.cls === "nodata" ? NON_AG_COLOR : CROP_COLOR[tip.cls],
-              }}
-            />
-            {CLASS_LABEL[tip.cls]} in {year}
-            {tip.was ? <span className="cdl__was">{`, ${CLASS_LABEL[tip.was].toLowerCase()} in ${prevYear}`}</span> : null}
-          </div>
-        ) : null}
+        {placement ? null : controls}
+        {placement ? null : tipEl}
       </div>
+      {placement ? controls : null}
+      {placement ? tipEl : null}
       <figcaption>
         <span>
           {showChanges

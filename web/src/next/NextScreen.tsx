@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { dataUrl } from "../data/load";
 import { Missing } from "../ui/Missing";
+import { Icon } from "./icons";
 import { NextSeason } from "./NextSeason";
 import type { NextData } from "./types";
 
@@ -53,11 +54,21 @@ export function NextScreen({ fips }: { fips: string }) {
 
   return (
     <div className="fr-next-wrap">
-      <nav className="fr-next fr-next--crumbs" aria-label="Breadcrumb" style={{ paddingBottom: 0, minHeight: 0 }}>
-        <p className="fr-crumbs">
-          <a href={`#/map/${data.fips}`}>← Map</a> · <a href={`#/state/${data.state}`}>{STATE_NAME[data.state] ?? data.state}</a> ›{" "}
-          <a href={`#/county/${data.fips}`}>{data.name} County history</a> › <b>Next season</b>
-        </p>
+      <nav className="ns-top" aria-label="County">
+        <a
+          className="ns-back solid-btn"
+          href={`#/county/${data.fips}`}
+          aria-label={`Back to the ${data.name} County history`}
+          title={`Back to the ${data.name} County history`}
+        >
+          <Icon name="back" />
+        </a>
+        <span className="ns-top-where">
+          <b>
+            {data.name} County, {STATE_NAME[data.state] ?? data.state}
+          </b>
+          <span aria-hidden="true"> · </span>Next season
+        </span>
       </nav>
       <NextSeason data={data} onYearClick={(y) => (window.location.hash = `#/county/${data.fips}?year=${y}`)} />
     </div>

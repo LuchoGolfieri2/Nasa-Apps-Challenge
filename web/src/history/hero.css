@@ -1,0 +1,164 @@
+/*
+  Columna del año junto al mapa (pantalla 2): el año en cajas, como una tarjeta del tiempo (YearTiles),
+  y la carrera de barras dentro de su propia tarjeta. Archivo aparte de history.css para no pisar a otros.
+*/
+
+/* Un poco menos de aire entre bloques, para que cajas y barras entren junto al mapa a 1440 × 900.
+   Doble clase: este archivo se carga antes que history.css. */
+.history .history__story {
+  gap: 14px;
+}
+
+.tiles-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Marcas del clima del año (p. ej. "Wet July"). La fila guarda su alto aunque ese año no tenga marcas,
+   así las cajas no saltan durante el play. */
+.tiles-block__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 24px;
+  margin: 0;
+}
+.tiles-block__tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font: 700 13px/1 var(--font-body);
+}
+
+.tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: 92px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 2px rgba(15, 42, 29, 0.05);
+  font-variant-numeric: tabular-nums;
+}
+
+.tile__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 20px;
+  margin-bottom: 2px;
+}
+.tile__icon {
+  flex: none;
+  color: var(--primary);
+}
+
+/* En el DOM va primero la etiqueta (se lee "Corn yield, 182 bu/acre"); en pantalla, primero el valor. */
+.tile__value {
+  order: 1;
+  font: 700 18px/1.15 var(--font-display);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.tile__top {
+  order: 0;
+}
+.tile__value b {
+  font-weight: 700;
+}
+.tile__value small {
+  font: 500 12px var(--font-body);
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+/* Palabras (p. ej. "Wetter than usual") en lugar de cifras: un poco más chicas para que entren en dos líneas */
+.tile__word {
+  font-size: 16px;
+}
+.tile__label {
+  order: 2;
+  font: 500 12.5px/1.3 var(--font-body);
+  color: var(--ink-3);
+}
+.tile__stamp {
+  order: 3;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+/* Faltante dentro de la caja: escrito y con el rayado del resto de la app, pero compacto */
+.tile .missing--inline {
+  padding: 2px 7px;
+  font: 600 13px/1.3 var(--font-body);
+}
+.tile .missing b {
+  color: var(--ink-2);
+}
+
+/* Comparación con lo habitual: etiqueta chica arriba a la derecha */
+.tile__tag {
+  min-width: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font: 700 11px/1.3 var(--font-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.tile__tag--above {
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+.tile__tag--below {
+  color: var(--wheat-ink);
+}
+
+.tiles-block__sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+/* Carrera de barras en su propia tarjeta */
+.story-card {
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+}
+/* Sobre la tarjeta blanca el resaltado al pasar el cursor tiene que ser verdoso, no blanco */
+.story-card .race__hit:hover {
+  background: var(--surface-2);
+}
+
+@media (max-width: 640px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .story-card {
+    padding: 14px 12px;
+  }
+}

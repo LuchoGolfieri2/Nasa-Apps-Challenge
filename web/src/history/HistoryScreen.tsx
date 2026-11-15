@@ -1,43 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { replaceQuery } from "../app/router";
 import { loadCounty } from "../data/load";
-import type { County, CountyYear } from "../data/types";
+import type { County, CountyYear, RasterInfo } from "../data/types";
 import type { CropId } from "../ui/crops";
 import { CROPS, CROP_COLOR, CROP_LABEL } from "../ui/crops";
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 import { BarRace } from "./BarRace";
 import { CdlMap } from "./CdlMap";
+import { CountyGlobe, type CdlView } from "./CountyGlobe";
 import { Timeline } from "./Timeline";
 import { usePlayback } from "./usePlayback";
 import { useRasters } from "./useRasters";
 import { YieldHistory } from "./YieldHistory";
-import { YearFacts, YearLines } from "./YearFacts";
+import { YearTiles } from "./YearTiles";
 import "./history.css";
+import "./globe-stage.css";
 
 /**
  * Segundos por año en el play: 0,8 s de transición entre años + 0,2 s con el año exacto quieto.
  * Se puede cambiar con ?speed=1.6 (tomas del video).
  */
 const DEFAULT_STEP_S = 1;
-
-const DEMO = [
-  { fips: "19169", label: "Story, IA" },
-  { fips: "20191", label: "Sumner, KS" },
-  { fips: "17113", label: "McLean, IL" },
-];
-
-/** Una fuente por producto (la más detallada), para los sellos de la columna del año. */
-function uniqueSources(sources: (string | undefined)[]): string[] {
-  const byProduct = new Map<string, string>();
-  for (const s of sources) {
-    if (!s) continue;
-    const product = s.split(" · ")[0];
-    const seen = byProduct.get(product);
-    if (!seen || s.length > seen.length) byProduct.set(product, s);
-  }
-  return [...byProduct.values()];
-}
 
 export function HistoryScreen({
   fips,
@@ -51,6 +35,9 @@ export function HistoryScreen({
   const [highlight, setHighlight] = useState<CropId | null>(null);
   const [pinned, setPinned] = useState<CropId | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+  /** Sobre el globo: dónde va el condado (lo ubica el CSS) y el zoom del mapa del CDL, que mueve la cámara */
+  const slot = useRef<HTMLDivElement>(null);
+  const [cdlView, setCdlView] = useState<CdlView>({ k: 1, x: 0, y: 0 });
   const autoplay = useRef(query.get("play") === "1");
   const stepMs = useMemo(() => {
     const s = Number(query.get("speed"));
@@ -147,11 +134,8 @@ export function HistoryScreen({
   );
 
   const lit = highlight ?? pinned;
-  // El sello del CDL ya va en "Acres by crop"
-  const sources = uniqueSources([
-    current.yield?.source,
-    current.weather?.source,
-  ]);
+  // Con la ubicación del ráster, el mapa del CDL va sobre el globo; sin ella, como antes.
+  const onGlobe = !!county.raster?.origin;
   const rewind = () => {
     pb.reset(0);
     pb.play();
@@ -162,7 +146,7 @@ export function HistoryScreen({
     <div className={guideOpen ? "guide guide--open" : "guide"}>
       <button
         type="button"
-        className="guide__btn"
+        className="guide__btn solid-btn"
         aria-expanded={guideOpen}
         onClick={() => setGuideOpen((o) => !o)}
       >
@@ -213,12 +197,6 @@ export function HistoryScreen({
       ) : null}
     </div>
   );
-  const switcher = DEMO.some((d) => d.fips === county.fips)
-    ? DEMO
-    : [
-        { fips: county.fips, label: `${county.name}, ${county.state}` },
-        ...DEMO,
-      ];
   const maxSeq = Math.max(
     1,
     ...(county.common_rotations?.items.map((t) => t.pct) ?? []),
@@ -226,32 +204,64 @@ export function HistoryScreen({
 
   return (
     <main className="history">
-      <p className="history__eyebrow">
-        <a href={`#/map/${county.fips}`}>← Map</a>
-        <span aria-hidden="true"> · </span>
-        <a href={`#/state/${county.state}`}>{county.state_name}</a>
-        <span aria-hidden="true"> › </span>
-        <label className="history__switch">
-          <span className="visually-hidden">County</span>
-          <select
-            value={county.fips}
-            onChange={(e) =>
-              (window.location.hash = `#/county/${e.target.value}`)
-            }
+      <nav className="history__eyebrow" aria-label="County">
+        <a
+          className="history__back solid-btn"
+          href={`#/map/${county.fips}`}
+          aria-label="Back to the map"
+          title="Back to the map"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
           >
-            {switcher.map((d) => (
-              <option key={d.fips} value={d.fips}>
-                {d.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </p>
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </a>
+        {/* El condado se elige solo desde el mapa: acá queda escrito, sin selector. */}
+        <p className="history__where">
+          {county.name} County, {county.state_name}
+        </p>
+      </nav>
 
       <div
-        className={`history__stage${county.raster ? "" : " history__stage--nomap"}`}
+        className={`history__stage${county.raster ? "" : " history__stage--nomap"}${onGlobe ? " history__stage--globe" : ""}`}
       >
-        {county.raster ? (
+        {onGlobe ? (
+          <>
+            <div ref={slot} className="history__slot" aria-hidden="true" />
+            <CountyGlobe
+              info={county.raster as RasterInfo & { origin: [number, number] }}
+              fips={county.fips}
+              view={cdlView}
+              slot={slot}
+            >
+              {(placement) => (
+                <CdlMap
+                  info={county.raster!}
+                  years={years}
+                  rasters={rasters}
+                  pb={pb}
+                  index={index}
+                  playing={playing}
+                  between={between}
+                  highlight={lit}
+                  countyName={county.name}
+                  overlay={guide}
+                  placement={placement}
+                  onView={setCdlView}
+                />
+              )}
+            </CountyGlobe>
+          </>
+        ) : county.raster ? (
           <div
             className="history__map"
             style={
@@ -295,25 +305,22 @@ export function HistoryScreen({
               ))}
             </ul>
           </div>
-          <YearLines county={county} y={current} />
+          <YearTiles county={county} y={current} />
           {county.raster ? (
-            <BarRace
-              years={county.years}
-              pb={pb}
-              index={index}
-              between={between}
-              highlight={lit}
-              onHighlight={setHighlight}
-              pinned={pinned}
-              onPin={(c) => setPinned((p) => (p === c ? null : c))}
-              source={county.raster.source ?? "USDA CDL"}
-            />
+            <div className="story-card">
+              <BarRace
+                years={county.years}
+                pb={pb}
+                index={index}
+                between={between}
+                highlight={lit}
+                onHighlight={setHighlight}
+                pinned={pinned}
+                onPin={(c) => setPinned((p) => (p === c ? null : c))}
+                source={county.raster.source ?? "USDA CDL"}
+              />
+            </div>
           ) : null}
-          <p className="history__sources">
-            {sources.map((s) => (
-              <SourceChip key={s} source={s} />
-            ))}
-          </p>
         </div>
       </div>
 
@@ -337,10 +344,7 @@ export function HistoryScreen({
         </a>
       </div>
 
-      <section className="history__more" aria-labelledby="detail-title">
-        <h2 id="detail-title">{current.year} in detail</h2>
-        <YearFacts county={county} y={current} />
-
+      <section className="history__more" aria-labelledby="more-title">
         <h2 id="more-title">
           {years.length} years in {county.name} County
         </h2>

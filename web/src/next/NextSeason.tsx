@@ -12,6 +12,7 @@
  */
 import React, {useMemo, useState} from 'react';
 import {Confidence, ModelRuleTag, PrototypeStamp, SourceChip} from './bits';
+import {Icon, PRIORITY_ICON, similarIcon} from './icons';
 import {commonAxis, suggest} from './suggest';
 import {TwinGlobe} from './TwinGlobe';
 import {CROP_COLOR, CROP_LABEL} from '../ui/crops';
@@ -86,9 +87,11 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
     <div className="ns">
       <header className="ns-head">
         <div>
-          <p className="ns-where">
-            {data.name} County, {data.state} {anyPrototype ? <PrototypeStamp /> : null}
-          </p>
+          {anyPrototype ? (
+            <p className="ns-where">
+              <PrototypeStamp />
+            </p>
+          ) : null}
           <h1>
             {COUNT_WORD[options.length] ?? options.length} ways to plant {plan.label.toLowerCase()} next season
           </h1>
@@ -107,6 +110,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
           <div className="ns-chips" role="group" aria-labelledby="ns-pick-prio">
             {PRIORITIES.map((p) => (
               <button key={p} type="button" aria-pressed={priorities.includes(p)} className={`ns-chip ${priorities.includes(p) ? 'on' : ''}`} onClick={() => toggle(p)}>
+                <Icon name={PRIORITY_ICON[p]} size={18} />
                 {PRIORITY_LABEL[p]}
               </button>
             ))}
@@ -147,6 +151,9 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
         </p>
       ) : null}
 
+      {/* LA RESPUESTA PRIMERO: la sugerida en cifras, para el que quiere el dato directo */}
+      {winner ? <Answer option={winner} usual={usual} onWhy={() => open(winner.id, true)} /> : null}
+
       {/* TRES OPCIONES, EJE COMÚN EN BU/ACRE */}
       <section className="ns-cards" aria-label="Options for next season" style={{['--n' as string]: options.length}}>
         {options.map((o) => (
@@ -156,13 +163,19 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
 
       <section id="ns-detail" className="ns-detail ns-paper" aria-live="polite" style={{['--at' as string]: focusIndex, ['--n' as string]: options.length}}>
         <div>
-          <h2>Why {focus.is_current ? 'keep your usual mix' : focus.label.toLowerCase()}</h2>
+          <h2 className="ns-detail-h ns-detail-h--pro">
+            <Icon name="check" size={24} />
+            Why {focus.is_current ? 'keep your usual mix' : focus.label.toLowerCase()}
+          </h2>
           <ul>
             {pros.length ? pros.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">Nothing else stands out in favor of this option in the data.</li>}
           </ul>
         </div>
         <div>
-          <h2>What could go wrong</h2>
+          <h2 className="ns-detail-h ns-detail-h--con">
+            <Icon name="alert" size={24} />
+            What could go wrong
+          </h2>
           <ul>
             {cons.length ? cons.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">No risk specific to this option shows up in the data.</li>}
           </ul>
@@ -178,25 +191,14 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
         <SourceChip source={focus.source || 'Field Rewind model · 2009–2023'} />
       </p>
 
-      {/* FALTANTES */}
-      {data.missing.length ? (
-        <section className="ns-sec">
-          <h2>What we don&apos;t know yet</h2>
-          <ul className="ns-two">
-            {data.missing.map((m, i) => (
-              <li key={i} className="ns-box ns-box--missing">
-                <b className="ns-missing">Missing data:</b> {m.what.charAt(0).toLowerCase() + m.what.slice(1)}. {m.why}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {/* GEMELOS */}
-      <section className="ns-sec">
-        <h2>Counties like yours</h2>
+      {/* GEMELOS: van antes que los faltantes, son la prueba de que la opción funciona cerca */}
+      <section className="ns-sec ns-twins" aria-labelledby="ns-twins-title">
+        <h2 id="ns-twins-title" className="ns-sec-h">
+          <Icon name="pin" size={30} />
+          Counties like yours
+        </h2>
         <p className="ns-lead">
-          Counties with similar soil and weather. The lines go from {data.name} County to the ones that back the option you pick.
+          Counties with the same kind of soil and weather as {data.name} County. See what they plant, and why they count as a match.
         </p>
         <div className="ns-tabs">
           <span id="ns-twins-for">Show counties for</span>
@@ -228,8 +230,9 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
                 <SourceChip source={twin.source} />
               </div>
             ) : null}
-            <a className="ns-open" href={`#/map/${data.fips}`}>
+            <a className="ns-open solid-btn" href={`#/map/${data.fips}`}>
               Open in the map
+              <Icon name="open" size={18} />
             </a>
           </div>
           <div className="ns-side">
@@ -241,19 +244,42 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
                 {focus.twins_note.text.replace(/^Counties like yours[^:]*:\s*\d+\.\s*/, '')} <Confidence level={focus.twins_note.confidence.level} />
               </p>
             ) : null}
-            <ul>
-              {focusTwins.map((t) => (
-                <li key={t.fips}>
-                  <button type="button" className={`ns-twin ${twinSel === t.fips ? 'on' : ''}`} aria-pressed={twinSel === t.fips} onClick={() => setTwinSel(twinSel === t.fips ? null : t.fips)}>
-                    <b>
-                      {t.name}, {t.state}
-                    </b>
-                    <small>Similar on {t.similar_on.join(' and ')}</small>
-                    <CropSplit twin={t} />
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {focusTwins.length ? (
+              <ol className="ns-twin-list">
+                {focusTwins.map((t) => (
+                  <li key={t.fips}>
+                    <button type="button" className={`ns-twin ${twinSel === t.fips ? 'on' : ''}`} aria-pressed={twinSel === t.fips} onClick={() => setTwinSel(twinSel === t.fips ? null : t.fips)}>
+                      <span className="ns-twin-name">
+                        <b>{t.name}</b>, {t.state}
+                      </span>
+                      <span className="ns-twin-why">
+                        <span className="ns-twin-label">Why it&apos;s like yours</span>
+                        <span className="ns-twin-reasons">
+                          {t.similar_on.length ? (
+                            t.similar_on.map((s) => (
+                              <span key={s} className="ns-why">
+                                <Icon name={similarIcon(s)} size={16} />
+                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                              </span>
+                            ))
+                          ) : (
+                            <small className="ns-missing">Missing data: what makes it similar</small>
+                          )}
+                        </span>
+                      </span>
+                      <span className="ns-twin-why">
+                        <span className="ns-twin-label">What they plant</span>
+                        <CropSplit twin={t} />
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="ns-box ns-box--missing">
+                <b className="ns-missing">Missing data:</b> no county like yours backs this option yet.
+              </p>
+            )}
           </div>
         </div>
 
@@ -277,13 +303,87 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
         ))}
       </section>
 
+      {/* FALTANTES */}
+      {data.missing.length ? (
+        <section className="ns-sec">
+          <h2 className="ns-sec-h">
+            <Icon name="question" size={30} />
+            What we don&apos;t know yet
+          </h2>
+          <ul className="ns-two">
+            {data.missing.map((m, i) => (
+              <li key={i} className="ns-box ns-box--missing">
+                <b className="ns-missing">Missing data:</b> {m.what.charAt(0).toLowerCase() + m.what.slice(1)}. {m.why}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <p className="ns-foot">Decision support for the whole county, not a single field. It does not replace your agronomist.</p>
     </div>
   );
 };
 
+/** La sugerida en cuatro cifras, arriba de todo: rinde típico, diferencia con lo habitual, ingreso y confianza. */
+const Answer: React.FC<{option: NextOption; usual: number | null; onWhy: () => void}> = ({option: o, usual, onWhy}) => {
+  const y = o.yield_bu_ac;
+  const delta = y && usual != null && !o.is_current ? y.median - usual : null;
+  return (
+    <section className="ns-answer" aria-labelledby="ns-answer-title">
+      <div className="ns-answer-pick">
+        <span className="ns-answer-badge">
+          <Icon name="star" size={22} />
+        </span>
+        <div>
+          <p className="ns-answer-kicker">Suggested for your priorities</p>
+          <h2 id="ns-answer-title">
+            <CropDot crop={o.crop} />
+            {o.label}
+          </h2>
+          <button type="button" className="ns-answer-why" onClick={onWhy}>
+            See why
+          </button>
+        </div>
+      </div>
+      <ul className="ns-answer-tiles">
+        <li className="ns-tile">
+          <Icon name="bars" />
+          <span className="ns-tile-label">Typical yield</span>
+          <span className="ns-tile-value">{y ? `${fmt(y.median)} bu/ac` : <span className="ns-missing">Missing data</span>}</span>
+          {y ? <small>Bad year {fmt(y.p10)} · good year {fmt(y.p90)}</small> : null}
+        </li>
+        <li className="ns-tile">
+          <Icon name="arrow" />
+          <span className="ns-tile-label">Vs. your usual mix</span>
+          <span className={`ns-tile-value ${delta != null && delta < 0 ? 'neg' : ''}`}>
+            {o.is_current ? 'This is your usual mix' : delta != null ? `${signed(delta)} bu/ac` : <span className="ns-missing">Missing data</span>}
+          </span>
+          {delta != null ? <small>In a typical year</small> : null}
+        </li>
+        <li className="ns-tile">
+          <Icon name="dollar" />
+          <span className="ns-tile-label">Left per acre</span>
+          <span className="ns-tile-value">{o.income_usd_ac ? `${usd(o.income_usd_ac.median)}/ac` : <span className="ns-missing">Missing data</span>}</span>
+          {o.income_usd_ac ? <small>After operating costs, typical year</small> : null}
+        </li>
+        <li className="ns-tile">
+          <Icon name="shield" />
+          <span className="ns-tile-label">How sure we are</span>
+          <span className="ns-tile-value ns-tile-value--conf">
+            <Confidence level={o.confidence.level} />
+          </span>
+        </li>
+      </ul>
+    </section>
+  );
+};
+
 const ReasonItem: React.FC<{reason: Reason; onYear: (y: number) => void}> = ({reason: r, onYear}) => (
-  <li className="ns-reason">
+  <li className={`ns-reason ${r.pro ? 'ns-reason--pro' : 'ns-reason--con'}`}>
+    <span className="ns-reason-icon">
+      <Icon name={r.priority === 'yield' ? 'bars' : PRIORITY_ICON[r.priority]} size={18} />
+    </span>
     <p>{r.text}</p>
     <div className="ns-meta">
       <ModelRuleTag kind={r.kind} />
@@ -335,7 +435,14 @@ const OptionCard: React.FC<{
   const delta = y && usual != null && !o.is_current ? y.median - usual : null;
   return (
     <article className={`ns-card ${suggested ? 'ns-card--sug ns-paper' : ''} ${open ? 'open' : ''}`} onClick={onOpen}>
-      <p className="ns-card-tag">{suggested ? <span>Suggested for your priorities</span> : null}</p>
+      <p className="ns-card-tag">
+        {suggested ? (
+          <span>
+            <Icon name="star" size={14} />
+            Suggested for your priorities
+          </span>
+        ) : null}
+      </p>
       <h2>{o.label}</h2>
       <p className="ns-card-sub">{o.sublabel}</p>
       <p className={`ns-card-delta ${delta != null && delta < 0 ? 'neg' : ''}`}>{delta != null ? `${signed(delta)} bu/ac vs. your usual mix` : ' '}</p>
@@ -367,6 +474,7 @@ const OptionCard: React.FC<{
       )}
       {o.income_usd_ac ? (
         <p className="ns-card-income">
+          <Icon name="dollar" size={18} />
           <b>{usd(o.income_usd_ac.median)}</b>/acre after operating costs, typical year
           <small>
             Bad year {usd(o.income_usd_ac.p10)} · good year {usd(o.income_usd_ac.p90)} · USDA NASS prices, ERS costs

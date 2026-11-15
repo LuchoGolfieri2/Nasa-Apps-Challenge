@@ -1,0 +1,264 @@
+/*
+  Pantalla 2 sobre el globo (CountyGlobe): el globo llena el escenario, el mapa del CDL va justo sobre el condado
+  y la columna del año (titular, cajas y carrera de barras) flota encima en cuadros de vidrio.
+  Se carga después de history.css y hero.css: a igual especificidad, gana este archivo.
+*/
+
+.history__stage--globe {
+  /* ancho de la columna del año; el condado se encuadra en lo que queda a la izquierda */
+  --story-w: clamp(340px, 33%, 460px);
+  /* vidrio oscuro: sobre los lotes del Landsat el vidrio blanco dejaba el texto blanco sin contraste */
+  --gl-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)), rgba(8, 26, 17, 0.4);
+  --gl-line: rgba(255, 255, 255, 0.32);
+  --gl-blur: blur(20px) saturate(1.5);
+  --gl-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38), 0 10px 30px rgba(0, 0, 0, 0.25);
+  --gl-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+
+  position: relative;
+  display: block;
+  width: calc(100% - 64px);
+  max-width: 1656px;
+  height: max(520px, calc(100dvh - var(--chrome) - 24px));
+  margin: 8px auto 16px;
+  padding: 0;
+  border-radius: 26px;
+  /* clip y no hidden: con el mapa acercado, el navegador no puede correr el escenario de costado al enfocar */
+  overflow: clip;
+  background: #0e2e5c;
+  isolation: isolate;
+}
+/* borde y viñeta, como el globo de "Counties like yours" */
+.history__stage--globe::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgba(170, 215, 255, 0.18),
+    inset 0 0 70px 10px rgba(6, 22, 44, 0.6);
+}
+
+/* Lugar del condado: invisible, solo lo mide CountyGlobe */
+.history__slot {
+  position: absolute;
+  top: 64px;
+  left: 20px;
+  bottom: 68px;
+  right: calc(var(--story-w) + 44px);
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.cglobe,
+.cglobe__canvas,
+.cglobe__over {
+  position: absolute;
+  inset: 0;
+}
+.cglobe__over {
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* El mapa del CDL sobre el globo */
+.cdl--globe {
+  position: absolute;
+  inset: 0;
+  display: block;
+  margin: 0;
+  pointer-events: none;
+}
+.cdl--globe .cdl__frame {
+  pointer-events: auto;
+  /* borde blanco que sigue el contorno exacto del condado en el ráster, y una sombra que lo despega del globo */
+  filter: drop-shadow(1.6px 0 0 #fff) drop-shadow(-1.6px 0 0 #fff) drop-shadow(0 1.6px 0 #fff)
+    drop-shadow(0 -1.6px 0 #fff) drop-shadow(0 6px 18px rgba(0, 0, 0, 0.55));
+}
+.cdl--globe .cdl__clip {
+  overflow: visible;
+  border-radius: 0;
+}
+.cdl--globe .cdl__state--loading {
+  color: #fff;
+  text-shadow: var(--gl-text-shadow);
+}
+.cdl--globe .guide {
+  top: 16px;
+  left: 16px;
+  pointer-events: auto;
+}
+.cdl--globe .cdl__zoom {
+  top: 16px;
+  right: calc(var(--story-w) + 32px);
+  pointer-events: auto;
+}
+
+/* Epígrafe del mapa: un cuadro de vidrio abajo a la izquierda */
+.cdl--globe figcaption {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  width: fit-content;
+  max-width: calc(100% - var(--story-w) - 64px);
+  justify-content: flex-start;
+  padding: 6px 6px 6px 14px;
+  border-radius: 18px;
+  background: var(--gl-bg);
+  border: 1px solid var(--gl-line);
+  -webkit-backdrop-filter: var(--gl-blur);
+  backdrop-filter: var(--gl-blur);
+  box-shadow: var(--gl-shadow);
+  color: #fff;
+  text-shadow: var(--gl-text-shadow);
+  pointer-events: auto;
+}
+.cdl--globe .cdl__toggle {
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+}
+.cdl--globe .cdl__toggle:hover:not(:disabled) {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+}
+.cdl--globe .cdl__toggle[aria-pressed="true"] {
+  background: var(--sprout);
+  border-color: var(--sprout);
+  color: var(--night);
+  text-shadow: none;
+}
+.cdl--globe .source-chip {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.cdl--globe .source-chip b {
+  color: #fff;
+}
+
+/* Columna del año sobre el globo: texto blanco y cuadros de vidrio */
+.history .history__stage--globe .history__story {
+  --ink: #ffffff;
+  --ink-2: rgba(255, 255, 255, 0.88);
+  --ink-3: rgba(255, 255, 255, 0.74);
+  --line: rgba(255, 255, 255, 0.24);
+  --line-strong: rgba(255, 255, 255, 0.42);
+  --surface-1: rgba(255, 255, 255, 0.1);
+  --surface-2: rgba(255, 255, 255, 0.18);
+  --primary: var(--sprout);
+  --primary-soft: rgba(142, 208, 129, 0.28);
+  --primary-strong: #e2f6da;
+  --wheat-ink: #f6d47e;
+
+  position: absolute;
+  z-index: 2;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: var(--story-w);
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0 4px 0 0;
+  gap: 12px;
+  color: var(--ink);
+  text-shadow: var(--gl-text-shadow);
+  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}
+
+.history__stage--globe .headline,
+.history__stage--globe .tile,
+.history__stage--globe .story-card,
+.history__stage--globe .tiles-block__tag {
+  background: var(--gl-bg);
+  border: 1px solid var(--gl-line);
+  -webkit-backdrop-filter: var(--gl-blur);
+  backdrop-filter: var(--gl-blur);
+  box-shadow: var(--gl-shadow);
+}
+.history__stage--globe .headline {
+  flex: none;
+  padding: 16px 18px 14px;
+  border-radius: 20px;
+}
+.history__stage--globe .headline ul {
+  margin-top: 8px;
+}
+.history__stage--globe .tile {
+  border-radius: 16px;
+}
+.history__stage--globe .story-card {
+  border-radius: 20px;
+}
+.history__stage--globe .tiles-block__tags:empty {
+  display: none;
+}
+.history__stage--globe .tile__tag,
+.history__stage--globe .stamp {
+  text-shadow: none;
+}
+.history__stage--globe .source-chip {
+  background: rgba(8, 26, 17, 0.45);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.history__stage--globe .missing {
+  background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 6px, transparent 6px 12px);
+}
+
+/* Pantallas angostas: el condado arriba y la columna del año debajo, todo sobre el mismo globo */
+@media (max-width: 1100px) {
+  .history__stage--globe {
+    --story-w: 0px;
+    width: calc(100% - 32px);
+    height: auto;
+    padding-bottom: 12px;
+    border-radius: 20px;
+  }
+  .history__slot {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: min(86vw, 600px);
+    /* lugar para la guía y el zoom arriba, y para el epígrafe abajo (el margen no cuenta al medir) */
+    margin: 76px 0 72px;
+  }
+  /* zoom en fila, a la altura de la guía, para no tapar el condado */
+  .cdl--globe .cdl__zoom {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: calc(100% - 180px);
+  }
+  .history .history__stage--globe .history__story {
+    position: relative;
+    inset: auto;
+    width: auto;
+    padding: 0 12px;
+    overflow: visible;
+  }
+  .cdl--globe .cdl__zoom {
+    right: 16px;
+  }
+  .cdl--globe figcaption {
+    bottom: auto;
+    top: calc(76px + min(86vw, 600px) + 10px);
+    max-width: calc(100% - 32px);
+  }
+}
+@media (max-width: 640px) {
+  .history__stage--globe {
+    width: calc(100% - 16px);
+  }
+  /* el epígrafe ocupa dos o tres renglones */
+  .history__slot {
+    margin-bottom: 138px;
+  }
+  .cdl--globe figcaption {
+    left: 12px;
+    max-width: calc(100% - 24px);
+    padding: 8px 10px;
+    border-radius: 14px;
+    font-size: 13px;
+  }
+}

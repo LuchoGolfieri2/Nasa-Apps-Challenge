@@ -76,6 +76,8 @@ export interface RasterInfo extends Sourced {
   years: number[];
   gray_step: number;
   pixel_m: number;
+  /** Esquina de arriba a la izquierda del ráster, en metros (EPSG:5070). Ubica el mapa sobre el globo. */
+  origin?: [number, number];
 }
 
 export interface County {
