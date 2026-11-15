@@ -63,7 +63,7 @@ export function SourcesScreen() {
             success".
           </li>
           <li>
-            <b>Coverage.</b> The yield model and "Counties like yours" cover Iowa and Illinois (and use Indiana as twins).
+            <b>Coverage.</b> The yield model and "Counties like yours" cover Iowa, Illinois and Indiana.
             Kansas has the crop history only, so its next-season options show "Missing data".
           </li>
           <li>

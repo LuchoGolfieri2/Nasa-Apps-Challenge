@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ML = ROOT / "backend" / "Datos"
 WEB = ROOT / "web"
 OUT = WEB / "public" / "data" / "next"
-STATES = {"19": "IA", "17": "IL", "20": "KS"}  # estados que muestra el mapa
+STATES = {"19": "IA", "17": "IL", "18": "IN", "20": "KS"}  # estados que muestra el mapa
 
 CROP = {"maiz": "corn", "soja": "soy"}
 CROP_LABEL = {"corn": "Corn", "soy": "Soybeans", "wheat": "Winter wheat", "other": "Oats"}
