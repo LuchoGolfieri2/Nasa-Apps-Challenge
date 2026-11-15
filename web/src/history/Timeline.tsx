@@ -23,7 +23,7 @@ interface Props {
 const pctFmt = (v: number) => `${Math.round(v)}%`;
 
 /** Cuadro translúcido con el resumen de un año. Aparece al pasar el cursor o al enfocar con el teclado. */
-function YearPeek({ y, left }: { y: CountyYear; left: number }) {
+function YearPeek({ y, left, below }: { y: CountyYear; left: number; below: boolean }) {
   const top = y.crops_pct
     ? CROPS.map((c) => ({ c, v: y.crops_pct![c] ?? 0 }))
         .sort((a, b) => b.v - a.v)
@@ -31,7 +31,7 @@ function YearPeek({ y, left }: { y: CountyYear; left: number }) {
     : [];
   const yields = y.yield ? Object.entries(y.yield.crops) : [];
   return (
-    <div className="peek" style={{ left: `clamp(160px, ${left}%, calc(100% - 160px))` }} aria-hidden="true">
+    <div className={below ? "peek peek--below" : "peek"} style={{ left: `clamp(160px, ${left}%, calc(100% - 160px))` }} aria-hidden="true">
       <div className="peek__head">
         <span className="peek__year">{y.year}</span>
         {y.weather?.tags.map((t) => (
@@ -69,6 +69,12 @@ function YearPeek({ y, left }: { y: CountyYear; left: number }) {
 /** Línea de tiempo con ⏪ y ▶ (F15). Flechas izquierda y derecha cambian de año. */
 export function Timeline({ years, year, playing, loaded, total, marks, onYear, onPlay, onRewind, data, stepMs }: Props) {
   const [peek, setPeek] = useState<number | null>(null);
+  // Si la barra quedó pegada arriba, el cuadro no entra encima: se abre hacia abajo.
+  const [below, setBelow] = useState(false);
+  const show = (el: HTMLElement, y: number) => {
+    setBelow(el.getBoundingClientRect().top < 340);
+    setPeek(y);
+  };
   const ready = loaded >= total;
   const idx = years.indexOf(year);
   const n = years.length;
@@ -147,9 +153,9 @@ export function Timeline({ years, year, playing, loaded, total, marks, onYear, o
                 aria-pressed={y === year}
                 tabIndex={y === year ? 0 : -1}
                 onClick={() => onYear(y)}
-                onPointerEnter={(e) => e.pointerType !== "touch" && setPeek(y)}
+                onPointerEnter={(e) => e.pointerType !== "touch" && show(e.currentTarget, y)}
                 onPointerLeave={() => setPeek(null)}
-                onFocus={(e) => e.currentTarget.matches(":focus-visible") && setPeek(y)}
+                onFocus={(e) => e.currentTarget.matches(":focus-visible") && show(e.currentTarget, y)}
                 onBlur={() => setPeek(null)}
               >
                 {marks[y]?.length ? <span className="timeline__mark">{marks[y][0]}</span> : null}
@@ -164,7 +170,7 @@ export function Timeline({ years, year, playing, loaded, total, marks, onYear, o
               </button>
             );
           })}
-          {peeked ? <YearPeek y={peeked} left={center(years.indexOf(peeked.year))} /> : null}
+          {peeked ? <YearPeek y={peeked} below={below} left={center(years.indexOf(peeked.year))} /> : null}
         </div>
       ) : (
         <div className="timeline__loading" role="status">

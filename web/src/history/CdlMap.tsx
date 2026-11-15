@@ -58,10 +58,12 @@ interface Props {
   /** Año anterior, para el modo "qué cambió". null en el primer año o si ese mapa no cargó. */
   prevYear: number | null;
   prevClasses: Uint8Array | null;
+  /** Controles extra sobre el mapa (la guía de lectura). */
+  overlay?: React.ReactNode;
 }
 
 /** El condado pintado píxel a píxel (30 m) con el CDL del año (F17). */
-export function CdlMap({ info, year, classes, status, highlight, countyName, prevYear, prevClasses }: Props) {
+export function CdlMap({ info, year, classes, status, highlight, countyName, prevYear, prevClasses, overlay }: Props) {
   const main = useRef<HTMLCanvasElement>(null);
   const fade = useRef<HTMLCanvasElement>(null);
   const drawnYear = useRef<number | null>(null);
@@ -162,7 +164,7 @@ export function CdlMap({ info, year, classes, status, highlight, countyName, pre
       setView((v) => clampView({ k: v.k, x: d.x + e.clientX - d.px, y: d.y + e.clientY - d.py }, box.width, box.height));
       return;
     }
-    if (!classes || (e.target as HTMLElement).closest("button")) return setTip(null);
+    if (!classes || (e.target as HTMLElement).closest("button, .guide")) return setTip(null);
     const mx = e.clientX - box.left;
     const my = e.clientY - box.top;
     const px = Math.floor(((mx - view.x) / view.k / box.width) * info.width);
@@ -175,7 +177,7 @@ export function CdlMap({ info, year, classes, status, highlight, countyName, pre
     setTip({ x: mx, y: my, cls, was: was === "nodata" ? null : was });
   };
   const onDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (view.k === 1 || (e.target as HTMLElement).closest("button")) return;
+    if (view.k === 1 || (e.target as HTMLElement).closest("button, .guide")) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     setSmooth(false);
     drag.current = { px: e.clientX, py: e.clientY, x: view.x, y: view.y };
@@ -199,7 +201,7 @@ export function CdlMap({ info, year, classes, status, highlight, countyName, pre
         onPointerCancel={() => (drag.current = null)}
         onPointerLeave={() => setTip(null)}
         onDoubleClick={(e) => {
-          if ((e.target as HTMLElement).closest("button")) return;
+          if ((e.target as HTMLElement).closest("button, .guide")) return;
           const box = e.currentTarget.getBoundingClientRect();
           zoomBy(2, e.clientX - box.left, e.clientY - box.top);
         }}
@@ -223,6 +225,7 @@ export function CdlMap({ info, year, classes, status, highlight, countyName, pre
         ) : !classes ? (
           <div className="cdl__state cdl__state--loading">Loading the {year} crop map…</div>
         ) : null}
+        {overlay}
         <div className="cdl__zoom">
           <button type="button" onClick={() => zoomBy(1.8)} disabled={view.k >= MAX_ZOOM} aria-label="Zoom in">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">

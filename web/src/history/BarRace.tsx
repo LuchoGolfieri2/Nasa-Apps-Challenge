@@ -4,7 +4,7 @@ import { CROPS, CROP_COLOR, CROP_LABEL, CROP_NOTE, type CropId } from "../ui/cro
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 
-const ROW = 42;
+const ROW = 54;
 const fmt = new Intl.NumberFormat("en-US");
 
 interface Props {
