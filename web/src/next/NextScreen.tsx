@@ -1,3 +1,4 @@
+import { MODEL_STATES_TEXT, STATE_NAME } from "../data/states";
 import { useEffect, useState } from "react";
 import { dataUrl } from "../data/load";
 import { Missing } from "../ui/Missing";
@@ -5,7 +6,6 @@ import { Icon } from "./icons";
 import { NextSeason } from "./NextSeason";
 import type { NextData } from "./types";
 
-const STATE_NAME: Record<string, string> = { KS: "Kansas", IA: "Iowa", IL: "Illinois", IN: "Indiana" };
 
 /** Pantalla 3 · Next season (ruta #/county/<fips>/next). Lee data/next/<fips>.json. */
 export function NextScreen({ fips }: { fips: string }) {
@@ -31,7 +31,7 @@ export function NextScreen({ fips }: { fips: string }) {
       <main className="fr-next">
         <div className="fr-next-empty">
           <h1>Options for next season</h1>
-          <Missing what={`the yield model doesn't cover county ${fips} yet (it covers Iowa, Illinois and Indiana; Kansas is not in the model yet)`} />
+          <Missing what={`the yield model doesn't cover county ${fips} yet (it covers ${MODEL_STATES_TEXT})`} />
           <p>
             <a className="btn" href={`#/county/${fips}`}>
               ← Back to the county history

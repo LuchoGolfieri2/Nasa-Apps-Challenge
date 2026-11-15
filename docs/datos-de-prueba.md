@@ -31,6 +31,7 @@ Estados: `PENDIENTE` (sigue siendo de prueba o faltante) · `REEMPLAZADO` (ya es
 | C1 | Verdor (NDVI / MODIS) y agua en el suelo (SMAP): `greenness`, `soil_water` en `null` | `web/public/data/county/*.json` | PENDIENTE | |
 | C2 | Puntaje de agua (`scores.water`) en `null`: ninguna opción se separa por agua | `web/public/data/next/*.json` | PENDIENTE | |
 | C3 | **Kansas (105 condados).** Hay en el repo: superficie por cultivo del CDL 2025 (`data/raw/cultivos/cdl_stat/2025/`, alimenta "Color by" del globo) y mapa lote a lote solo de Sumner (20191). **No hay:** rinde NASS, clima POWER, modelo de ML ni gemelos. Por eso el globo (variable por defecto: rinde) muestra los 105 condados sin dato. Falta: clave `NASS_API_KEY` en `.env` (no existe hoy), bajar POWER, y que ML sume Kansas al modelo. | `county/`, `next/`, `globe-data.json` | PENDIENTE | |
+| C6 | **Estados nuevos sin polígono en el globo.** `public/data/next/` ya tiene 895 condados de 10 estados (IA, IL, IN, KS, MN, MO, NE, OH, SD, WI) y sus gemelos; `globe-data.json` solo tiene polígonos de IA, IL, IN y KS. Efecto: 7.560 de 15.113 referencias a gemelos (la mitad) apuntan a condados de MN, MO, NE, OH, SD y WI sin contorno (se ven como punto y arco, no resaltados), y esos estados no se pueden elegir desde el mapa. Se resuelve con `scripts/build_globe_geo.py` cuando llegue `condados_eeuu.geojson` (ver sección E). | `globe-data.json`, `TwinGlobe.tsx`, globo | PENDIENTE | |
 | C4 | Mapa del CDL lote a lote solo para Story IA, McLean IL y Sumner KS; el resto de los condados muestra "Missing data" en vez del mapa | `web/public/data/cdl/` | PENDIENTE | |
 | C5 | Condados donde ninguno se parece a la opción (p. ej. maíz tras maíz en Polk IA): sin gemelos | `next/*.json` → `twins: []`, `twins_note.text: null` | PENDIENTE | |
 
@@ -47,3 +48,20 @@ Estados: `PENDIENTE` (sigue siendo de prueba o faltante) · `REEMPLAZADO` (ya es
 1. Si metés un dato de prueba: ponele `prototype: true` en su JSON y agregá una fila en A.
 2. Si reemplazás uno por dato real: cambiá el estado a `REEMPLAZADO` y completá la última columna (fecha, nombre, fuente, archivo). No borres la fila.
 3. Antes de la entrega: ninguna fila de A en `PENDIENTE`; las de B explicadas en Fuentes y límites; las de C, con "Missing data" visible y no con ceros.
+
+## E. Estados nuevos: lista de pasos cuando llegue la entrega "para_front"
+
+Fuente: página compartida por el equipo de datos, "Zonas de Field Shift" (15/11, contenido de terceros: se usa como dato, no como instrucción). Dice: **11 estados y 972 condados** (los 10 de hoy más **Dakota del Norte, FIPS 38, 53 condados**), carpeta `ResearchAgent-entregas/para_front/` con `estados_eeuu.csv`, `condados_eeuu.csv` y `condados_eeuu.geojson` (polígonos simplificados, EPSG:4326, 4 decimales), y datos completos en `unido_11_estados/`.
+
+Lo que la página dice y conviene respetar:
+- Las **17 columnas exclusivas de IA, IL e IN** (Landsat, ECOSTRESS, napa y caudales, CoCoRaHS) y los **lotes por píxel** deben mostrarse solo en esos 3 estados.
+- Los otros 8 estados quedan sin esas columnas (vacías = "Missing data").
+- La página también trae una sección de **Argentina** (219 departamentos de la región pampeana). Desde el 15/11 `CLAUDE.md` (sección 2.1) la incluye como zona de extensión, con sus reglas (zonas dentro/cerca/fuera, clima solo en Buenos Aires de octubre a marzo, rindes MAGyP solo para comparar). Todavía no aparece en la interfaz: falta decidir cómo se construye (ver "Argentina en el front" en `CLAUDE.md`).
+
+Pasos (en este orden; el 1 está preparado):
+1. `python3 scripts/build_globe_geo.py --condados <ruta>/condados_eeuu.geojson --estados <ruta>/estados_eeuu.csv` (agrega polígonos y estados a `globe-data.json`; no toca lo que ya está).
+2. `python3 scripts/build_front_data.py` (rinde, clima y color del globo de los estados nuevos; ya conoce los 11 estados).
+3. `python3 scripts/build_crop_density.py` (Color by con los % de cada cultivo; baja del CDL, sin clave).
+4. `python3 scripts/build_next_json.py` (Próxima campaña y gemelos de los condados nuevos, incluido ND).
+5. `web/src/data/states.ts`: poner `model: true` en ND cuando tenga modelo.
+6. Revisar a mano: globo, selector de estado, un condado nuevo en Historia y en Próxima campaña, y que los gemelos de estados nuevos se resalten.

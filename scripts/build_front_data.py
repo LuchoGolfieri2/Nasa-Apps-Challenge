@@ -4,7 +4,7 @@ build_front_data.py — Arma los JSON y PNG estáticos que lee el front (tareas 
 
 Entradas (lee lo que exista; lo que falta queda en null = "Missing data"):
   data/cdl/cdl_fieldshift.zip  superficie, transiciones y rasters del CDL (2015–2025)
-  backend/Datos/tabla_modelado.csv   rinde NASS y clima POWER por condado y año (IA, IL, IN)
+  backend/Datos/tabla_modelado.csv   rinde NASS y clima POWER por condado y año (los estados de la entrega)
   backend/Datos/front/anomalias.json años fuera de lo habitual, según el equipo de ML
   web/src/map/globe-data.json        nombres de condados (US Census)
 
@@ -42,7 +42,12 @@ ANOMALIAS = RAIZ / "backend" / "Datos" / "front" / "anomalias.json"
 GLOBO = RAIZ / "web" / "src" / "map" / "globe-data.json"
 ANIOS_FICHA = range(2015, 2026)  # la historia cubre una década, como el CDL
 ANIOS_COLOR = range(2021, 2026)  # el color del globo: rinde de maíz medio de los últimos 5 años
-POSTAL = {"19": ("IA", "Iowa"), "17": ("IL", "Illinois"), "18": ("IN", "Indiana"), "20": ("KS", "Kansas")}
+# Los 11 estados (los 10 con modelo + Dakota del Norte, que todavía no está en la entrega). Mismo orden que web/src/data/states.ts.
+POSTAL = {
+    "19": ("IA", "Iowa"), "17": ("IL", "Illinois"), "18": ("IN", "Indiana"), "20": ("KS", "Kansas"),
+    "27": ("MN", "Minnesota"), "29": ("MO", "Missouri"), "31": ("NE", "Nebraska"), "39": ("OH", "Ohio"),
+    "46": ("SD", "South Dakota"), "55": ("WI", "Wisconsin"), "38": ("ND", "North Dakota"),
+}
 SALIDA = RAIZ / "web" / "public" / "data"
 
 CONDADOS = {
@@ -491,7 +496,7 @@ def main() -> None:
                 f"rinde en {len(rinde)} años, clima en {len(clima)} años"
             )
 
-    # El resto de los condados del modelo (IA, IL, IN): sin CDL, con rinde y clima
+    # El resto de los condados del modelo (todos los estados de la tabla): sin CDL, con rinde y clima
     nombres = {c["id"]: c["name"] for c in json.loads(GLOBO.read_text(encoding="utf-8"))["counties"]}
     if tabla is not None:
         for fips in sorted(set(tabla.fips) - set(CONDADOS)):
@@ -508,7 +513,7 @@ def main() -> None:
     meta = {
         "app": "Field Rewind",
         "generated": date.today().isoformat(),
-        "states": ["IA", "IL", "IN", "KS"],
+        "states": [POSTAL[f][0] for f in POSTAL if tabla is not None and f in set(tabla.fips.str[:2]) or f in {c[:2] for c in CONDADOS}],
         "demo_counties": list(CONDADOS),
         "default_county": CONDADO_DEMO,
         "years": sorted(todos_los_anios),
