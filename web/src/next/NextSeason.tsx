@@ -25,6 +25,7 @@ const COUNT_WORD = ['No', 'One', 'Two', 'Three', 'Four', 'Five'];
 const CropDot: React.FC<{crop: CropId}> = ({crop}) => <i className="ns-dot" style={{background: CROP_COLOR[crop]}} />;
 
 const fmt = (v: number) => Math.round(v).toString();
+const usd = (v: number) => `$${Math.round(v).toLocaleString('en-US')}`;
 const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${Math.abs(Math.round(v))}`;
 /** El JSON trae "→" en las secuencias; en pantalla se lee mejor con palabras. */
 const sequence = (label: string) => label.replace(/\s*→\s*/g, ', then ').replace(/, then ([A-Z])/g, (_, c: string) => `, then ${c.toLowerCase()}`);
@@ -117,7 +118,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
         <p className="ns-unscored">
           {result.unscored.map((p) => (
             <span key={p}>
-              <b className="ns-missing">Missing data:</b> {PRIORITY_LABEL[p].toLowerCase()} ({p === 'income' ? 'costs not loaded yet' : 'no data separates these options'}). Not used in the suggestion.{' '}
+              <b className="ns-missing">Missing data:</b> {PRIORITY_LABEL[p].toLowerCase()} ({p === 'income' ? 'no yield range to turn into income' : 'no data separates these options'}). Not used in the suggestion.{' '}
             </span>
           ))}
         </p>
@@ -269,6 +270,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
             <p className="ns-new-range">
               {fmt(x.range.p10)}–{fmt(x.range.p90)}
               <small>bu/ac, typical {fmt(x.range.median)}</small>
+              {x.income_usd_ac ? <small className="ns-new-income">About {usd(x.income_usd_ac.median)}/acre after operating costs</small> : null}
             </p>
             <Confidence level={x.confidence.level} />
           </div>
@@ -363,6 +365,14 @@ const OptionCard: React.FC<{
           <b className="ns-missing">Missing data:</b> no yield range for this option.
         </p>
       )}
+      {o.income_usd_ac ? (
+        <p className="ns-card-income">
+          <b>{usd(o.income_usd_ac.median)}</b>/acre after operating costs, typical year
+          <small>
+            Bad year {usd(o.income_usd_ac.p10)} · good year {usd(o.income_usd_ac.p90)} · USDA NASS prices, ERS costs
+          </small>
+        </p>
+      ) : null}
       <div className="ns-card-conf">
         <Confidence level={o.confidence.level} />
         <small>{o.confidence.reason.replace(/^Low confidence:\s*/i, '')}</small>
