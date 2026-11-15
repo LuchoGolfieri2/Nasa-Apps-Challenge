@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ML = ROOT / "backend" / "Datos"
 WEB = ROOT / "web"
 OUT = WEB / "public" / "data" / "next"
-STATES = {"19": "IA", "17": "IL", "18": "IN", "20": "KS", "27": "MN", "29": "MO", "31": "NE", "39": "OH", "46": "SD", "55": "WI"}  # estados que muestra el mapa
+STATES = {"19": "IA", "17": "IL", "18": "IN", "20": "KS", "27": "MN", "29": "MO", "31": "NE", "38": "ND", "39": "OH", "46": "SD", "55": "WI"}  # estados que muestra el mapa
 
 CROP = {"maiz": "corn", "soja": "soy"}
 CROP_LABEL = {"corn": "Corn", "soy": "Soybeans", "wheat": "Winter wheat", "other": "Oats"}
@@ -57,7 +57,7 @@ MODEL_SRC = "Field Rewind model · USDA NASS · NASA POWER"
 INCOME_SRC = "Field Rewind model · USDA NASS prices · USDA ERS costs"
 PRICE_CROP = {"corn": "maiz", "soy": "soja", "wheat": "trigo_invierno", "oats": "avena"}
 STATE_NAME = {"19": "Iowa", "17": "Illinois", "18": "Indiana", "20": "Kansas", "27": "Minnesota", "29": "Missouri",
-              "31": "Nebraska", "39": "Ohio", "46": "South Dakota", "55": "Wisconsin"}
+              "31": "Nebraska", "38": "North Dakota", "39": "Ohio", "46": "South Dakota", "55": "Wisconsin"}
 
 
 def load_prices():

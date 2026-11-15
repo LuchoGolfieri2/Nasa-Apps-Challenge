@@ -3,8 +3,8 @@
 Precio y costo por acre para pasar el rango de rinde a ingreso ($/acre) en "Next season".
 
 Entrada (de la entrega, fuera de Git):
-  economia_anual.csv de cada grupo de la entrega de 10 estados (IA/IL/IN en ia_il_in_v3/condado/extras/,
-  y oh_ne_mn/, mo_wi_sd/ y ks/ en <grupo>/economia/data/processed/economia/)
+  economia_anual.csv de cada grupo de la entrega final de 11 estados (IA/IL/IN en ia_il_in_v4/condado/extras/,
+  y oh_ne_mn/, mo_wi_sd/, ks/ y nd/ en <grupo>/economia/data/processed/economia/)
     precio_usd_bu           precio recibido por el productor, NASS, por estado y año comercial
     costo_operativo_usd_ac  costos operativos por acre sembrado, USDA ERS, región Heartland
                             (el mismo valor para los estados de una misma región ERS)
@@ -41,17 +41,17 @@ ROOT = Path(__file__).resolve().parent.parent
 ENTREGAS = ROOT / "backend" / "Datos" / "entregas"
 SALIDA = ROOT / "backend" / "Datos" / "precios_costos.csv"
 ANIOS = list(range(2021, 2026))
-ESTADOS = ["17", "18", "19", "20", "27", "29", "31", "39", "46", "55"]  # los 10 estados del modelo (punto 2)
-ENTREGA_10 = ENTREGAS / "fieldshift_datos_todo_10estados_20261115"
-GRUPOS_10 = [ENTREGA_10 / "ia_il_in_v3" / "condado" / "extras" / "economia_anual.csv"] + [
-    ENTREGA_10 / g / "economia" / "data" / "processed" / "economia" / "economia_anual.csv" for g in ("oh_ne_mn", "mo_wi_sd", "ks")]
+ESTADOS = ["17", "18", "19", "20", "27", "29", "31", "38", "39", "46", "55"]  # los 11 estados del modelo (punto 2)
+ENTREGA_10 = ENTREGAS / "fieldshift_datos_final_20261115"
+GRUPOS_10 = [ENTREGA_10 / "ia_il_in_v4" / "condado" / "extras" / "economia_anual.csv"] + [
+    ENTREGA_10 / g / "economia" / "data" / "processed" / "economia" / "economia_anual.csv" for g in ("oh_ne_mn", "mo_wi_sd", "ks", "nd")]
 CULTIVOS = ["maiz", "soja", "trigo_invierno", "avena"]
 
 
 def buscar_entradas():
     if len(sys.argv) > 1:
         return [Path(a) for a in sys.argv[1:]]
-    if all(p.exists() for p in GRUPOS_10):  # entrega de 10 estados: un archivo por grupo
+    if all(p.exists() for p in GRUPOS_10):  # entrega final de 11 estados: un archivo por grupo
         return GRUPOS_10
     for v in ("fieldshift_datos_v3", "fieldshift_datos_v2"):  # solo IA, IL e IN (el archivo es idéntico en las dos)
         p = ENTREGAS / v / "condado" / "extras" / "economia_anual.csv"
