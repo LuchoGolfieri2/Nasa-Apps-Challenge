@@ -140,7 +140,6 @@
   gap: 12px;
   color: var(--ink);
   text-shadow: var(--gl-text-shadow);
-  scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
 }
 
 .history__stage--globe .headline,
