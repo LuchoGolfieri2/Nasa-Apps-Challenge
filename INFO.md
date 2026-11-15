@@ -17,7 +17,7 @@ la versión del contrato coincida con la del `manifest.json`."*
 ## 1. Qué es el producto
 
 Proyecto para NASA Space Apps Challenge 2026, desafío **"Field Shift: Adapting Farms with NASA Data"**.
-La herramienta ayuda a productores del **Corn Belt de EE.UU.** (Iowa, Illinois e Indiana) a comparar
+La herramienta ayuda a productores de **EE.UU.** (Iowa, Illinois y Kansas) a comparar
 rotaciones de cultivos con datos de la NASA, para cuidar el suelo y aguantar mejor los años secos y
 húmedos.
 
@@ -43,8 +43,10 @@ bajo húmedo, zona media). Cada sector sale de agrupar los píxeles de 30 m del 
    campo que "por ahora viene" en un archivo.
 4. **Todo lo PROVISORIO, aislado:** detrás de una función o un componente propio, para cambiarlo en un
    solo lugar.
-5. **El modelo no recomienda.** Nada de "recommended", "best option" ni "deberías". Se compara y se
-   muestra el rango.
+5. **La app sugiere; los textos del modelo no.** Desde el 14/11 la app marca una opción como
+   "Suggested for your priorities" según los `scores` y las prioridades del productor, siempre con
+   rango y confianza. Los textos que vienen de ML (razones, titulares) siguen sin decir
+   "recommended", "best option" ni "you should": dicen "tends to".
 6. **Skills:** usá `field-shift-frontend` para las pantallas y `dataviz` para cualquier gráfico.
 7. **La skill `field-shift-frontend` tiene restos de una versión argentina.** Para este proyecto:
    - donde dice "departamento", es **condado** (`fips`);
@@ -92,7 +94,7 @@ El nombre en inglés de cada pantalla es el que va en la interfaz; el español e
 
 ## 4. Contrato de datos
 
-**Dónde:** ML escribe todo en `data/ml/front/`. El front lo copia o lo sirve como archivos estáticos.
+**Dónde:** ML escribe todo en `backend/Datos/front/`. El front lo copia o lo sirve como archivos estáticos.
 No hay API en vivo.
 
 **Reglas de todos los archivos (FIRME):**
@@ -119,7 +121,7 @@ No hay API en vivo.
 
 | Campo | Tipo | Qué es |
 |---|---|---|
-| `version_contrato` | texto | Por ejemplo `"0.1"` |
+| `version_contrato` | texto | Por ejemplo `"0.2"` |
 | `generado` | texto | Fecha y hora en que ML generó los archivos (ISO 8601) |
 | `es_prueba` | booleano | `true` = datos de prueba. El front muestra la franja "TEST DATA" |
 | `lotes` | lista de texto | Los `id_lote` disponibles |
@@ -134,9 +136,9 @@ Un `FeatureCollection` con un `Feature` por lote (geometría `Polygon` o `MultiP
 | Propiedad | Tipo | Qué es | Estado |
 |---|---|---|---|
 | `id_lote` | texto | `<fips>_<id del Crop Sequence Boundaries>` | FIRME |
-| `fips` | texto | 5 dígitos (19 Iowa, 17 Illinois, 18 Indiana) | FIRME |
+| `fips` | texto | 5 dígitos (19 Iowa, 17 Illinois, 20 Kansas) | FIRME |
 | `condado` | texto | Nombre del condado | FIRME |
-| `estado` | texto | `IA`, `IL` o `IN` | FIRME |
+| `estado` | texto | `IA`, `IL` o `KS` | FIRME |
 | `area_ha` y `area_ac` | número | Superficie | FIRME |
 | `cultivos` | objeto | Año → cultivo, por ejemplo `{"2024": "maiz", "2025": "soja"}` | FIRME |
 | `estado_sectores` | texto | `con_sectores`, `lote_parejo` o `sin_datos` | FIRME |
@@ -162,7 +164,7 @@ Ejemplo de **forma**. Los valores son inventados, solo para mostrar la estructur
 
 ```json
 {
-  "version_contrato": "0.1",
+  "version_contrato": "0.2",
   "id_lote": "19169_000000",
   "estado_sectores": "con_sectores",
   "anios_usados": [2013, 2014, 2015],
@@ -220,7 +222,7 @@ Fuentes previstas para la idea 1:
 ### 4.6 `escenarios_rotacion.json` y `clima_condado/` (PROVISORIO)
 
 - `escenarios_rotacion.json`: una fila por `fips`, `rotacion`, `cultivo` y `anio_clima`, con `pred`,
-  `p10` y `p90` en bu/ac. Son las mismas columnas que `data/ml/escenarios_rotacion.csv` del CLAUDE.md
+  `p10` y `p90` en bu/ac. Son las mismas columnas que `backend/Datos/escenarios_rotacion.csv` del CLAUDE.md
   de ML. Los ids de `rotacion` todavía no están definidos.
 - `clima_condado/<fips>.json`: sin formato todavía. Maquetá la franja con datos de prueba.
 
@@ -343,6 +345,7 @@ visible sale de `textos.json`.
 | Versión | Fecha | Cambio |
 |---|---|---|
 | 0.2 | 2026-11-14 | La interfaz va en inglés (firme). `textos.json` solo en inglés. |
+| 0.2 | 2026-11-14 | Nuevo `backend/Datos/front/anomalias.json` (punto 4: rinde contra un año normal, causa y titular por año). Regla 5: la app sugiere según prioridades; los textos de ML no recomiendan. |
 | 0.1 | 2026-11-14 | Primera versión: lotes, sectores, fuentes y datos de prueba. Ficha del sector, escenarios y clima, provisorios. |
 
 ### Pedidos del front

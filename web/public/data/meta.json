@@ -1,0 +1,73 @@
+{
+  "app": "Field Rewind",
+  "generated": "2026-11-14",
+  "states": [
+    "IA",
+    "IL",
+    "KS"
+  ],
+  "demo_counties": [
+    "19169",
+    "17113",
+    "20191"
+  ],
+  "default_county": "19169",
+  "years": [
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "classes": [
+    "nodata",
+    "non_ag",
+    "corn",
+    "soy",
+    "wheat",
+    "sorghum",
+    "double_wheat_soy",
+    "alfalfa",
+    "fallow",
+    "other"
+  ],
+  "crop_labels": {
+    "corn": "Corn",
+    "soy": "Soybeans",
+    "wheat": "Wheat",
+    "sorghum": "Sorghum",
+    "double_wheat_soy": "Wheat + soybeans (double crop)",
+    "alfalfa": "Alfalfa",
+    "fallow": "Fallow",
+    "other": "Other crops"
+  },
+  "sources": [
+    {
+      "id": "cdl",
+      "name": "USDA Cropland Data Layer",
+      "gives": "What was planted, field by field",
+      "resolution": "30 m",
+      "period": "2015–2025"
+    },
+    {
+      "id": "nass",
+      "name": "USDA NASS Quick Stats",
+      "gives": "County yield",
+      "resolution": "county",
+      "period": "see each county"
+    },
+    {
+      "id": "power",
+      "name": "NASA POWER",
+      "gives": "Rain and temperature",
+      "resolution": "0.5°",
+      "period": "see each county"
+    }
+  ]
+}

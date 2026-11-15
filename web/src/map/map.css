@@ -1,0 +1,136 @@
+/* Pantalla 1 · Mapa (portada → globo → estado → condado). Todo va dentro de .maplayer
+   para no pisar los estilos de las otras pantallas. El globo es el tema; la interfaz,
+   notas planas al margen del mapa. */
+.maplayer{
+  --night:#0F2A1D;--field:#2F7D4F;--sprout:#8ED081;--wheat:#E9B949;--paper:#F6F1E4;
+  --ink-2:rgba(246,241,228,.74);--ink-3:rgba(246,241,228,.56);--rule:rgba(246,241,228,.14);
+  --radius:10px;--display:"Bricolage Grotesque",system-ui,sans-serif;--text:"DM Sans",system-ui,sans-serif;
+  position:fixed;inset:0;z-index:20;overflow:hidden;background:#000;color:var(--paper);
+  font:500 15px/1.45 var(--text);-webkit-font-smoothing:antialiased
+}
+.maplayer[hidden]{display:none}
+.maplayer *{box-sizing:border-box}
+.maplayer button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.maplayer :focus-visible{outline:2px solid var(--sprout);outline-offset:2px}
+.maplayer #globe-sky,.maplayer #globe-hud,.maplayer #globe{position:fixed;inset:0;width:100%;height:100%;display:block}
+.maplayer #globe{touch-action:none}
+.maplayer #globe-hud{pointer-events:none}
+.maplayer .ui{position:fixed;z-index:2}
+
+/* Barra de arriba: sin caja. Un velo corto la mantiene legible sobre la imagen satelital. */
+.maplayer #top{left:0;right:0;top:0;display:flex;align-items:center;gap:28px;padding:14px 24px 36px;background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,0));pointer-events:none}
+.maplayer #top>*{pointer-events:auto}
+.maplayer #home{display:flex;align-items:center;gap:10px;min-height:44px;padding:0;background:none;border:0}
+.maplayer #home svg{height:26px;width:auto}
+.maplayer #home b{font:800 21px/1 var(--display);letter-spacing:-.01em}
+.maplayer #home b span{font-weight:500}
+.maplayer #nav{display:flex;align-items:center;font-size:14px}
+body[data-level="globe"] .maplayer #nav{display:none}
+.maplayer #back,.maplayer #crumbs button{min-height:44px;padding:0 8px;background:none;border:0;color:var(--ink-2)}
+.maplayer #back{font-weight:700;color:var(--paper);margin-right:8px;padding-left:0}
+.maplayer #crumbs{display:flex;align-items:center}
+.maplayer #crumbs i{font-style:normal;color:var(--ink-3)}
+.maplayer #crumbs span{padding:0 8px;font-weight:700}
+
+/* Panel lateral: una sola superficie opaca, pegada al borde, sin vidrio ni tarjetas anidadas. */
+.maplayer #panel{right:0;top:0;bottom:0;width:372px;overflow:auto;overscroll-behavior:contain;background:var(--night);border-left:1px solid var(--rule);padding:28px 28px 32px}
+.maplayer #panel[hidden],.maplayer #p-stats[hidden],.maplayer #p-twins[hidden],.maplayer #p-next[hidden],.maplayer #p-twinlist[hidden],.maplayer #legend[hidden]{display:none}
+.maplayer #p-name{margin:0;font:800 32px/1.05 var(--display);letter-spacing:-.015em;text-wrap:balance}
+.maplayer #p-state{margin:6px 0 0;color:var(--ink-2);font-size:14px;font-variant-numeric:tabular-nums}
+.maplayer #p-status{margin:16px 0 0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.maplayer #p-status.ok{color:var(--sprout)}
+.maplayer #p-status.missing{color:var(--ink-2)}
+.maplayer #p-status.missing::before{content:"";flex:none;width:14px;height:14px;border:1px dashed var(--ink-3);border-radius:2px;background:repeating-linear-gradient(135deg,rgba(246,241,228,.28) 0 2px,transparent 2px 5px)}
+.maplayer .proto{display:flex;align-items:center;gap:8px;margin:28px 0 12px;font-size:12.5px;color:var(--ink-3)}
+.maplayer .tag{flex:none;font:700 11px/1 var(--text);letter-spacing:.04em;text-transform:uppercase;color:var(--night);background:var(--wheat);border-radius:3px;padding:4px 5px 3px}
+.maplayer .stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--rule)}
+.maplayer .stats div{padding:12px 12px 0 0}
+.maplayer .stats div+div{padding-left:12px;border-left:1px solid var(--rule)}
+.maplayer .stats b{display:block;white-space:nowrap;font:800 20px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.maplayer .stats small{display:block;margin-top:4px;font-size:12px;line-height:1.3;color:var(--ink-2)}
+.maplayer .seg{display:inline-flex;margin-top:8px;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.maplayer .seg button{min-width:36px;min-height:32px;padding:0 8px;background:none;border:0;font-size:12px;font-weight:700;color:var(--ink-2)}
+.maplayer .seg button+button{border-left:1px solid var(--rule)}
+.maplayer .seg button[aria-pressed="true"]{background:var(--paper);color:var(--night)}
+.maplayer .actions{display:flex;flex-direction:column;gap:8px;margin-top:28px}
+.maplayer .btn{min-height:48px;padding:0 20px;border-radius:var(--radius);border:1px solid var(--rule);background:transparent;font-weight:700;transition:background-color .15s ease-out,border-color .15s ease-out}
+.maplayer .btn.primary{background:var(--sprout);border-color:transparent;color:var(--night)}
+.maplayer .btn:disabled{background:rgba(246,241,228,.07);border-color:transparent;color:var(--ink-3);cursor:not-allowed}
+.maplayer .twins button{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--rule);padding:12px 0;min-height:48px}
+.maplayer .twins button:last-child{border-bottom:1px solid var(--rule)}
+.maplayer .twins b{display:block;font-size:15px}
+.maplayer .twins small{display:block;margin-top:2px;font-size:12.5px;line-height:1.35;color:var(--ink-2)}
+
+/* Buscador: un campo sólido en la barra de arriba, con su lista debajo. */
+.maplayer .sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.maplayer #search{position:relative;width:280px}
+.maplayer #q{width:100%;min-height:40px;padding:0 12px;border:1px solid var(--rule);border-radius:var(--radius);background:var(--night);color:var(--paper);font:500 14px var(--text)}
+.maplayer #q::placeholder{color:var(--ink-3)}
+.maplayer #q-list{position:absolute;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px 0;list-style:none;max-height:320px;overflow:auto;overscroll-behavior:contain;background:var(--night);border:1px solid var(--rule);border-radius:var(--radius)}
+.maplayer #q-list[hidden]{display:none}
+.maplayer #q-list li{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:40px;padding:10px 12px;font-size:14px;cursor:pointer}
+.maplayer #q-list li small{flex:none;font-size:12px;color:var(--ink-2)}
+.maplayer #q-list li[aria-selected="true"]{background:rgba(246,241,228,.1)}
+.maplayer #q-list li.none{cursor:default;color:var(--ink-2)}
+.maplayer #tip{z-index:3;pointer-events:none;background:var(--night);border:1px solid var(--rule);border-radius:6px;padding:6px 10px;font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.maplayer #tip[hidden]{display:none}
+.maplayer #tip b{font-weight:700}
+
+/* Leyenda: el único elemento con caja, porque se apoya sobre la imagen. */
+.maplayer #legend{left:24px;bottom:36px;width:272px;background:var(--night);border-radius:var(--radius);padding:12px 14px 10px}
+.maplayer #legend .t{display:flex;align-items:center;justify-content:space-between;gap:8px;white-space:nowrap;font-size:13px;font-weight:700;margin-bottom:8px}
+.maplayer #legend .bar{height:8px;border-radius:2px;background:linear-gradient(90deg,rgb(68,1,84),rgb(59,82,139),rgb(33,145,140),rgb(94,201,98),rgb(253,231,37))}
+.maplayer #legend .n{display:flex;justify-content:space-between;margin-top:4px;font-size:11.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.maplayer #legend .m{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11.5px;color:var(--ink-2)}
+.maplayer #legend .m i{width:16px;height:10px;border-radius:2px;background:repeating-linear-gradient(135deg,rgba(246,241,228,.6) 0 2px,#464646 2px 5px)}
+.maplayer #sources{left:24px;bottom:12px;font-size:11px;color:var(--ink-3)}
+
+.maplayer #start{left:50%;bottom:40px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:10px;transition:opacity .3s ease-out}
+body:not([data-level="globe"]) .maplayer #start{opacity:0;pointer-events:none}
+.maplayer #cta{font-size:16px;padding:0 24px}
+.maplayer #start small{font-size:13px;color:var(--ink-2)}
+
+/* Portada: un velo sobre el globo que gira. Al tocar Start el velo se va y la cámara vuela a EE. UU. */
+.maplayer #landing{inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;text-align:center;background:rgba(0,0,0,.6);
+  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s ease-out,visibility 0s linear .6s}
+body.landing .maplayer #landing{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .4s ease-out,visibility 0s}
+.maplayer #landing .logo{display:flex;align-items:center;gap:clamp(14px,2.2vw,28px)}
+.maplayer #landing svg{height:clamp(52px,8vw,104px);width:auto}
+.maplayer #landing h1{margin:0;font:800 clamp(44px,7.5vw,104px)/1 var(--display);letter-spacing:-.02em}
+.maplayer #landing h1 span{font-weight:500}
+.maplayer #landing p{margin:0;font-size:clamp(18px,2vw,26px);color:var(--ink-2)}
+.maplayer #enter{margin-top:12px;min-height:52px;padding:0 36px;font-size:17px}
+.maplayer #landing small{position:absolute;bottom:24px;left:0;right:0;font-size:12.5px;color:var(--ink-3)}
+/* la interfaz del mapa aparece cuando el vuelo de entrada ya va por la mitad */
+.maplayer .ui:not(#landing){transition:opacity .3s ease-out .9s}
+body.landing .maplayer .ui:not(#landing){opacity:0;pointer-events:none;transition:none}
+
+@media (hover:hover){
+  .maplayer #home:hover b,.maplayer #back:hover,.maplayer #crumbs button:hover{color:var(--sprout)}
+  .maplayer .btn:not(:disabled):hover{border-color:rgba(246,241,228,.4)}
+  .maplayer .btn.primary:not(:disabled):hover{background:#A6DE9B}
+  .maplayer .twins button:hover b{color:var(--sprout)}
+}
+@media (prefers-reduced-motion:reduce){
+  .maplayer #start,.maplayer .btn,.maplayer #landing,.maplayer .ui{transition:none!important}
+}
+body.recording .maplayer .ui:not(#top),body.recording .maplayer #nav{display:none!important}
+body.recording .maplayer #home{pointer-events:none}
+@media (max-width:760px){
+  .maplayer #top{padding:10px 16px 28px;gap:8px 12px;flex-wrap:wrap}
+  .maplayer #search{order:3;width:100%}
+  .maplayer #home b{font-size:18px;white-space:nowrap}
+  .maplayer #crumbs{display:none}
+  .maplayer #back{white-space:nowrap}
+  .maplayer #legend{display:none}
+  .maplayer #panel{top:auto;left:0;width:auto;max-height:62vh;border-left:0;border-top:1px solid var(--rule);border-radius:16px 16px 0 0;padding:20px 20px 24px}
+  .maplayer #p-name{font-size:26px}
+  .maplayer #sources{left:16px}
+}
+
+/* el nombre de la app no se parte en dos líneas en tablet */
+.maplayer #home b{white-space:nowrap}
+
+/* Aviso cuando el navegador no tiene WebGL y el globo no se puede dibujar */
+.maplayer .no-gl{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;width:min(440px,calc(100% - 32px));margin:0;padding:16px 18px;border-radius:14px;border:1px dashed rgba(246,241,228,.45);background:rgba(15,42,29,.88);color:#F6F1E4;font:500 15px/1.45 "DM Sans",system-ui,sans-serif;text-align:center}
+.maplayer .no-gl a{color:#8ED081;font-weight:700}

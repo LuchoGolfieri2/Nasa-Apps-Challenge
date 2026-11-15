@@ -23,7 +23,7 @@ Cambio de regla: antes era "se compara, no se recomienda". **Ahora la app sugier
 ## 3. Conexión front ↔ back
 
 - La app lee **JSON estáticos** (contrato en `docs/front-end-plan.md` §7, con los cambios de abajo). `null` = "Missing data"; `"prototype": true` en un bloque = sello "Prototype data".
-- **Quién genera los JSON: a confirmar con el equipo.** Propuesta por defecto: `scripts/build_front_data.py` del front, que lee CSV de `data/processed/`, el zip del CDL, `data/ml/` y el dataset de costos.
+- **Quién genera los JSON: a confirmar con el equipo.** Propuesta por defecto: `scripts/build_front_data.py` del front, que lee CSV de `data/processed/`, el zip del CDL, `backend/Datos/` y el dataset de costos.
 - Pedidos a otros equipos:
   - **ML:** el rango de cada opción es **rinde en bu/acre** (p10, mediana, p90), no NDVI. Además, para cada opción: confianza + motivo, y la lista de gemelos con en qué se parecen. Necesita NASS de rinde por condado.
   - **Datos:** NASS rinde y superficie de todos los condados de IA, IL, KS (gemelos y mapa de estado); POWER de los centroides; rasters CDL por año ya existen.
@@ -67,7 +67,7 @@ Cambio de regla: antes era "se compara, no se recomienda". **Ahora la app sugier
 
 ## 5. Dirección visual — pendiente
 
-Se define con **mockups de 5 variaciones de color/tema** generados con kie.ai (skill `imagegen`; el usuario la llamó `/kie-image`). Cada mockup muestra la misma pantalla (Historia de Sumner a 1920×1080) para comparar solo color y tema. Restricciones: compatible con la marca (`#12281C`, `#96DC6E`, `#3C8C2D`), colores de cultivo aptos para daltonismo, contraste AA. Las imágenes generadas con IA llevan marca "AI-generated" si se usan en algo público.
+Se define con **mockups de 5 variaciones de color/tema** generados con kie.ai (skill `imagegen`; el usuario la llamó `/kie-image`). Cada mockup muestra la misma pantalla (Historia de Sumner a 1920×1080) para comparar solo color y tema. Restricciones: paleta del equipo de `docs/specs/mockups-secciones.md` (Verde noche `#0F2A1D`, Verde campo `#2F7D4F`, Verde brote `#8ED081`, Oro trigo `#E9B949`, Papel `#F6F1E4`, Tierra `#6B4A2F`, Rojo alerta `#E5484D`), colores de cultivo aptos para daltonismo, contraste AA. Las imágenes generadas con IA llevan marca "AI-generated" si se usan en algo público.
 
 ## 6. Video
 

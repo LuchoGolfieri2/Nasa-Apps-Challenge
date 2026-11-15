@@ -31,7 +31,7 @@ Usá este skill junto con los skills `frontend-design` (dirección estética) y 
 
 ## Stack sugerido
 
-Sitio estático (Vite + React o HTML simple) que lee los JSON de `data/ml/` y `data/processed/`, publicado gratis (GitHub Pages o Vercel). Incluí un "campo de demo" precargado para que la demo nunca falle.
+Sitio estático (Vite + React o HTML simple) que lee los JSON de `backend/Datos/` y `data/processed/`, publicado gratis (GitHub Pages o Vercel). Incluí un "campo de demo" precargado para que la demo nunca falle.
 
 ## Antes de dar por terminado
 

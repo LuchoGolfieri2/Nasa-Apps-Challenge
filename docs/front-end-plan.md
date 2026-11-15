@@ -57,7 +57,7 @@ No existe todavía `data/processed/` ni `config/config.yaml` en el repo.
 
 Recomiendo **todo oscuro, con la identidad del logo**, porque la app aparece pegada a las animaciones del video y tiene que parecer la misma pieza:
 
-- Fondo `#12281C` (verde oscuro), acento `#96DC6E` (verde claro, "REWIND"), verde cultivo `#3C8C2D`. El rojo `#D71E1E` es solo de la animación: en la app no se usa para "malo".
+- **Paleta definitiva (14/11), la de `docs/specs/mockups-secciones.md`:** Verde noche `#0F2A1D` (fondo), Verde campo `#2F7D4F`, Verde brote `#8ED081` (acento, "REWIND"), Oro trigo `#E9B949`, Papel `#F6F1E4`, Tierra `#6B4A2F`, Rojo alerta `#E5484D` (solo riesgo y confianza baja, nunca "malo" decorativo). Reemplaza a `#12281C`, `#96DC6E`, `#3C8C2D` y `#D71E1E`.
 - **Globo estilizado oscuro**, sin teselas satelitales: países y estados como polígonos (Natural Earth + Census), atmósfera suave de MapLibre. Sin claves de API, pesa poco y se ve bien en 960×1080.
 - Colores de cultivo ya validados (`#E69F00` maíz, `#009E73` soja, `#56B4E9` cobertura/forraje, `#D98BB5` cereal fino) **hay que revalidarlos sobre fondo oscuro** antes de usarlos (skill `better-colors` / `dataviz`).
 - Tipografía sans en negrita para títulos, como el logo; texto de cuerpo legible. Se elige en la fase 2 con `frontend-design` y `no-ai-design-slop`.
@@ -89,7 +89,7 @@ web/
     data/         # tipos TS y carga de JSON
   public/data/    # JSON estáticos generados (sección 7)
 scripts/
-  build_front_data.py   # CSV de data/processed + zip CDL + data/ml -> web/public/data
+  build_front_data.py   # CSV de data/processed + zip CDL + backend/Datos -> web/public/data
 ```
 
 `build_front_data.py` lee lo que exista y escribe `null` donde falte. La app nunca calcula nada pesado: solo lee y dibuja.
