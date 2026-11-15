@@ -1,11 +1,12 @@
+import { MODEL_STATES_TEXT, STATE_NAME } from "../data/states";
 import { useEffect, useState } from "react";
 import { dataUrl } from "../data/load";
 import { Missing } from "../ui/Missing";
 import { Icon } from "./icons";
 import { NextSeason } from "./NextSeason";
 import type { NextData } from "./types";
+import { farmOption, loadFarm } from "../farm/farm";
 
-const STATE_NAME: Record<string, string> = { KS: "Kansas", IA: "Iowa", IL: "Illinois", IN: "Indiana" };
 
 /** Pantalla 3 · Next season (ruta #/county/<fips>/next). Lee data/next/<fips>.json. */
 export function NextScreen({ fips }: { fips: string }) {
@@ -26,12 +27,16 @@ export function NextScreen({ fips }: { fips: string }) {
     };
   }, [fips]);
 
+  // My Farm: si el productor guardó un campo en este condado, la pantalla arranca con su cultivo y sus prioridades
+  const saved = loadFarm();
+  const farm = saved && saved.fips === fips ? saved : null;
+
   if (failed) {
     return (
       <main className="fr-next">
         <div className="fr-next-empty">
           <h1>Options for next season</h1>
-          <Missing what={`the yield model doesn't cover county ${fips} yet (it covers Iowa, Illinois and Indiana; Kansas is not in the model yet)`} />
+          <Missing what={`the yield model doesn't cover county ${fips} yet (it covers ${MODEL_STATES_TEXT})`} />
           <p>
             <a className="btn" href={`#/county/${fips}`}>
               ← Back to the county history
@@ -70,7 +75,13 @@ export function NextScreen({ fips }: { fips: string }) {
           <span aria-hidden="true"> · </span>Next season
         </span>
       </nav>
-      <NextSeason data={data} onYearClick={(y) => (window.location.hash = `#/county/${data.fips}?year=${y}`)} />
+      <NextSeason
+        data={data}
+        initialCrop={farm?.plan}
+        initialPriorities={farm?.priorities}
+        farmPlanId={farm ? farmOption(data, farm)?.id ?? null : null}
+        onYearClick={(y) => (window.location.hash = `#/county/${data.fips}?year=${y}`)}
+      />
     </div>
   );
 }

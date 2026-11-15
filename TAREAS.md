@@ -60,6 +60,9 @@ Ejemplo:
     - **B · Celdas de ~1 km:** grilla con el cultivo dominante por celda, calculada a partir de A. ~25 MB.
     - **C · Retrato en cuadritos:** 100 cuadritos (1 = 1 % de la superficie) más la tendencia del % de maíz por año; sin mapa. ~2 MB. Los datos salen de `GetCDLStat`, que ya se usa en `scripts/build_crop_density.py`.
   - Recomendación: A + C. Los 3 condados a 30 m llevan "Field-level" y los demás "Lower detail", para no mezclar calidades sin aviso.
+- [ ] **F33** Estados nuevos en el globo y la historia (MN, MO, NE, OH, SD, WI y ND): polígonos, selector, historia y gemelos resaltados · Libre · Bloquea: entrega "para_front" de datos
+  - Preparado (15/11): `scripts/build_globe_geo.py` (suma polígonos y estados a `globe-data.json`), `web/src/data/states.ts` (lista única de estados) y `build_front_data.py` con los 11 estados. Probado con datos sintéticos, falta con el archivo real.
+  - Pasos y cuidados (17 columnas solo para IA, IL e IN; Argentina fuera de alcance): `docs/datos-de-prueba.md`, sección E.
 
 ## Pantalla 1 · Mapa
 
@@ -98,7 +101,7 @@ Ejemplo:
 
 ## My Farm (nueva, 15/11)
 
-- [ ] **F29** My Farm: perfil del campo (condado, acres, cultivos de los últimos años, costo y precio propios, prioridades) guardado en el navegador; pantalla tipo dashboard con ilustraciones de cultivos, medidor y curva de rinde; Next season usa ese perfil · 🔨 Lucho (15/11 14:50)
+- [x] ~~**F29** My Farm: perfil del campo (condado, acres, cultivos de los últimos años, costo y precio propios, prioridades) guardado en el navegador; pantalla tipo dashboard con ilustraciones de cultivos, medidor y curva de rinde; Next season usa ese perfil~~ · ✅ Lucho
 
 ## Video y entrega
 

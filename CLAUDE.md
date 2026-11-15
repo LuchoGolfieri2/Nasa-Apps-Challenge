@@ -2,7 +2,7 @@
 
 Proyecto del equipo **Pepers** para NASA Space Apps Challenge 2026, desafío **"Field Shift: Adapting Farms with NASA Data"**. La app se llama **Field Rewind** (*"Rewind your land before you decide."*): ayuda a productores a comparar rotaciones de cultivos con datos de la NASA y el USDA y sugiere una según sus prioridades. "Field Shift" es el nombre del desafío, no de la app.
 
-**Zona de estudio: Iowa, Illinois y Kansas (Estados Unidos).** Reemplaza a la zona núcleo argentina de versiones anteriores. Si encontrás instrucciones, nombres o fuentes argentinas (MAGyP, INTA, IGN, INDEC, `id_depto`, `campania`), están desactualizadas: avisá al humano.
+**Zona de estudio (actualizada el 15/11/2026): 11 estados del Corn Belt de Estados Unidos y la región pampeana de Argentina.** Estados Unidos: Iowa, Illinois, Indiana, Kansas, Minnesota, Missouri, Nebraska, Ohio, Dakota del Sur, Wisconsin y Dakota del Norte (972 condados; Dakota del Norte todavía no está en el modelo). Argentina: 219 departamentos de Buenos Aires, La Pampa, Córdoba, Santa Fe y Entre Ríos, con datos desde la entrega `para_front` del equipo de datos. Los nombres y fuentes argentinas (MAGyP, INDEC, `id_depto`, `campania`) **vuelven a estar vigentes**; ver la sección 2.1 para sus reglas. Los números salen de la página "Zonas de Field Shift" (15/11): si no coinciden con los archivos de la entrega, mandan los archivos; avisá al humano.
 
 **Este repo NO entrena modelos.** Su único objetivo es bajar, limpiar y estructurar datos en CSV listos para que otro equipo arme el modelo de machine learning.
 
@@ -25,16 +25,34 @@ Referencia de variables: planilla "Catálogo de variables – Field Shift" (IDs 
 
 ## 2. Parámetros del proyecto (`config/config.yaml`)
 
-Valores por defecto. **Estados confirmados por el equipo el 14/11/2026** (Kansas reemplaza a Indiana).
+Valores por defecto. **Estados confirmados por el equipo el 15/11/2026** (Indiana y Kansas se quedan, y se suman MN, MO, NE, OH, SD, WI y ND; Argentina vuelve como zona de extensión).
 
-- **Zona:** Iowa (`IA`, FIPS 19), Illinois (`IL`, 17) y Kansas (`KS`, 20), todos sus condados (≈ 306: 99 + 102 + 105). Iowa e Illinois son Corn Belt núcleo; Kansas suma el trigo de invierno. Condados de demo con historia completa: Story IA `19169`, McLean IL `17113` y Sumner KS `20191`. Escalable a más estados a medida que haya datos.
+- **Zona (Estados Unidos):** 11 estados, 972 condados. Con modelo de rinde (10): Iowa (`IA`, FIPS 19, 99 condados), Illinois (`IL`, 17, 102), Indiana (`IN`, 18, 92), Kansas (`KS`, 20, 105), Minnesota (`MN`, 27, 87), Missouri (`MO`, 29, 115), Nebraska (`NE`, 31, 93), Ohio (`OH`, 39, 88), Dakota del Sur (`SD`, 46, 66) y Wisconsin (`WI`, 55, 72). Dakota del Norte (`ND`, 38, 53) todavía no está en la entrega del modelo. Iowa e Illinois son Corn Belt núcleo; Kansas suma el trigo de invierno. Condados de demo con historia completa: Story IA `19169`, McLean IL `17113` y Sumner KS `20191`. Las 17 columnas exclusivas (Landsat 30 m, ECOSTRESS, napa y caudales, CoCoRaHS) y los lotes por píxel existen **solo para IA, IL e IN**; en los otros estados quedan vacías y se muestran como "Missing data".
+- **Zona (Argentina, extensión):** región pampeana, 219 departamentos; ver 2.1.
 - **Unidad espacial:** condado (county).
 - **Unidad temporal:** año. `anio` es el año calendario de la cosecha. Los archivos mensuales llevan el mes real; las ventanas de cada año se definen en la sección 4.
 - **Período:** 2000 a 2025. Rotaciones desde 2008 (desde ese año el Cropland Data Layer cubre todo el país). POWER puede ir desde 1981 para climatologías y SPI.
 - **Cultivos:** maíz, soja, trigo de invierno, avena, alfalfa y heno. Cultivos de cobertura (centeno) solo como práctica, desde el Censo Agropecuario.
-- **CRS:** guardar vectores en EPSG:4326. Para áreas y rasters del USDA (CDL, gSSURGO), usar EPSG:5070 (Albers CONUS, equivalente).
+- **CRS:** guardar vectores en EPSG:4326 (también los de Argentina). Para áreas y rasters del USDA (CDL, gSSURGO), usar EPSG:5070 (Albers CONUS, equivalente).
 
 Leé siempre estos valores de `config/config.yaml`; no los escribas fijos en el código.
+
+### 2.1 Argentina (región pampeana)
+
+Según la entrega `ResearchAgent-entregas/para_front/` (`departamentos_argentina.csv` y `.geojson`) y los datos completos de `fieldshift_argentina_v1/`. Cifras de la página "Zonas de Field Shift" (15/11); verificarlas contra los archivos.
+
+- **Unidad espacial:** departamento (partido en Buenos Aires). Clave: `id_depto`, código INDEC de 5 dígitos con ceros a la izquierda (Buenos Aires empieza con `06`). Se une por `id_depto` donde en Estados Unidos se une por `fips`; ver sección 4.
+- **Departamentos:** Buenos Aires 135, La Pampa 22, Córdoba 26, Santa Fe 19, Entre Ríos 17 (total 219).
+- **Zonas según la distancia climática con los condados de Estados Unidos** (16 variables), columna `zona`:
+  - `dentro` (15 departamentos: 12 de Buenos Aires y 3 de La Pampa): clima dentro del rango de EE. UU. Es la zona de la demo, sin aviso de extrapolación.
+  - `cerca` (1 o 2 variables fuera del rango, casi todo Buenos Aires): se muestra con el aviso de la variable fuera de rango (casi siempre lluvia de marzo o temperatura de octubre).
+  - `fuera` (3 o más variables fuera, incluye el núcleo de Córdoba, Santa Fe y Entre Ríos): no se muestra predicción, o se marca claramente.
+- **Clima por campaña (2000–2025):** solo los 135 departamentos de Buenos Aires. La temporada va de octubre a marzo: lo que en EE. UU. es "julio" (floración del maíz) acá es **enero**. No reusar las ventanas de la sección 4 sin adaptarlas y anotarlo en el data card.
+- **Rindes MAGyP** (maíz, soja, trigo): sirven para **comparar** contra la predicción, nunca como entrada del modelo. El sur bonaerense rinde aproximadamente la mitad que sus condados análogos de EE. UU.
+- **Suelo:** SoilGrids (1 km), no gSSURGO. No mezclarlos sin marcar la fuente.
+- Cada departamento tiene un condado análogo de EE. UU. (columna del CSV); no inventar equivalencias nuevas.
+- Las reglas 1 a 8 valen igual: nada de datos inventados, `raw/` no se toca, y los faltantes van como celda vacía.
+
 
 ---
 
@@ -77,7 +95,7 @@ Todos los paquetes entregan en el mismo formato para poder unirlos sin trabajo e
 | `fecha` | `YYYY-MM-DD` (solo archivos diarios o de 8/16 días) | `2023-07-15` |
 | `mes` | `YYYY-MM` (solo archivos mensuales) | `2023-07` |
 
-Excepción: los datos que solo existen por estado (Crop Progress) usan `fips_estado` (2 dígitos) en lugar de `fips`.
+Excepciones: los datos que solo existen por estado (Crop Progress) usan `fips_estado` (2 dígitos) en lugar de `fips`; los de Argentina usan `id_depto` (5 dígitos INDEC) en lugar de `fips`.
 
 **Archivos por paquete, según corresponda:**
 
@@ -299,4 +317,8 @@ El pipeline sigue siendo el objetivo de este repo; esta sección resume para qu�
 
 **Pendiente para el equipo de datos:** comparar el verdor del maíz según el cultivo anterior (maíz tras soja frente a maíz tras maíz) necesita cruzar el NDVI con las transiciones por píxel del CDL. Ese cálculo no está en el contrato de la sección 4; agregarlo cambia el esquema, así que se consulta antes (regla 6).
 
-**Sin definir:** qué variable pinta el mapa de estado (propuesta: % de maíz de NASS), qué variables definen que dos condados se parezcan, cómo se muestran los gemelos (arcos o botón) y quién genera los JSON del front.
+**Gemelos (definido en `backend/ML/PUNTO5.md`):** dos condados se parecen por **suelo y clima** (9 números: 5 de suelo de SSURGO y 4 de clima típico), sin mirar qué siembran. La lista de cada opción toma, entre los más parecidos, los **primeros 5 que de verdad hicieron esa opción**; con menos de 3 no hay rango. Se muestran como arcos sobre el globo, con el condado resaltado.
+
+**Argentina en el front** (según la entrega; a confirmar con el equipo antes de construirla): predicción solo en zona `dentro`, con aviso en `cerca` y sin predicción (o marcada) en `fuera`; clima por campaña solo en Buenos Aires; comparar con los rindes MAGyP. Mientras no se construya, Argentina no aparece en la interfaz.
+
+**Sin definir:** qué variable pinta el mapa de estado (propuesta: % de maíz de NASS) y quién genera los JSON del front.

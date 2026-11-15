@@ -11,6 +11,7 @@ Arma los JSON de la pantalla 3 ("Next season") con datos reales:
 Salida:
   web/public/data/next/<fips>.json   uno por condado de IA, IL y KS que tenga datos del modelo
   web/src/map/next-available.json    lista de esos condados (el mapa la usa para el botón "Next season")
+  web/src/farm/usda-prices.json      precio NASS y costo ERS de maíz y soja por estado (valores por defecto de My Farm)
 
 No inventa datos: lo que falta va en null y se muestra como "Missing data".
 Las reglas agronómicas (salud del suelo) van marcadas kind="rule".
@@ -140,6 +141,12 @@ def build_crop(fips, crop, ranges, explic_crop, twins_county, pc):
                     reasons.append(reason(r, "yield", v > 0))
             elif r["type"] == "climate_bad_years":
                 reasons.append(reason(r, "risk", False))
+            elif r["type"] in ("county_level", "soil"):
+                # Nivel propio del condado (suelo y manejo) o grupo de suelo del modelo: habla del rinde
+                reasons.append(reason(r, "yield", (r.get("value_bu_ac") or 0) > 0))
+            elif r["type"] == "soil_rule":
+                # Regla de SSURGO: cuánta agua retiene el suelo; pesa en los años secos
+                reasons.append(reason(r, "risk", r.get("sign", 0) > 0))
         if (crop, rot) in SOIL_RULE:
             text, pro = SOIL_RULE[(crop, rot)]
             reasons.append({"priority": "soil", "text": text, "source": "Agronomic rule", "kind": "rule", "years": [], "pro": pro})
@@ -211,13 +218,23 @@ def build_crop(fips, crop, ranges, explic_crop, twins_county, pc):
     return {"crop": crop, "label": CROP_LABEL[crop], "options": opts}
 
 
-def income_missing(fips, prices):
+def income_missing(fips, prices, crops=None):
     st = STATE_NAME[fips[:2]]
     if not all((fips[:2], es) in prices for es in CROP):
         return [{"what": "Income ($/acre)", "why": f"No USDA NASS price or ERS cost for {st}."}]
-    return [{"what": "Cost by rotation",
-             "why": "USDA ERS gives one operating cost per crop, so every option uses the same cost. "
-                    "Corn after corn usually needs more nitrogen, so its income here is likely too high."}]
+    out = [{"what": "Cost by rotation",
+            "why": "USDA ERS gives one operating cost per crop, so every option uses the same cost. "
+                   "Corn after corn usually needs more nitrogen, so its income here is likely too high."},
+           {"what": "Cost for this county",
+            "why": f"Operating costs are the USDA ERS average for {st}'s farm region, not this county's. "
+                   "Your own costs may be higher or lower."}]
+    negativas = sorted({o["label"] for c in (crops or {}).values() for o in c["options"]
+                        if o["income_usd_ac"] and o["income_usd_ac"]["median"] < 0})
+    if negativas:
+        out.append({"what": "Income below zero",
+                    "why": "At the regional average cost, a typical year leaves less than the operating cost here "
+                           f"({', '.join(negativas)}). With lower local costs the result can be positive."})
+    return out
 
 
 def main():
@@ -254,7 +271,7 @@ def main():
             "crops": crops,
             "twins": [{**t, "source": t.get("source", ""), "prototype": bool(t.get("prototype"))} for t in (tc or {}).get("twins", [])],
             "explore": explore,
-            "missing": income_missing(fips, prices) + [
+            "missing": income_missing(fips, prices, crops) + [
                 {"what": "Water use", "why": "No data separates these options for water."},
             ],
             "contract": {"explicaciones": explic.get("version_contrato"), "gemelos": twins.get("version_contrato")},
@@ -263,6 +280,15 @@ def main():
         written.append(fips)
     written.sort()
     (WEB / "src" / "map" / "next-available.json").write_text(json.dumps(written) + "\n")
+    # My Farm: el productor puede usar su precio y su costo; si no, estos (USDA)
+    prices = load_prices()
+    farm = {}
+    for (st, cult), v in sorted(prices.items()):
+        crop = {"maiz": "corn", "soja": "soy"}.get(cult)
+        if crop:
+            farm.setdefault(st, {})[crop] = {"price": v["price"], "cost": v["cost"], "years": v["years"]}
+    (WEB / "src" / "farm").mkdir(exist_ok=True)
+    (WEB / "src" / "farm" / "usda-prices.json").write_text(json.dumps(farm, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"{len(written)} condados →", OUT)
 
 

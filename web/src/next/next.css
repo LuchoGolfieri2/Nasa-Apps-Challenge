@@ -378,3 +378,12 @@
 .ns-answer .fr-conf--high{color:var(--field)}.ns-answer .fr-conf--medium{color:#7a570c}.ns-answer .fr-conf--low{color:#b3261e}
 .ns-answer .fr-conf-reason{color:var(--dark-2)}
 .ns-side-src{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+
+/* My Farm (F29): la opción que coincide con la rotación del productor */
+.ns-card-mine{display:inline-flex;align-items:center;gap:5px;margin-left:6px;padding:3px 10px;border-radius:999px;background:rgba(233,185,73,.22);color:var(--wheat-ink);font-size:12px;font-weight:700}
+/* Íconos de cultivo (CropIcon) en chips, títulos y barras de gemelos */
+.ns-chip .crop-ico{margin-left:-2px}
+.ns-card h2 .crop-ico,.ns-answer h2 .crop-ico{transform:translateY(2px);align-self:center}
+.ns-split-text{display:inline}
+.ns-split-item{white-space:nowrap}
+.ns-split-item .crop-ico{margin:0 3px 0 4px;vertical-align:-3px}

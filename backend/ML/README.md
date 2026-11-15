@@ -9,6 +9,8 @@ Una notebook por cada uso de ML del issue #6. Cada una se corre de arriba hacia 
 3. [`PLANTILLA_PUNTO.md`](PLANTILLA_PUNTO.md): copiala como `PUNTON.md` para documentar tu punto.
 4. `INFO.md` (raíz del repo): qué muestra el front y en qué formato lo espera.
 
+**Arreglos y pruebas del 15/11:** [`MEJORAS_15_11.md`](MEJORAS_15_11.md) (rangos con 15 climas, banda por estado, años raros, suelo en las razones, riego en los gemelos y la prueba 2024–2025).
+
 ## Puntos
 
 | # | Notebook | Explicación | Qué hace | Estado |

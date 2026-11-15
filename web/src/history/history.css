@@ -1210,3 +1210,13 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Ícono de cultivo junto al nombre (carrera de barras y leyenda de la mezcla) */
+.race__label .crop-ico {
+  margin-right: 6px;
+  vertical-align: -3px;
+}
+.mix__legend .crop-ico {
+  margin-right: 4px;
+  vertical-align: -3px;
+}
