@@ -6,6 +6,7 @@ import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
 import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer, ArcLayer, ScatterplotLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
 import D from './globe-data.json';
+import NEXT_LIST from './next-available.json'; // lo genera scripts/build_next_json.py
 
 let active = true;
 /** MapLayer avisa si el mapa está a la vista; oculto no dibuja */
@@ -19,7 +20,7 @@ const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream), NIGHT = hex(COL.night);
 const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
 const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
-const NEXT_AVAILABLE = ['20191']; // condados con pantalla Next season
+const NEXT_AVAILABLE = NEXT_LIST; // condados con datos del modelo para la pantalla Next season
 const POSTAL = {19: 'IA', 17: 'IL', 20: 'KS'};
 const FIPS_OF = {IA: '19', IL: '17', KS: '20'};
 
@@ -643,7 +644,7 @@ function startTake(name) {
   if (name === 'a') {
     takeDur = 6000; Object.assign(R, {lon: -20, lat: 22, k: 1});
     flyTo({lon: -96, lat: 37, k: 1.15}, 2000);
-    setTimeout(() => flyToState('20'), 2000); setTimeout(() => flyToCounty('20191'), 3900);
+    setTimeout(() => flyToState('19'), 2000); setTimeout(() => flyToCounty(START), 3900);
   } else {
     takeDur = 3000; const ks = stateById['20'];
     Object.assign(R, {lon: ks.centroid[0], lat: ks.centroid[1], k: fitK(ks, 0.7)});

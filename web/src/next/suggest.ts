@@ -6,9 +6,9 @@ export interface Suggestion {
   winner: NextOption | null;
   /** puntaje promedio 0..1 de cada opción en las prioridades que sí tienen dato */
   scores: Record<string, number | null>;
-  /** prioridades marcadas que no se pudieron usar porque falta el dato (p. ej. income sin costos) */
+  /** prioridades marcadas que no se pudieron usar porque falta el dato (ingreso sin costos, agua) */
   unscored: Priority[];
-  /** las 2 razones a mostrar, primero las de las prioridades marcadas */
+  /** las 2 razones a mostrar: solo a favor, primero las de las prioridades marcadas */
   reasons: Reason[];
 }
 
@@ -26,30 +26,21 @@ export function suggest(options: NextOption[], priorities: Priority[]): Suggesti
     if (s == null) continue;
     if (!winner || s > (scores[winner.id] as number)) winner = o;
   }
-  const reasons = winner
-    ? winner.reasons
-        .filter((r) => r.pro) // en la frase sugerida solo van razones a favor
-        .sort((a, b) => Number(usable.includes(b.priority)) - Number(usable.includes(a.priority))).slice(0, 2)
-    : [];
+  const rank = (r: Reason) => (usable.includes(r.priority as Priority) ? 0 : r.priority === 'yield' ? 1 : 2);
+  const reasons = winner ? winner.reasons.filter((r) => r.pro).sort((a, b) => rank(a) - rank(b)).slice(0, 2) : [];
   return {winner, scores, unscored, reasons};
 }
 
-/** Rinde de una opción como % de un año habitual del condado (100 = lo de siempre). null = falta el dato */
-export function asPercentOfUsual(o: NextOption): {p10: number; median: number; p90: number} | null {
-  if (!o.yield_bu_ac || !o.usual_bu_ac) return null;
-  const pct = (v: number) => Math.round((v / (o.usual_bu_ac as number)) * 100);
-  return {p10: pct(o.yield_bu_ac.p10), median: pct(o.yield_bu_ac.median), p90: pct(o.yield_bu_ac.p90)};
-}
-
-/**
- * Eje común para las 3 barras, en % de un año habitual.
- * Se usa % y no bu/acre porque los cultivos no son comparables en bushels
- * (el maíz siempre da más bushels por acre que el trigo).
- */
-export function commonAxis(options: NextOption[]): {max: number; ticks: number[]} {
-  const top = Math.max(...options.map((o) => asPercentOfUsual(o)?.p90 ?? 0), 125);
-  const max = Math.ceil(top / 25) * 25;
+/** Eje común en bu/acre para las tres opciones de un mismo cultivo */
+export function commonAxis(options: NextOption[]): {min: number; max: number; ticks: number[]} {
+  const lows = options.map((o) => o.yield_bu_ac?.p10).filter((v): v is number => v != null);
+  const highs = options.map((o) => o.yield_bu_ac?.p90).filter((v): v is number => v != null);
+  if (!lows.length) return {min: 0, max: 100, ticks: [0, 25, 50, 75, 100]};
+  const span = Math.max(...highs) - Math.min(...lows);
+  const step = span > 60 ? 20 : span > 25 ? 10 : 5;
+  const min = Math.floor((Math.min(...lows) - step * 0.6) / step) * step;
+  const max = Math.ceil((Math.max(...highs) + step * 0.6) / step) * step;
   const ticks: number[] = [];
-  for (let v = 0; v <= max; v += 25) ticks.push(v);
-  return {max, ticks};
+  for (let v = min; v <= max; v += step) ticks.push(v);
+  return {min, max, ticks};
 }

@@ -1,6 +1,7 @@
 # Pantalla 3 — Next season (F21, F22, F23, F24)
 
-Estado: funciona con **datos de prueba** (`web/public/data/next/20191.json`, todo con `"prototype": true`).
+Estado: funciona con **datos reales** del equipo de ML y del CDL. Los JSON los arma `scripts/build_next_json.py`
+(201 condados de Iowa e Illinois; Kansas todavía no está en el modelo → "Missing data").
 
 ## Archivos
 | Archivo | Qué es |
@@ -13,7 +14,7 @@ Estado: funciona con **datos de prueba** (`web/public/data/next/20191.json`, tod
 | `types.ts` | Tipos de `next/<fips>.json`. Los cultivos usan los ids de `src/ui/crops.ts` |
 | `twinMapShapes.ts` | Contornos de IA, IL, KS ya proyectados (generado) |
 | `next.css` | Estilos; usa los tokens de `web/src/ui/tokens.css` |
-| `scripts/make_mock_next.py` (raíz del repo) | Genera el JSON de prueba |
+| `scripts/build_next_json.py` (raíz del repo) | Cruza `backend/Datos` (rangos del punto 2, explicaciones del punto 3, gemelos del punto 5) con el CDL y escribe `web/public/data/next/<fips>.json` y `web/src/map/next-available.json` |
 
 ## Colores
 Los cultivos usan `CROP_COLOR` de `src/ui/crops.ts` (los mismos del mapa del CDL). Para el texto grande sobre la tarjeta clara
@@ -38,3 +39,16 @@ se usan versiones más oscuras (`CROP_INK` en `NextSeason.tsx`) para que pase co
 - Las barras van en **% de un año habitual del condado** (`asPercentOfUsual` en `suggest.ts`), con bu/acre como dato secundario. La spec decía bu/acre: avisar al equipo.
 - Rotación editable cultivo por cultivo (hoy se elige entre las 3 más comunes del CDL).
 - F23 queda listo del lado de esta pantalla; falta la línea de tiempo (F15) del otro lado.
+
+## De dónde sale cada cosa (datos reales)
+| En pantalla | Fuente |
+|---|---|
+| Rango p10 / mediana / p90 de cada opción | `backend/Datos/escenarios_rotacion_resumen.csv` (modelo del punto 2) |
+| Razones, riesgos con años, confianza, "qué mueve el rango" | `backend/Datos/front/explicaciones.json` (punto 3) |
+| Gemelos por opción y "Something new nearby" (trigo, avena) | `backend/Datos/front/gemelos.json` (punto 5) |
+| "Most common sequences here" | `web/public/data/county/<fips>.json` (CDL, pantalla 2); si no hay, la frase del modelo |
+| Puntaje de riesgo | p10 de cada opción, comparado entre las tres (Model) |
+| Puntaje de suelo | Regla fija: rotar > habitual > repetir (Rule) |
+| Ingreso y agua | "Missing data": no hay costos ni dato que separe las opciones |
+
+Para regenerar después de un cambio en `backend/Datos`: `python3 scripts/build_next_json.py`.

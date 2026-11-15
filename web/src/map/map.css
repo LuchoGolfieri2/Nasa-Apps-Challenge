@@ -127,3 +127,6 @@ body.recording .maplayer #home{pointer-events:none}
   .maplayer #p-name{font-size:26px}
   .maplayer #sources{left:16px}
 }
+
+/* el nombre de la app no se parte en dos líneas en tablet */
+.maplayer #home b{white-space:nowrap}
