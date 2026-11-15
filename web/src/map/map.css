@@ -117,7 +117,41 @@ body.landing .maplayer #landing{opacity:1;visibility:visible;pointer-events:auto
 .maplayer #landing h1{margin:0;font:800 clamp(44px,7.5vw,104px)/1 var(--display);letter-spacing:-.02em}
 .maplayer #landing h1 span{font-weight:500}
 .maplayer #landing p{margin:0;font-size:clamp(18px,2vw,26px);color:var(--ink-2)}
-.maplayer #enter{margin-top:12px;min-height:52px;padding:0 36px;font-size:17px}
+/* Lema de la portada: Bricolage Grotesque (la de los títulos); la primera mitad liviana, la segunda en negrita y verde brote */
+.maplayer #landing p.landing__tag{font:500 clamp(20px,2.2vw,30px)/1.15 var(--display);letter-spacing:-.01em;color:rgba(246,241,228,.92)}
+.maplayer #landing .landing__tag-a{font-weight:400;opacity:.85}
+.maplayer #landing .landing__tag-b{font-weight:800;color:var(--sprout,#8ED081)}
+
+/* Los dos botones de la portada: Map (verde) y My Farm (vidrio que se vuelve oro). Se elevan y brillan al pasar el cursor. */
+.maplayer .landing__actions{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin-top:14px}
+.maplayer .landing__btn{position:relative;display:inline-flex;align-items:center;gap:12px;min-height:60px;padding:0 24px 0 14px;border-radius:999px;border:1.5px solid transparent;
+  font:700 18px/1 inherit;font-family:inherit;color:#fff;text-decoration:none;cursor:pointer;overflow:hidden;isolation:isolate;
+  transition:transform .28s cubic-bezier(.2,.7,.2,1),box-shadow .28s,background-color .2s,border-color .2s,color .2s}
+.maplayer .landing__btn::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.35) 50%,transparent 70%);background-size:260% 100%;background-position:160% 0;transition:background-position .6s ease-out}
+.maplayer .landing__btn--map{background:var(--field,#2F7D4F);box-shadow:0 8px 22px rgba(0,0,0,.3)}
+.maplayer .landing__btn--farm{background:rgba(246,241,228,.12);border-color:rgba(246,241,228,.5);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 8px 22px rgba(0,0,0,.22)}
+.maplayer #landing .landing__ico svg{height:22px;width:22px;transform:none!important}
+.maplayer .landing__ico{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.18);transition:transform .35s cubic-bezier(.2,.7,.2,1),background-color .2s}
+.maplayer .landing__arrow{font-size:20px;opacity:.85;transition:transform .28s cubic-bezier(.2,.7,.2,1)}
+.maplayer .landing__btn:focus-visible{outline:3px solid var(--sprout,#8ED081);outline-offset:3px}
+.maplayer .landing__btn:active{transform:translateY(-1px) scale(.98)}
+@media (hover:hover){
+  .maplayer .landing__btn:hover{transform:translateY(-5px) scale(1.04)}
+  .maplayer .landing__btn:hover::after{background-position:-60% 0}
+  .maplayer .landing__btn:hover .landing__arrow{transform:translateX(6px)}
+  .maplayer .landing__btn:hover .landing__ico{transform:rotate(-10deg) scale(1.12)}
+  .maplayer .landing__btn--map:hover{background:#3a9460;box-shadow:0 16px 34px rgba(0,0,0,.4),0 0 0 7px rgba(142,208,129,.22)}
+  .maplayer .landing__btn--farm:hover{background:var(--wheat-gold,#E9B949);border-color:var(--wheat-gold,#E9B949);color:#0F2A1D;box-shadow:0 16px 34px rgba(0,0,0,.4),0 0 0 7px rgba(233,185,73,.25)}
+  .maplayer .landing__btn--farm:hover .landing__ico{background:rgba(15,42,29,.14)}
+}
+/* El nombre de la portada cambia de color al pasar el cursor, como el de la cabecera */
+.maplayer #landing .logo{cursor:default;color:var(--cream,#F6F1E4);transition:color .3s ease-out}
+.maplayer #landing h1{transition:color .3s ease-out}
+.maplayer #landing .logo svg{transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+.maplayer #landing .logo:hover{color:var(--sprout,#8ED081)}
+.maplayer #landing .logo:hover h1{color:var(--sprout,#8ED081)}
+.maplayer #landing .logo:hover svg{transform:translateX(-6px)}
 .maplayer #landing small{position:absolute;bottom:24px;left:0;right:0;font-size:12.5px;color:var(--ink-3)}
 /* la interfaz del mapa aparece cuando el vuelo de entrada ya va por la mitad */
 .maplayer .ui:not(#landing){transition:opacity .3s ease-out .9s}
@@ -131,7 +165,7 @@ body.landing .maplayer .ui:not(#landing){opacity:0;pointer-events:none;transitio
   .maplayer #c-close:hover{color:var(--paper);background-color:rgba(15,42,29,.06)}
 }
 @media (prefers-reduced-motion:reduce){
-  .maplayer #start,.maplayer .btn,.maplayer #landing,.maplayer .ui{transition:none!important}
+  .maplayer #start,.maplayer .btn,.maplayer #landing,.maplayer .ui,.maplayer .landing__btn,.maplayer .landing__btn::after,.maplayer .landing__ico,.maplayer .landing__arrow,.maplayer #landing h1,.maplayer #landing .logo svg{transition:none!important}
   /* la tarjeta aparece y se va con un fundido, sin escala ni desplazamiento
      (!important: app.css anula todas las transiciones con movimiento reducido, y este fundido se conserva) */
   .maplayer #card-box,.maplayer #card.open #card-box{transform:none;transition:opacity .12s ease-out!important}

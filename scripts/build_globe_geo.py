@@ -164,7 +164,11 @@ def main() -> None:
             "id": fe, "name": nombres_estado[fe], "centroid": centro(cont, None), "bounds": bounds(cont), "geometry": cont,
         })
 
-    print(f"Condados nuevos: {len(nuevos)} ({', '.join(f'{k}: {sum(1 for n in nuevos if n['state'] == k)}' for k in sorted({n['state'] for n in nuevos}))})")
+    por_est = {}
+    for n in nuevos:
+        por_est[n["state"]] = por_est.get(n["state"], 0) + 1
+    detalle = ", ".join(f"{k}: {v}" for k, v in sorted(por_est.items()))
+    print(f"Condados nuevos: {len(nuevos)} ({detalle})")
     print(f"Estados nuevos: {[s['name'] for s in estados_nuevos]}")
     for fips, motivo in saltados:
         print(f"  salteado {fips}: {motivo}")
