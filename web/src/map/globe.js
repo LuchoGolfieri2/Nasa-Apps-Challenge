@@ -440,6 +440,9 @@ const one = (key, obj) => { if (!obj) return []; const m = memo.get(key); if (m 
 // no escriben profundidad (SURFACE): entre ellas manda el orden en que se dibujan.
 const GROUND_SINK_M = 25000;
 const SURFACE = {depthWriteEnabled: false};
+// Esquinas redondeadas en todos los bordes: con la esquina en punta (miter, la de deck.gl por defecto) cada giro
+// cerrado de un borde de río (Red River entre ND y MN) saca un pico de hasta 4 veces el grosor de la línea.
+const ROUND = {lineJointRounded: true, lineCapRounded: true};
 let groundBias = 0, depthUnit = 0;
 const groundOffset = () => [0, groundBias];
 function updateGroundBias() {
@@ -467,10 +470,10 @@ function buildLayers(a) {
           _imageCoordinateSystem: COORDINATE_SYSTEM.CARTESIAN, parameters: SURFACE});
       }}),
     // brillo fijo debajo de los estados con datos (no late: no es un dato en vivo)
-    new GeoJsonLayer({id: 'states-glow', parameters: SURFACE, data: STATES_GLOW, filled: false, stroked: true, lineWidthUnits: 'pixels',
+    new GeoJsonLayer({id: 'states-glow', parameters: SURFACE, data: STATES_GLOW, filled: false, stroked: true, ...ROUND, lineWidthUnits: 'pixels',
       getLineWidth: 9, getLineColor: [...GLOW, Math.round(65 * stateFade)],
       updateTriggers: {getLineColor: [stateFade]}}),
-    new GeoJsonLayer({id: 'states', parameters: SURFACE, data: STATES, filled: true, stroked: true, pickable: R.k <= COUNTY_K + 0.6,
+    new GeoJsonLayer({id: 'states', parameters: SURFACE, data: STATES, filled: true, stroked: true, ...ROUND, pickable: R.k <= COUNTY_K + 0.6,
       lineWidthUnits: 'pixels',
       getFillColor: (f) => {
         const dim = selState && selState !== f ? 0.45 : 1;
@@ -489,19 +492,19 @@ function buildLayers(a) {
     const countyPx = base * R.k * rad * 0.45, edge = Math.max(1.5, Math.min(3, countyPx / 12));
     const fillEdge = a > 0.5 ? edge : Math.min(edge, Math.max(0.3, countyPx / 10));
     layers.push(
-      new GeoJsonLayer({id: 'counties', parameters: SURFACE, data: COUNTIES, opacity: fillA, filled: true, stroked: true,
+      new GeoJsonLayer({id: 'counties', parameters: SURFACE, data: COUNTIES, opacity: fillA, filled: true, stroked: true, ...ROUND,
         pickable: R.k > COUNTY_K + 0.6, lineWidthUnits: 'pixels', getLineWidth: fillEdge, getLineColor: NIGHT,
         updateTriggers: {getLineWidth: fillEdge, getFillColor: mode}, getFillColor: (f) => [...f.rgb, 255]}),
       // borde doble: Papel fino sobre Verde noche, así siempre contrasta uno de los dos con la rampa
-      new GeoJsonLayer({id: 'county-lines', parameters: SURFACE, data: COUNTIES, opacity: a, filled: false, stroked: true,
+      new GeoJsonLayer({id: 'county-lines', parameters: SURFACE, data: COUNTIES, opacity: a, filled: false, stroked: true, ...ROUND,
         lineWidthUnits: 'pixels', getLineWidth: edge / 3, getLineColor: CREAM, updateTriggers: {getLineWidth: edge}}),
-      new GeoJsonLayer({id: 'state-edge-dark', parameters: SURFACE, data: STATES, opacity: a, filled: false, stroked: true,
+      new GeoJsonLayer({id: 'state-edge-dark', parameters: SURFACE, data: STATES, opacity: a, filled: false, stroked: true, ...ROUND,
         lineWidthUnits: 'pixels', getLineWidth: 5, getLineColor: NIGHT}),
-      new GeoJsonLayer({id: 'state-edge', parameters: SURFACE, data: STATES, opacity: a, filled: false, stroked: true,
+      new GeoJsonLayer({id: 'state-edge', parameters: SURFACE, data: STATES, opacity: a, filled: false, stroked: true, ...ROUND,
         lineWidthUnits: 'pixels', getLineWidth: 3, getLineColor: CREAM}),
-      new GeoJsonLayer({id: 'county-hover', parameters: SURFACE, data: one('hover', hoverCounty), filled: true, stroked: true,
+      new GeoJsonLayer({id: 'county-hover', parameters: SURFACE, data: one('hover', hoverCounty), filled: true, stroked: true, ...ROUND,
         lineWidthUnits: 'pixels', getFillColor: [255, 255, 255, 64], getLineColor: CREAM, getLineWidth: 1.5}),
-      new GeoJsonLayer({id: 'county-selected', parameters: SURFACE, data: one('sel', selCounty), filled: false, stroked: true,
+      new GeoJsonLayer({id: 'county-selected', parameters: SURFACE, data: one('sel', selCounty), filled: false, stroked: true, ...ROUND,
         lineWidthUnits: 'pixels', getLineColor: WHITE, getLineWidth: 3.5}));
   }
 
