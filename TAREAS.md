@@ -73,10 +73,10 @@ Ejemplo:
 - [ ] **F36** (ML, punto 5) Que `area_por_cultivo` de `punto5_vecinos.ipynb` emita `oats` en `grew_crop_pct` en vez de `other`, y volver a correr el paso 20 (guardar `gemelos.json`) y `scripts/build_next_json.py` · Libre
   - Por qué: la avena no es una clase del CDL (cae en `other`), pero en Próxima campaña ya es un cultivo propio con ícono y color (`web/src/ui/crops.ts`, `CropIcon`). Hoy las barras "What they plant" de los gemelos la muestran como "Other crops". Con la entrega final del 15/11 `gemelos.json` sigue emitiendo solo `corn`, `soy`, `wheat` y `other`.
   - No hay que reentrenar nada: el punto 5 es una búsqueda de vecinos y el cambio es solo de nombres al guardar. Verificar antes que el área sembrada de avena por condado esté en la entrega.
-- [ ] **F38** Verificar que se subieron los datos de todos los condados y lugares que se marcan en el globo (EE. UU. y Argentina) · Libre
+- [x] ~~**F38** Verificar que se subieron los datos de todos los condados y lugares que se marcan en el globo (EE. UU. y Argentina)~~ · ✅ Lucho/Claude
   - Hecho EE. UU. (15/11): `python3 scripts/check_coverage.py` cruza globo, historia, Próxima campaña y modelo. Resultado: 919 polígonos (los 10 estados completos), 890 fichas, 895 de Próxima campaña, 0 gemelos rotos y 0 valores en 0. Los 29 condados sin historia los marca el globo con "Missing data": 24 no están en la tabla del modelo (ciudades y zonas de bosque, como St. Louis city o Vilas) y 5 tienen datos de modelo solo antes de 2015. Dakota del Norte sigue sin polígonos ni modelo.
   - Hecho Argentina, datos (15/11): `python3 scripts/build_argentina.py` arma `web/public/data/argentina/` con la entrega final: 219 departamentos (15 `dentro`, 102 `cerca`, 102 `fuera`), polígonos, condados análogos, rindes del MAGyP contra EE. UU. y clima de Buenos Aires. Sin predicción del modelo. Contrato: `docs/argentina-front.md`.
-  - Falta Argentina en la interfaz (a decidir con el equipo) y sumarla a `scripts/check_coverage.py`.
+  - Hecho Argentina, interfaz y control (15/11): pantalla `#/argentina` (F39) y `scripts/check_coverage.py` controla que los 219 departamentos tengan ficha y zona, y que ninguno tenga predicción.
   - EE. UU., cantidad de condados con polígono contra los de la entrega (según "Zonas de Field Shift", a confirmar con los archivos): IA 99, IL 102, IN 92, KS 105, MN 87, MO 115, NE 93, OH 88, SD 66, WI 72 y ND 53 (hoy ND no está). Total 972.
   - Para cada condado marcado: tiene ficha de historia (`web/public/data/county/`), archivo de Próxima campaña (`next/`, si su estado tiene modelo) y color del globo (`stat` en `globe-data.json`). Lo que no tenga dato se ve como "Missing data", nunca con 0 ni sin marcar.
   - Cruces a buscar: condados marcados sin datos, datos de condados que no están en el globo, y condados con gemelos que apuntan a un condado sin polígono.
@@ -86,7 +86,8 @@ Ejemplo:
 
 ## Pantalla 1 · Mapa
 
-- [ ] **F39** Argentina en la interfaz: pantalla `#/argentina` con el mapa de los 219 departamentos por zona, la ficha de cada uno (rinde del MAGyP contra sus análogos de EE. UU., clima de Buenos Aires, suelo) y enlaces a los condados análogos. Sin predicción, según `docs/argentina-front.md` · 🔨 Lucho/Claude (15/11 20:15)
+- [x] ~~**F39** Argentina en la interfaz: pantalla `#/argentina` con el mapa de los 219 departamentos por zona, la ficha de cada uno (rinde del MAGyP contra sus análogos de EE. UU., clima de Buenos Aires, suelo) y enlaces a los condados análogos. Sin predicción, según `docs/argentina-front.md`~~ · ✅ Lucho/Claude
+  - Hecho (15/11): `web/src/argentina/`. Mapa plano (SVG, sin WebGL) de los 219 departamentos, pintado por zona o por rinde ÷ análogos de EE. UU. (maíz, soja, trigo); selector por provincia; ficha con zona y aviso, "No yield estimate", rinde contra el rango p10–p90 de los 3 análogos, serie del MAGyP 2001–2025, clima de Buenos Aires (octubre–marzo), suelo SoilGrids contra el primer análogo y enlaces a la historia de los análogos. Entradas: "Argentina" en la barra de arriba y en el globo. Revisado a 1920×1080 y 390×844: sin scroll horizontal y axe AA sin fallas.
 - [x] ~~**F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar~~ · ✅ Naim
   - Archivos: `web/src/map/globe.js` (deck.gl + Blue Marble de GIBS)
   - Sin latido: el resaltado es fijo, porque un latido parece un dato en vivo y no lo es. Gira solo a 3°/s tras 3 s sin tocarlo.

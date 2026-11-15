@@ -1,7 +1,6 @@
 # Argentina en el front: datos listos (F38, parte Argentina)
 
-Datos de la región pampeana para que el front pueda mostrarla. **Solo datos**: la interfaz todavía no la usa.
-Cómo mostrarla lo decide el equipo (`CLAUDE.md`, "Argentina en el front").
+Datos de la región pampeana. **La interfaz ya los usa** desde el 15/11: pantalla `#/argentina` (tarea F39, código en `web/src/argentina/`).
 
 - **Script:** `python3 scripts/build_argentina.py` (lee la entrega `fieldshift_datos_final_20261115`, que no va a
   Git; es idempotente).
@@ -77,8 +76,10 @@ Conversión a bu/ac con los factores de `CLAUDE.md` (maíz 62,77 kg/ha por bu/ac
 - La "temporada" argentina es **octubre a marzo**: lo que en EE. UU. es julio, acá es enero.
 - Interfaz en inglés; los textos de los JSON ya están en inglés y sin "recommend".
 
-## Lo que falta (front)
+## En la interfaz (F39, 15/11)
 
-- Decidir con el equipo dónde aparece (capa del globo, pantalla propia o solo la toma C del video).
-- Dibujarlo: el mapa por zona, la ficha y los arcos a los condados análogos.
-- Sumar Argentina a `scripts/check_coverage.py` (F38).
+- **Entradas:** "Argentina" en la barra de arriba de las pantallas y en la cabecera del globo. Rutas `#/argentina` y `#/argentina/<id_depto>`.
+- **Mapa:** SVG plano (sin WebGL) de los 219 departamentos. Se pinta por zona o por `ratio_<cultivo>` (rinde ÷ análogos, escala divergente: marrón rinde menos, verde rinde más; rayado = sin rinde del MAGyP).
+- **Ficha:** zona con `zone_text`, "No yield estimate" con `prediction_note`, rinde contra el p10–p90 de los análogos, serie del MAGyP, clima de Buenos Aires (últimas 6 campañas), suelo contra el primer análogo y enlaces a la historia de los 3 análogos.
+- **Control:** `scripts/check_coverage.py` revisa que los 219 tengan ficha y zona y que ninguno tenga predicción.
+- **Pendiente:** los arcos a los análogos sobre el globo y la toma C del video (F26).

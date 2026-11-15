@@ -83,6 +83,29 @@ def main() -> int:
     if not any(k[:2] in nd for k in poly):
         print("\nDakota del Norte: sin polígonos ni modelo (la entrega todavía no la trae).")
 
+    # Argentina (F39): cada departamento del mapa tiene su ficha, su zona y ninguna predicción.
+    ar = RAIZ / "web" / "public" / "data" / "argentina"
+    if (ar / "departamentos.geojson").exists():
+        feats = json.loads((ar / "departamentos.geojson").read_text(encoding="utf-8"))["features"]
+        ids = {f["properties"]["id_depto"] for f in feats}
+        fichas_ar = {p.stem for p in (ar / "depto").glob("*.json")}
+        zonas = {}
+        for f in feats:
+            zonas[f["properties"]["zone"]] = zonas.get(f["properties"]["zone"], 0) + 1
+        print(f"\nArgentina: {len(ids)} departamentos en el mapa, {len(fichas_ar)} fichas, zonas {zonas}")
+        if ids != fichas_ar:
+            errores.append(f"Argentina: mapa y fichas no coinciden ({sorted(ids ^ fichas_ar)[:10]})")
+        if len(ids) != 219:
+            errores.append(f"Argentina: {len(ids)} departamentos, la página 'Zonas de Field Shift' dice 219")
+        for i in sorted(fichas_ar):
+            d = json.loads((ar / "depto" / f"{i}.json").read_text(encoding="utf-8"))
+            if d.get("prediction") is not None:
+                errores.append(f"Argentina {i}: tiene predicción y no debería")
+            if d.get("zone") not in ("dentro", "cerca", "fuera"):
+                errores.append(f"Argentina {i}: zona '{d.get('zone')}'")
+    else:
+        print("\nArgentina: falta web/public/data/argentina/ (correr scripts/build_argentina.py)")
+
     print("\n" + ("Sin errores." if not errores else "Errores:\n  - " + "\n  - ".join(errores)))
     return 1 if errores else 0
 
