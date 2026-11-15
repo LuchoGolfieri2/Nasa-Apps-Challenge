@@ -10,6 +10,7 @@ import { SourceChip } from "../ui/SourceChip";
 import { BarRace } from "./BarRace";
 import { CdlMap } from "./CdlMap";
 import { CountyGlobe, type CdlView } from "./CountyGlobe";
+import { StateRewind } from "./StateRewind";
 import { Timeline } from "./Timeline";
 import { usePlayback } from "./usePlayback";
 import { useScrollFade } from "./useScrollFade";
@@ -288,7 +289,10 @@ export function HistoryScreen({
             />
           </div>
         ) : (
-          <YieldHistory county={county} year={year} onYear={pickYear} />
+          <div className="history__nomap">
+            <YieldHistory county={county} year={year} onYear={pickYear} />
+            <StateRewind fips={county.fips} name={county.name} postal={county.state} year={current.year} />
+          </div>
         )}
 
         <div className="history__story" ref={storyRef}>

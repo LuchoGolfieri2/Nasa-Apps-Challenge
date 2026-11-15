@@ -49,7 +49,7 @@
   /* Texto */
   --ink: #12271b;
   --ink-2: rgba(18, 39, 27, 0.74);
-  --ink-3: rgba(18, 39, 27, 0.56);
+  --ink-3: rgba(18, 39, 27, 0.64); /* 0.64: contraste AA (≥4,5:1) sobre blanco, --bg y --surface-2 */
 
   /* Tipografía */
   --font-display: "Bricolage Grotesque", system-ui, sans-serif;
