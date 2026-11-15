@@ -12,7 +12,7 @@ Una notebook por cada uso de ML del issue #6. Cada una se corre de arriba hacia 
 
 | # | Notebook | Explicación | Qué hace | Estado |
 |---|---|---|---|---|
-| 1 | [`punto1_sectores.ipynb`](punto1_sectores.ipynb) | [`PUNTO1.md`](PUNTO1.md) | Divide el lote en sectores (fuzzy c-means sobre el vigor de varios años; terreno y suelo para nombrarlos) | Anda con los 10 lotes de la entrega v1.2: 6 con sectores y 4 parejos. Falta la salida en GeoJSON para el front |
+| 1 | [`punto1_sectores.ipynb`](punto1_sectores.ipynb) | [`PUNTO1.md`](PUNTO1.md) | Divide el lote en sectores (fuzzy c-means sobre el vigor de varios años; terreno y suelo para nombrarlos) | Anda con los 10 lotes de la entrega v1.3: 5 con sectores, 2 con sectores débiles y 3 parejos. Falta la salida en GeoJSON para el front |
 | 2 | [`punto2_vigor.ipynb`](punto2_vigor.ipynb) | [`PUNTO2.md`](PUNTO2.md) | Vigor esperado por cultivo, con banda de riesgo (Monte Carlo) | Parte A (práctica) anda. Parte B espera NDVI, clima y suelo |
 | 3 | dentro de `punto2_vigor.ipynb` | [`PUNTO2.md`](PUNTO2.md) | El "por qué" de la recomendación (SHAP) | Espera el modelo del punto 2 |
 | 4 | `punto4_anomalias.ipynb` | `PUNTO4.md` | Años que rindieron distinto de lo esperado | Si sobra tiempo |
@@ -22,7 +22,7 @@ Una notebook por cada uso de ML del issue #6. Cada una se corre de arriba hacia 
 
 - `cdl_puntos.csv` (raíz del repo): historial de cultivos por punto, 2017–2025. Detalles en `ML_NOTAS_CDL.md`.
 - NDVI (MODIS), clima (POWER) y suelo (SSURGO) por `point_id`: los trae Diego.
-- `fieldshift_datos_v1.2/lotes` (pipeline ResearchAgent): 10 lotes con píxeles de 30 m, con vigor (Landsat), terreno, suelo y clima. La usa el punto 1. Pesa 180 MB y no está en Git: ver [`PUNTO1.md`](PUNTO1.md).
+- `fieldshift_datos_v1.3/lotes` (pipeline ResearchAgent): 10 lotes con píxeles de 30 m, con vigor (Landsat), cultivo (CDL), terreno (3DEP), suelo, drenaje con caños y clima. La usa el punto 1. Pesa unos 450 MB y no está en Git: ver [`PUNTO1.md`](PUNTO1.md).
 
 ## Salidas
 
