@@ -54,7 +54,7 @@ La guía oficial 2026 pide que la demo **muestre el software funcionando**. Por 
 
 La voz dice: *"Elegís tu condado y rebobinás una década: qué se sembró, cómo rindió y qué clima hubo, con datos de la NASA. Después comparás tu rotación con otras y la app te sugiere una según tus prioridades, con lo que pasó en el pasado."*
 
-> Actualizado el 14/11: el CDL limpio cubre 2015–2025, así que la voz dice "una década" (en inglés, "a decade"), no "18 años". El condado de la toma B es **Sumner, KS**.
+> Actualizado el 14/11: el CDL limpio cubre 2015–2025, así que la voz dice "una década" (en inglés, "a decade"), no "18 años". El condado de la toma B es **Story, IA** (cambio del 14/11 a la noche: Kansas no está en el modelo de ML, así que Sumner no tiene "Next season").
 
 | Seg. aprox. | Acción en pantalla |
 |---|---|

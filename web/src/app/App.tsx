@@ -2,6 +2,8 @@ import { Logo } from "../ui/Logo";
 import { HistoryScreen } from "../history/HistoryScreen";
 import { MapLayer } from "../map/MapLayer";
 import { NextScreen } from "../next/NextScreen";
+import { SourcesScreen } from "../sources/SourcesScreen";
+import { NASA_USDA_COUNT } from "../sources/datasets";
 import { useLocation } from "./router";
 import "./app.css";
 
@@ -13,8 +15,8 @@ function Pending({ title, task, children }: { title: string; task: string; child
       <p>This screen is being built ({task}).</p>
       {children}
       <p>
-        <a className="btn btn--primary" href="#/county/20191">
-          Rewind Sumner County, KS
+        <a className="btn btn--primary" href="#/county/19169">
+          Rewind Story County, IA
         </a>
       </p>
     </main>
@@ -35,7 +37,9 @@ export function App() {
             <Logo />
             <nav className="topbar__nav" aria-label="Main">
               <a href="#/map">Map</a>
-              <a href="#/sources">Sources &amp; limits</a>
+              <a href="#/sources" className="topbar__sources">
+                Sources<span className="topbar__long"> &amp; limits</span> <span className="topbar__count">{NASA_USDA_COUNT} NASA &amp; USDA datasets</span>
+              </a>
             </nav>
           </header>
 
@@ -44,7 +48,7 @@ export function App() {
           ) : route.name === "next" ? (
             <NextScreen key={route.fips} fips={route.fips} />
           ) : route.name === "sources" ? (
-            <Pending title="Sources & limits" task="task F25" />
+            <SourcesScreen />
           ) : (
             <Pending title="Page not found" task="check the address" />
           )}

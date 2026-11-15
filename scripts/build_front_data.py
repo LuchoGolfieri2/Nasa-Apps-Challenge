@@ -40,7 +40,7 @@ CONDADOS = {
     "17113": {"name": "McLean", "state": "IL", "state_name": "Illinois"},
     "20191": {"name": "Sumner", "state": "KS", "state_name": "Kansas"},
 }
-CONDADO_DEMO = "20191"
+CONDADO_DEMO = "19169"  # Story, IA: el único condado de demo con modelo de ML y gemelos
 
 # Clases que muestra el front. El índice es el valor de gris del PNG.
 # 0 = sin dato (fuera del condado), 1 = no agrícola.

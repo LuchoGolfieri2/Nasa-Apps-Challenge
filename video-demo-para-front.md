@@ -24,8 +24,8 @@ Cambios que ya aplico, según la spec:
 | Tiempo | Pantalla | Qué se ve | Toma del front |
 |---|---|---|---|
 | 0–3 s | Completa | Logo de Field Rewind + clic en "Start demo" | Landing (ver pregunta 1) |
-| 3–9 s | **Dividida** | Izquierda: globo con glow → Kansas → Sumner. Derecha: intro animada (la hago yo en Remotion) | **Toma A** a 960×1080 |
-| 9–18 s | Completa | Rewind 2015→2025 de Sumner: titular, panel lateral, bar race | **Toma B** a 1920×1080 |
+| 3–9 s | **Dividida** | Izquierda: globo con glow → Iowa → Story. Derecha: intro animada (la hago yo en Remotion) | **Toma A** a 960×1080 |
+| 9–18 s | Completa | Rewind 2015→2025 de Story: titular, panel lateral, bar race | **Toma B** a 1920×1080 |
 | 18–24 s | Completa | Botón "Next season" → sugerencia + arcos a los gemelos | **Toma B** (continúa) |
 | 24–27 s | Completa | Zoom out → giro a la Pampa | **Toma C** |
 | 27–30 s | Completa | Logo + tagline + aviso | Lo hago yo |
@@ -34,9 +34,9 @@ Si llega el dataset de costos, "Higher income" reemplaza 2–3 s de la sugerenci
 
 ## 4. Qué tiene que pasar en cada toma
 
-### Toma A — Globo → Sumner (6 s, 960×1080)
+### Toma A — Globo → Story (6 s, 960×1080)
 - Globo girando lento, glow fuerte, los 3 estados encendidos con latido.
-- La cámara va directo a Kansas y entra a **Sumner, KS (20191)**.
+- La cámara va directo a Iowa y entra a **Story, IA (19169)**.
 - Sin tocar nada a mano: que lo haga sola con `?take=a`.
 
 ### Toma B — Rewind + sugerencia (15 s, 1920×1080)
@@ -44,7 +44,7 @@ Si llega el dataset de costos, "Higher income" reemplaza 2–3 s de la sugerenci
 - Play automático 2015→2025, aprox. **0.8 s por año**.
 - Condado pintado lote a lote con el CDL de cada año.
 - **Arriba a la izquierda:** titular del año ("2023 — Dry July. Corn after soy on 46% of fields.").
-- **Bar chart race** de cultivos por superficie (en Sumner, el trigo cae y el maíz sube).
+- **Bar chart race** de cultivos por superficie (en Story se ve la rotación maíz–soja).
 - **Panel a la derecha, máximo 3 datos** que cambien con el año:
   1. Rinde del año vs. lo habitual, en palabras ("Below usual").
   2. Clima del año (POWER): "Dry July · +2 °C".
@@ -67,7 +67,7 @@ Si llega el dataset de costos, "Higher income" reemplaza 2–3 s de la sugerenci
 |---|---|---|---|
 | Landing con logo + botón | Sí | | Ver pregunta 1 |
 | Globo con glow + 3 estados | Sí | | |
-| Mapa del estado → Sumner | Sí | | |
+| Mapa del estado → Story | Sí | | |
 | Modo grabación `?take=a\|b\|c` | Sí | | Clave para grabar limpio |
 | CDL lote a lote por año | Sí | | |
 | Bar chart race | Sí | | |
@@ -98,7 +98,7 @@ Si llega el dataset de costos, "Higher income" reemplaza 2–3 s de la sugerenci
 3. La spec dice que la toma C va a 960×1080. En este guion va a **pantalla completa**: ¿pueden grabarla a 1920×1080?
 4. ¿La sugerencia va a tener datos reales de ML o va con sello "Prototype data"?
 5. Gemelos: ¿arcos automáticos (A) o botón "Counties like yours" (B)?
-6. ¿El botón de entrada queda en Story o en Sumner? Para el video conviene **Sumner**.
+6. ~~¿Story o Sumner?~~ **Resuelto (14/11): Story, IA.** Es el único condado de demo con modelo de ML y gemelos; Kansas no está en el modelo.
 7. ¿Para qué fecha tienen una versión estable para grabar?
 
 ## 8. Formato de entrega de las grabaciones

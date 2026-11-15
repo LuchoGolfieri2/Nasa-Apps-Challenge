@@ -16,7 +16,7 @@
 | `#/county/20191/next` | Next season (pantalla 3) |
 
 Cada vista escribe su hash, así funcionan el "atrás" del navegador, las migas y los botones Back.
-"Go to Sumner County, KS" vuela directo a Sumner y abre su panel; desde ahí "▶ Rewind 2015–2025" abre la historia con `?play=1`.
+"Go to Story County, IA" vuela directo a Story y abre su panel; desde ahí "▶ Rewind 2015–2025" abre la historia con `?play=1`.
 Grabación: `?take=a` y `?take=c`.
 
 ## Transición portada → globo

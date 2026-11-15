@@ -188,3 +188,16 @@
 .fr-explore p{margin:6px 0 0!important;font-size:14px;line-height:1.4}
 .fr-explore .fr-conf{font-size:13px}
 .fr-explore-note{color:var(--m);font-size:12.5px!important}
+
+/* celular y tablet: más aire arriba de cada barra (para el número de la mediana) y la mitad de las marcas del eje */
+@media (max-width:1180px){
+  .fr-row-bar{margin-top:18px}
+  .fr-row-name small.fr-row-abs{margin-top:2px}
+}
+@media (max-width:700px){
+  .fr-axis span:nth-child(even){display:none}
+  .fr-next h1{font-size:30px}
+  .fr-sentence{font-size:30px}
+  .fr-reason-text{font-size:17px}
+  .fr-suggestion{padding:16px 16px 18px}
+}

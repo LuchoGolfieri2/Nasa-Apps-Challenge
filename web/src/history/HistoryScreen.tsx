@@ -17,8 +17,8 @@ import "./history.css";
 const DEFAULT_STEP_S = 0.8; // 11 años ≈ 9 s (antes 1,6)
 
 const DEMO = [
-  { fips: "20191", label: "Sumner, KS" },
   { fips: "19169", label: "Story, IA" },
+  { fips: "20191", label: "Sumner, KS" },
   { fips: "17113", label: "McLean, IL" },
 ];
 
@@ -101,8 +101,8 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
         <h1>No history for this county yet</h1>
         <Missing what={`Field Rewind has no data file for county ${fips}. It works in Iowa, Illinois and Kansas.`} />
         <p>
-          <a className="btn btn--primary" href="#/county/20191">
-            Rewind Sumner County, KS
+          <a className="btn btn--primary" href="#/county/19169">
+            Rewind Story County, IA
           </a>
         </p>
       </main>

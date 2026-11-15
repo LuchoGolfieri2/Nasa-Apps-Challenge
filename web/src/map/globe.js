@@ -644,7 +644,7 @@ function startTake(name) {
   if (name === 'a') {
     takeDur = 6000; Object.assign(R, {lon: -20, lat: 22, k: 1});
     flyTo({lon: -96, lat: 37, k: 1.15}, 2000);
-    setTimeout(() => flyToState('20'), 2000); setTimeout(() => flyToCounty('20191'), 3900);
+    setTimeout(() => flyToState('19'), 2000); setTimeout(() => flyToCounty(START), 3900);
   } else {
     takeDur = 3000; const ks = stateById['20'];
     Object.assign(R, {lon: ks.centroid[0], lat: ks.centroid[1], k: fitK(ks, 0.7)});

@@ -793,6 +793,10 @@
   }
 }
 @media (max-width: 640px) {
+  /* la columna del año elegido se agranda: que no empuje la página de costado */
+  .history__bar {
+    overflow-x: clip;
+  }
   .timeline__year {
     font-size: 0;
     padding: 0 1px;
