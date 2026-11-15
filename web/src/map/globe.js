@@ -218,6 +218,16 @@ const viewState = () => ({longitude: R.lon, latitude: R.lat, zoom: zoomOfK(R.k),
   minZoom: zoomOfK(K_MIN), maxZoom: zoomOfK(K_MAX)});
 const CONTROLLER = {inertia: 400, scrollZoom: {speed: 0.01, smooth: true}, keyboard: false, dragRotate: false};
 
+// Sin WebGL el globo no se puede dibujar (queda la esfera lisa): se avisa en vez de callar.
+if (!document.createElement('canvas').getContext('webgl2')) {
+  const note = document.createElement('p');
+  note.className = 'no-gl';
+  note.setAttribute('role', 'status');
+  note.innerHTML = 'Missing data: this browser can\'t draw the 3D map (WebGL is off). ' +
+    'Open a county directly: <a href="#/county/19169">Story, IA</a> · <a href="#/county/17113">McLean, IL</a> · <a href="#/county/20191">Sumner, KS</a>';
+  $('globe').parentNode.appendChild(note);
+}
+
 const deckgl = new Deck({
   parent: $('globe'),
   views: new GlobeView({id: 'globe', resolution: 5}),

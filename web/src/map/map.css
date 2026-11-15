@@ -130,3 +130,7 @@ body.recording .maplayer #home{pointer-events:none}
 
 /* el nombre de la app no se parte en dos líneas en tablet */
 .maplayer #home b{white-space:nowrap}
+
+/* Aviso cuando el navegador no tiene WebGL y el globo no se puede dibujar */
+.maplayer .no-gl{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;width:min(440px,calc(100% - 32px));margin:0;padding:16px 18px;border-radius:14px;border:1px dashed rgba(246,241,228,.45);background:rgba(15,42,29,.88);color:#F6F1E4;font:500 15px/1.45 "DM Sans",system-ui,sans-serif;text-align:center}
+.maplayer .no-gl a{color:#8ED081;font-weight:700}
