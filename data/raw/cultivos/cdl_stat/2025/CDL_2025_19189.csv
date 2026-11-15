@@ -1,0 +1,30 @@
+Value, Category, Count,  Acreage
+1, Corn, 540269, 120152.9
+4, Sorghum, 25, 5.6
+5, Soybeans, 362796, 80683.9
+12, Sweet Corn, 679, 151.0
+23, Spring Wheat, 16, 3.6
+27, Rye, 136, 30.2
+28, Oats, 1194, 265.5
+36, Alfalfa, 3393, 754.6
+37, Other Hay/Non Alfalfa, 5101, 1134.4
+39, Buckwheat, 7, 1.6
+42, Dry Beans, 203, 45.1
+44, Other Crops, 4, 0.9
+53, Peas, 63, 14.0
+59, Sod/Grass Seed, 43, 9.6
+61, Fallow/Idle Cropland, 10, 2.2
+68, Apples, 19, 4.2
+111, Open Water, 4752, 1056.8
+121, Developed/Open Space, 32656, 7262.5
+122, Developed/Low Intensity, 29553, 6572.4
+123, Developed/Medium Intensity, 6031, 1341.3
+124, Developed/High Intensity, 1730, 384.7
+131, Barren, 3655, 812.9
+141, Deciduous Forest, 13681, 3042.6
+142, Evergreen Forest, 52, 11.6
+143, Mixed Forest, 2696, 599.6
+152, Shrubland, 2846, 632.9
+176, Grass/Pasture, 112314, 24978.0
+190, Woody Wetlands, 3268, 726.8
+195, Herbaceous Wetlands, 28882, 6423.2

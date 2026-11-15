@@ -12,7 +12,7 @@ import { Timeline } from "./Timeline";
 import { usePlayback } from "./usePlayback";
 import { useRasters } from "./useRasters";
 import { YieldHistory } from "./YieldHistory";
-import { YearFacts } from "./YearFacts";
+import { YearFacts, YearLines } from "./YearFacts";
 import "./history.css";
 
 /**
@@ -26,6 +26,18 @@ const DEMO = [
   { fips: "20191", label: "Sumner, KS" },
   { fips: "17113", label: "McLean, IL" },
 ];
+
+/** Una fuente por producto (la más detallada), para los sellos de la columna del año. */
+function uniqueSources(sources: (string | undefined)[]): string[] {
+  const byProduct = new Map<string, string>();
+  for (const s of sources) {
+    if (!s) continue;
+    const product = s.split(" · ")[0];
+    const seen = byProduct.get(product);
+    if (!seen || s.length > seen.length) byProduct.set(product, s);
+  }
+  return [...byProduct.values()];
+}
 
 export function HistoryScreen({
   fips,
@@ -135,6 +147,11 @@ export function HistoryScreen({
   );
 
   const lit = highlight ?? pinned;
+  // El sello del CDL ya va en "Acres by crop"
+  const sources = uniqueSources([
+    current.yield?.source,
+    current.weather?.source,
+  ]);
   const rewind = () => {
     pb.reset(0);
     pb.play();
@@ -235,38 +252,27 @@ export function HistoryScreen({
         className={`history__stage${county.raster ? "" : " history__stage--nomap"}`}
       >
         {county.raster ? (
-          <>
-            <BarRace
-              years={county.years}
+          <div
+            className="history__map"
+            style={
+              {
+                "--ar": county.raster.width / county.raster.height,
+              } as React.CSSProperties
+            }
+          >
+            <CdlMap
+              info={county.raster}
+              years={years}
+              rasters={rasters}
               pb={pb}
               index={index}
+              playing={playing}
               between={between}
               highlight={lit}
-              onHighlight={setHighlight}
-              pinned={pinned}
-              onPin={(c) => setPinned((p) => (p === c ? null : c))}
-              source={county.raster?.source ?? "USDA CDL"}
+              countyName={county.name}
+              overlay={guide}
             />
-
-            <div className="history__map">
-              {county.raster ? (
-                <CdlMap
-                  info={county.raster}
-                  years={years}
-                  rasters={rasters}
-                  pb={pb}
-                  index={index}
-                  playing={playing}
-                  between={between}
-                  highlight={lit}
-                  countyName={county.name}
-                  overlay={guide}
-                />
-              ) : (
-                <Missing what="the crop map (USDA CDL) is not loaded for this county" />
-              )}
-            </div>
-          </>
+          </div>
         ) : (
           <YieldHistory county={county} year={year} onYear={pickYear} />
         )}
@@ -283,13 +289,31 @@ export function HistoryScreen({
             </h1>
             <ul>
               {current.headline.map((h) => (
-                <li key={h.text}>
-                  {h.text} <span className="headline__src">({h.source})</span>
+                <li key={h.text} title={`Source: ${h.source}`}>
+                  {h.text}
                 </li>
               ))}
             </ul>
           </div>
-          <YearFacts county={county} y={current} />
+          <YearLines county={county} y={current} />
+          {county.raster ? (
+            <BarRace
+              years={county.years}
+              pb={pb}
+              index={index}
+              between={between}
+              highlight={lit}
+              onHighlight={setHighlight}
+              pinned={pinned}
+              onPin={(c) => setPinned((p) => (p === c ? null : c))}
+              source={county.raster.source ?? "USDA CDL"}
+            />
+          ) : null}
+          <p className="history__sources">
+            {sources.map((s) => (
+              <SourceChip key={s} source={s} />
+            ))}
+          </p>
         </div>
       </div>
 
@@ -313,7 +337,10 @@ export function HistoryScreen({
         </a>
       </div>
 
-      <section className="history__more" aria-labelledby="more-title">
+      <section className="history__more" aria-labelledby="detail-title">
+        <h2 id="detail-title">{current.year} in detail</h2>
+        <YearFacts county={county} y={current} />
+
         <h2 id="more-title">
           {years.length} years in {county.name} County
         </h2>

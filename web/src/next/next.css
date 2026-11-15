@@ -225,3 +225,20 @@
 .ns-meta{flex-wrap:wrap}
 .ns-reason p{overflow-wrap:break-word}
 .ns-meta .source-chip{max-width:100%;white-space:normal}
+
+/* gemelos sobre el globo (TwinGlobe): el globo de la pantalla 1 de fondo, quieto, con arcos en 3D */
+@keyframes fr-twin-pop{from{opacity:0}to{opacity:1}}
+.fr-twinglobe{position:relative;width:100%;aspect-ratio:16/10;background:#0e2e5c;border-radius:26px;overflow:hidden}
+.fr-twinglobe-canvas{position:absolute;inset:0}
+.fr-twinglobe-labels{position:absolute;inset:0;pointer-events:none}
+.fr-twinglobe-label{position:absolute;white-space:nowrap;font:700 13px var(--font-body,system-ui);color:#f6f1e4;text-shadow:0 0 3px #0b2217,0 0 3px #0b2217,0 1px 4px rgba(0,0,0,.8);animation:fr-twin-pop .3s ease-out}
+.fr-twinglobe-label.is-origin{font:800 14px var(--font-display,system-ui);color:#8ed081}
+.fr-twinglobe-label.is-hot{color:#e9b949}
+.fr-twinglobe-label.is-dim{opacity:.75}
+@media (prefers-reduced-motion:reduce){.fr-twinglobe-label{animation:none}}
+.fr-twinglobe::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(170,215,255,.18),inset 0 0 60px 10px rgba(6,22,44,.75)}
+
+/* tema claro (fondo blanco): lo que estaba pensado en crema sobre oscuro pasa a tinta, así se lee */
+.ns-missing{color:var(--ink)}
+.ns-card.open{border-color:var(--field)}
+.fr-conf--high{color:var(--field)}.fr-conf--medium{color:#7a570c}.fr-conf--low{color:#b3261e}

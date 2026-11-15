@@ -7,7 +7,7 @@
 html,
 body {
   margin: 0;
-  background: var(--night);
+  background: var(--bg);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 16px;
@@ -16,11 +16,11 @@ body {
 }
 
 a {
-  color: var(--sprout);
+  color: var(--primary);
 }
 
 :focus-visible {
-  outline: 3px solid var(--wheat-gold);
+  outline: 3px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -52,8 +52,8 @@ a {
   font-weight: 500;
 }
 .topbar__nav a:hover {
-  color: var(--ink);
-  background: var(--surface-1);
+  color: var(--primary-strong);
+  background: var(--primary-soft);
 }
 
 .btn {
@@ -76,13 +76,13 @@ a {
   border-color: var(--ink);
 }
 .btn--primary {
-  background: var(--sprout);
-  border-color: var(--sprout);
-  color: var(--night);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
 }
 .btn--primary:hover {
-  background: #a6dc9a;
-  border-color: #a6dc9a;
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
 }
 
 .pending {
@@ -128,7 +128,9 @@ a {
   border: 1px solid var(--line-strong);
   font-size: 12.5px;
   font-weight: 700;
-  color: var(--wheat-gold);
+  color: var(--primary-strong);
+  background: var(--primary-soft);
+  border-color: transparent;
   white-space: nowrap;
 }
 /* Cabecera en pantallas angostas: el contador se esconde y los links se achican */

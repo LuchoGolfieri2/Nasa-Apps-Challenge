@@ -22,22 +22,63 @@
   font: 800 36px/1.1 var(--font-display);
 }
 
-/* Primera vista: cultivos a la izquierda, mapa al centro, el año a la derecha. */
+/* Primera vista: el mapa grande a la izquierda y el año a la derecha. La altura es fija (la ventana menos la
+   barra de arriba, las migas y la línea de tiempo), así la línea de tiempo no se mueve cuando cambia el texto. */
+.history {
+  --chrome: 230px;
+}
 .history__stage {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr);
   align-items: start;
-  gap: 36px;
+  gap: 48px;
   width: 100%;
-  max-width: 1640px;
+  max-width: 1720px;
+  height: max(520px, calc(100dvh - var(--chrome)));
   margin: 0 auto;
-  padding: 12px 32px 24px;
+  padding: 8px 32px 16px;
 }
 .history__story {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   min-width: 0;
+  max-width: 600px;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  /* margen para el fondo de las filas de cultivo al pasar el cursor, que sobresale 8 px */
+  padding-inline: 10px;
+  margin-inline: -10px;
+}
+/* Rinde y clima en dos líneas */
+.lines {
+  display: grid;
+  gap: 4px;
+  color: var(--ink-2);
+  font-size: clamp(16px, 1.1vw, 19px);
+}
+.lines p {
+  margin: 0;
+}
+.lines b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+/* En la columna el faltante va escrito, sin recuadro: el recuadro rayado queda para el mapa y el detalle. */
+.lines .missing {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 16px;
+}
+.history__sources {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .history__eyebrow {
   width: 100%;
@@ -57,7 +98,7 @@
   border-radius: 999px;
   border: 1px solid var(--line-strong);
   background: var(--surface-1)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23F6F1E4' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E")
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%2312271B' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E")
     no-repeat right 10px center / 12px;
   color: var(--ink);
   font: 700 15px var(--font-body);
@@ -68,7 +109,7 @@
   border-color: var(--ink);
 }
 .history__switch option {
-  background: var(--night);
+  background: #fff;
 }
 
 /* Titular del año */
@@ -79,7 +120,7 @@
 .headline__year {
   font: 800 clamp(56px, 5vw, 96px) / 0.9 var(--font-display);
   letter-spacing: -0.04em;
-  color: var(--wheat-gold);
+  color: var(--primary);
   font-variant-numeric: tabular-nums;
 }
 .headline ul {
@@ -87,7 +128,7 @@
   margin: 10px 0 0;
   padding: 0;
   min-height: 2.5em;
-  font: 500 clamp(18px, 1.25vw, 23px) / 1.25 var(--font-display);
+  font: 700 clamp(18px, 1.25vw, 23px) / 1.25 var(--font-display);
   letter-spacing: -0.01em;
 }
 .headline__src {
@@ -140,7 +181,7 @@
 }
 .race__hit[aria-pressed="true"] {
   background: var(--surface-2);
-  box-shadow: inset 3px 0 0 var(--wheat-gold);
+  box-shadow: inset 3px 0 0 var(--primary);
 }
 .race__row {
   position: absolute;
@@ -210,6 +251,7 @@
   border-radius: var(--radius);
   background: var(--surface-1);
   border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
 }
 .fact dt {
   display: flex;
@@ -268,28 +310,29 @@
   min-height: 34px;
   padding: 0 12px 0 9px;
   border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  background: rgba(15, 42, 29, 0.5);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  color: var(--ink-2);
+  border: 1px solid var(--glass-line);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+  text-shadow: var(--glass-text-shadow);
+  color: #fff;
   font: 500 13px var(--font-body);
   cursor: pointer;
 }
 .guide__btn:hover,
 .guide--open .guide__btn {
-  color: var(--ink);
-  border-color: var(--ink);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.34);
 }
 .guide__panel {
   margin-top: 8px;
   width: min(320px, 100%);
   padding: 12px 14px;
   border-radius: var(--radius);
-  border: 1px solid var(--line-strong);
-  background: rgba(15, 42, 29, 0.72);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  background: #fff;
+  box-shadow: var(--shadow-card);
   font-size: 14px;
   line-height: 1.35;
   color: var(--ink-2);
@@ -337,7 +380,7 @@
 .cdl__frame {
   position: relative;
   /* El ancho se achica con la altura de la ventana para que mapa y guía entren en la primera vista. */
-  width: min(100%, 640px, max(300px, calc(100vh - 360px)));
+  width: min(100%, max(300px, calc((100dvh - var(--chrome, 230px) - 80px) * var(--ar, 1))));
 }
 .cdl__frame--zoomed {
   cursor: grab;
@@ -381,16 +424,18 @@
   height: var(--tap);
   padding: 0 12px;
   border-radius: 12px;
-  border: 1px solid var(--line-strong);
-  background: rgba(15, 42, 29, 0.72);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  color: var(--ink);
+  border: 1px solid var(--glass-line);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+  text-shadow: var(--glass-text-shadow);
+  color: #fff;
   font: 700 14px var(--font-body);
   cursor: pointer;
 }
 .cdl__zoom button:hover:not(:disabled) {
-  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.34);
 }
 .cdl__zoom button:disabled {
   opacity: 0.4;
@@ -410,9 +455,9 @@
   border-color: var(--ink);
 }
 .cdl__toggle[aria-pressed="true"] {
-  background: var(--paper);
-  border-color: var(--paper);
-  color: var(--night);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
   font-weight: 700;
 }
 .cdl__toggle:disabled {
@@ -447,8 +492,9 @@
   gap: 8px;
   padding: 6px 10px;
   border-radius: var(--radius-s);
-  background: rgba(15, 42, 29, 0.94);
-  border: 1px solid var(--line-strong);
+  background: #fff;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--line);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
@@ -460,7 +506,7 @@
   width: 12px;
   height: 12px;
   border-radius: 3px;
-  border: 1px solid rgba(246, 241, 228, 0.35);
+  border: 1px solid rgba(15, 42, 29, 0.25);
 }
 .cdl figcaption {
   display: flex;
@@ -518,13 +564,13 @@
   padding: 0 22px 0 16px;
   border-radius: 999px;
   font: 700 16px var(--font-body);
-  background: var(--wheat-gold);
-  border-color: var(--wheat-gold);
-  color: var(--night);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
 }
 .timeline__btn--play:hover:not(:disabled) {
-  background: #f2c968;
-  border-color: #f2c968;
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
 }
 .timeline__btn:disabled {
   opacity: 0.45;
@@ -553,7 +599,7 @@
   display: block;
   height: 100%;
   border-radius: 2px;
-  background: linear-gradient(90deg, rgba(233, 185, 73, 0.25), var(--wheat-gold) 70%);
+  background: linear-gradient(90deg, rgba(47, 125, 79, 0.25), var(--primary) 70%);
 }
 .timeline__fill::after {
   content: "";
@@ -564,16 +610,16 @@
   height: 16px;
   margin-top: -8px;
   border-radius: 50%;
-  background: var(--wheat-gold);
+  background: var(--primary);
   border: 3px solid var(--surface-1);
-  box-shadow: 0 0 0 0 rgba(233, 185, 73, 0.5);
+  box-shadow: 0 0 0 0 rgba(47, 125, 79, 0.5);
 }
 .timeline__fill--playing::after {
   animation: head-pulse 1.1s ease-out infinite;
 }
 @keyframes head-pulse {
   to {
-    box-shadow: 0 0 0 12px rgba(233, 185, 73, 0);
+    box-shadow: 0 0 0 12px rgba(47, 125, 79, 0);
   }
 }
 .timeline__year {
@@ -628,7 +674,7 @@
   height: 44px;
   opacity: 1;
   filter: none;
-  box-shadow: 0 0 0 2px var(--wheat-gold);
+  box-shadow: 0 0 0 2px var(--primary);
 }
 .timeline__year:hover .timeline__mix,
 .timeline__year:focus-visible .timeline__mix {
@@ -649,7 +695,7 @@
   color: var(--ink-2);
 }
 .timeline__year--on {
-  color: var(--wheat-gold);
+  color: var(--primary);
   font-weight: 700;
   font-size: 19px;
 }
@@ -657,7 +703,7 @@
   color: var(--ink);
 }
 .timeline__year--on:hover {
-  color: var(--wheat-gold);
+  color: var(--primary);
 }
 .timeline__mark {
   position: absolute;
@@ -678,11 +724,9 @@
   transform: translateX(-50%);
   padding: 14px 16px 12px;
   border-radius: var(--radius);
-  border: 1px solid var(--line-strong);
-  background: rgba(15, 42, 29, 0.42);
-  -webkit-backdrop-filter: blur(10px) saturate(1.2);
-  backdrop-filter: blur(10px) saturate(1.2);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--line);
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(15, 42, 29, 0.16);
   pointer-events: none;
   text-align: left;
   animation: peek-in 0.18s ease-out;
@@ -707,13 +751,13 @@
   margin-right: auto;
   font: 800 34px/1 var(--font-display);
   letter-spacing: -0.03em;
-  color: var(--wheat-gold);
+  color: var(--primary);
   font-variant-numeric: tabular-nums;
 }
 .peek__tag {
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(246, 241, 228, 0.14);
+  background: var(--surface-2);
   font-size: 13px;
   font-weight: 500;
 }
@@ -768,7 +812,7 @@
 .timeline__progress span {
   display: block;
   height: 100%;
-  background: var(--wheat-gold);
+  background: var(--primary);
   transition: width 0.2s;
 }
 
@@ -796,6 +840,7 @@
   border-radius: var(--radius);
   background: var(--surface-1);
   border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
 }
 .card h3 {
   margin: 0 0 12px;
@@ -865,7 +910,7 @@
   color: var(--ink);
 }
 .mix__col--on {
-  color: var(--wheat-gold);
+  color: var(--primary);
   font-weight: 700;
 }
 .mix__stack {
@@ -877,7 +922,7 @@
   overflow: hidden;
 }
 .mix__col--on .mix__stack {
-  box-shadow: 0 0 0 2px var(--wheat-gold);
+  box-shadow: 0 0 0 2px var(--primary);
 }
 .mix__stack i {
   min-height: 2px;
@@ -919,13 +964,19 @@
   .history__stage {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
+    height: auto;
     padding: 12px 16px 24px;
+  }
+  .history__story {
+    max-width: none;
+    max-height: none;
+    overflow: visible;
   }
   .history__map {
     order: -1;
   }
   .cdl__frame {
-    width: min(100%, 640px);
+    width: min(100%, 720px);
   }
   .history__eyebrow {
     padding: 0 16px;
@@ -1031,7 +1082,9 @@
 
 /* Condados sin mapa del CDL: rinde año por año en lugar del mapa y la carrera de barras (YieldHistory) */
 .history__stage--nomap {
-  grid-template-columns: minmax(0, 2.1fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr);
+  height: auto;
+  min-height: max(420px, calc(100dvh - var(--chrome)));
 }
 .yh {
   display: flex;
@@ -1082,7 +1135,7 @@
   cursor: pointer;
 }
 .yh__bar:focus-visible {
-  outline: 2px solid var(--wheat-gold);
+  outline: 2px solid var(--primary);
   outline-offset: 3px;
   border-radius: 4px;
 }
@@ -1108,7 +1161,7 @@
   opacity: 1;
   border: 1px dashed var(--ink-3);
   border-bottom: 0;
-  background: repeating-linear-gradient(135deg, rgba(246, 241, 228, 0.06) 0 6px, transparent 6px 12px);
+  background: repeating-linear-gradient(135deg, rgba(15, 42, 29, 0.05) 0 6px, transparent 6px 12px);
 }
 .yh__bar:hover .yh__fill,
 .yh__bar.is-on .yh__fill {
@@ -1116,7 +1169,7 @@
 }
 .yh__bar.is-on .yh__v,
 .yh__bar.is-on .yh__y {
-  color: var(--wheat-gold);
+  color: var(--primary);
   font-weight: 700;
 }
 .yh__y {
@@ -1148,5 +1201,16 @@
 @media (prefers-reduced-motion: reduce) {
   .yh__fill {
     transition: none;
+  }
+}
+
+/* Detalle del año, debajo de la línea de tiempo: las tres tarjetas en fila */
+.history__more .facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 14px 0 36px;
+}
+@media (max-width: 900px) {
+  .history__more .facts {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

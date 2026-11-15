@@ -212,7 +212,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
           <div className="ns-world-map">
             {data.twins.some((t) => t.prototype) ? <PrototypeStamp /> : null}
             {data.centroid ? (
-              <TwinGlobe origin={{fips: data.fips, name: data.name, centroid: data.centroid}} allTwins={data.twins} twins={focusTwins} viewKey={focus.id} selected={twinSel} onSelect={setTwinSel} />
+              <TwinGlobe origin={{fips: data.fips, name: data.name, centroid: data.centroid}} twins={data.twins} highlight={focus.twins} animateKey={focus.id} selected={twinSel} onSelect={setTwinSel} />
             ) : (
               <p className="ns-box ns-box--missing">
                 <b className="ns-missing">Missing data:</b> county location.

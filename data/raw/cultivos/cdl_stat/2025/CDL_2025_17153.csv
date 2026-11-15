@@ -1,0 +1,24 @@
+Value, Category, Count,  Acreage
+1, Corn, 66563, 14803.3
+3, Rice, 180, 40.0
+5, Soybeans, 157293, 34981.1
+24, Winter Wheat, 3933, 874.7
+26, Dbl Crop WinWht/Soybeans, 26775, 5954.6
+36, Alfalfa, 97, 21.6
+37, Other Hay/Non Alfalfa, 5740, 1276.5
+47, Misc Vegs & Fruits, 460, 102.3
+61, Fallow/Idle Cropland, 20277, 4509.5
+67, Peaches, 41, 9.1
+111, Open Water, 11830, 2630.9
+121, Developed/Open Space, 21195, 4713.7
+122, Developed/Low Intensity, 12052, 2680.3
+123, Developed/Medium Intensity, 3113, 692.3
+124, Developed/High Intensity, 332, 73.8
+131, Barren, 2052, 456.4
+141, Deciduous Forest, 100728, 22401.4
+142, Evergreen Forest, 833, 185.3
+143, Mixed Forest, 1429, 317.8
+152, Shrubland, 531, 118.1
+176, Grass/Pasture, 83863, 18650.7
+190, Woody Wetlands, 55055, 12243.9
+195, Herbaceous Wetlands, 10756, 2392.1
