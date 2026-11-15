@@ -101,7 +101,7 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
     return (
       <main className="history history--empty">
         <h1>No history for this county yet</h1>
-        <Missing what={`Field Rewind has no data file for county ${fips}. It works in Iowa, Illinois and Kansas.`} />
+        <Missing what={`Field Rewind has no data file for county ${fips}. The year-by-year history is loaded for Story (IA), McLean (IL) and Sumner (KS) so far.`} />
         <p>
           <a className="btn btn--primary" href="#/county/19169">
             Rewind Story County, IA

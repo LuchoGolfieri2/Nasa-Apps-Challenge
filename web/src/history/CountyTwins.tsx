@@ -136,7 +136,7 @@ export function CountyTwins({ fips, name }: { fips: string; name: string }) {
     return (
       <div className="card twins">
         <h3>Counties like yours</h3>
-        <Missing what="similar counties for this county (covered in Iowa and Illinois so far)" />
+        <Missing what="similar counties for this county (covered in Iowa, Illinois and Indiana so far)" />
       </div>
     );
   }

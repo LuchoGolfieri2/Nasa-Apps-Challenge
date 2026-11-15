@@ -28,12 +28,14 @@ durante el vuelo y al arrastrar el mapa. En el celular (≤ 760 px) se apoya aba
   al pasar a otro condado la actual sale en 150 ms y recién ahí nace la nueva.
 - Se cierra con ×, Escape o un clic en mapa vacío; la cámara se queda y la ruta pasa a `#/state/XX`. También se cierra sola si
   te alejás del nivel de condado.
+- "Next season: what to plant →" aparece solo si el modelo cubre el condado (`next-available.json`); si no, se escribe el faltante.
 - "See more": la tarjeta crece hasta cubrir la pantalla (450 ms) y se abre la historia. Al volver, la tarjeta ya está abierta.
 - Con `prefers-reduced-motion` todo es un fundido, sin escala ni desplazamiento.
 - La lógica está en `globe.js` ("tarjeta del condado"): `showCard`, `placeCard` (posición por cuadro), `closeCard`, `openHistory`.
 
 Los condados parecidos ("Counties like yours") ya no están en el mapa: se ven al final de la historia del condado
 (`history/CountyTwins.tsx`), con los datos reales de `data/next/<fips>.json`.
+El clic en un estado solo vuela: ya no hay panel de estado.
 
 ## Transición portada → globo
 La portada es un velo sobre el globo, que gira chico y lejos. Al tocar Start el velo se desvanece y la cámara vuela a EE. UU. en 1,9 s.

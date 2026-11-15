@@ -6,6 +6,7 @@ import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
 import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
 import D from './globe-data.json';
+import NEXT_LIST from './next-available.json'; // lo genera scripts/build_next_json.py
 
 let active = true, onActive = null;
 /** MapLayer avisa si el mapa está a la vista; oculto no dibuja */
@@ -20,8 +21,12 @@ const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream), NIGHT = hex(COL.night);
 const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
 const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
-const POSTAL = {19: 'IA', 17: 'IL', 20: 'KS'};
-const FIPS_OF = {IA: '19', IL: '17', KS: '20'};
+const NEXT_AVAILABLE = NEXT_LIST; // condados con datos del modelo para la pantalla Next season
+const POSTAL = {19: 'IA', 17: 'IL', 18: 'IN', 20: 'KS'};
+const FIPS_OF = {IA: '19', IL: '17', IN: '18', KS: '20'};
+// Estados sin salidas del modelo de rinde (hoy Kansas): se siguen mostrando, con el aviso escrito.
+const hasModel = (stateId) => NEXT_AVAILABLE.some((id) => id.startsWith(stateId));
+const NO_MODEL = 'Missing data: no yield model for this state yet';
 
 const rad = Math.PI / 180, clamp01 = (x) => Math.max(0, Math.min(1, x));
 const toFeature = (o) => ({type: 'Feature', id: o.id, properties: {name: o.name, state: o.state},
@@ -615,6 +620,11 @@ function birthCard(origin, instant = false) {
   $('c-corn-v').textContent = corn ? `${Math.round(c.mock.corn * 100)}%` : 'Missing data';
   $('c-corn').className = corn ? '' : 'missing';
   $('c-open').disabled = !full;
+  // Next season: botón solo si el modelo cubre el condado; si no, el faltante se escribe
+  const hasNext = NEXT_AVAILABLE.includes(c.id);
+  $('c-next').hidden = !hasNext;
+  $('c-nonext').hidden = hasNext;
+  $('c-nonext').textContent = hasModel(c.properties.state) ? 'Missing data: no next-season options for this county yet' : NO_MODEL;
   $('c-close').setAttribute('aria-label', `Close ${c.properties.name} County`);
   card.hidden = false; card.className = `ui ${instant ? 'now' : 'pre'}`;
   measureCard();
@@ -709,6 +719,11 @@ $('enter').addEventListener('click', () => { location.hash = '#/map'; });
 // Botón de entrada: vuela directo al condado de demo y abre su tarjeta en el mapa
 $('cta').addEventListener('click', () => flyToCounty(START));
 $('c-open').addEventListener('click', openHistory);
+$('c-next').addEventListener('click', () => {
+  if (!selCounty || growing) return;
+  emit('next', {fips: selCounty.id, name: selCounty.properties.name, state: selState.properties.name});
+  location.hash = `#/county/${selCounty.id}/next`;
+});
 $('c-close').addEventListener('click', (e) => closeCard(e.detail === 0)); // detail 0 = activado con el teclado
 card.addEventListener('pointerenter', () => { hover = null; showTip(null); });
 window.addEventListener('keydown', (e) => {
@@ -730,7 +745,7 @@ function showTip(c, x, y) {
 // ---- buscador de estados y condados (combobox accesible)
 const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\bcounty\b/g, '').replace(/\s+/g, ' ').trim();
 const INDEX = [
-  ...STATES.map((s) => ({kind: 'state', id: s.id, label: s.properties.name, sub: 'State', key: norm(s.properties.name), alt: POSTAL[s.id].toLowerCase()})),
+  ...STATES.map((s) => ({kind: 'state', id: s.id, label: s.properties.name, sub: hasModel(s.id) ? 'State' : 'State · no yield model yet', key: norm(s.properties.name), alt: POSTAL[s.id].toLowerCase()})),
   ...COUNTIES.map((c) => ({kind: 'county', id: c.id, label: `${c.properties.name} County`, sub: stateById[c.properties.state].properties.name, key: norm(c.properties.name), alt: c.id})),
 ];
 let results = [], activeIdx = -1;

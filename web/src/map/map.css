@@ -59,7 +59,11 @@ body[data-level="globe"] .maplayer #nav{display:none}
 .maplayer #c-corn.missing #c-corn-v{font:700 13px/1.35 var(--text)}
 .maplayer #c-corn.missing .tag{display:none}
 .maplayer #c-corn-l{margin:2px 0 0;font-size:13px;color:var(--ink-2)}
-.maplayer #c-open{width:100%;min-height:44px;margin-top:16px;font-size:13px}
+.maplayer #c-open,.maplayer #c-next{width:100%;min-height:44px;font-size:13px}
+.maplayer #c-open{margin-top:16px}
+.maplayer #c-next{margin-top:8px}
+.maplayer #c-next[hidden],.maplayer #c-nonext[hidden]{display:none}
+.maplayer #c-nonext{margin:10px 0 0;font-size:13px;line-height:1.35;color:var(--ink-2)}
 .maplayer #c-close{position:absolute;top:4px;right:4px;display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:8px;background:none;color:var(--ink-2);transition:color .15s ease-out,background-color .15s ease-out}
 /* "See more": un velo del color de la tarjeta crece desde ella hasta cubrir la pantalla */
 .maplayer #card-grow{position:fixed;inset:0;z-index:6;background:var(--night);opacity:0;pointer-events:none;transition:clip-path .45s cubic-bezier(.4,0,.2,1),opacity .15s ease-out}
