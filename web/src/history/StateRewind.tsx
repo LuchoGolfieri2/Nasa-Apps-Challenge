@@ -133,7 +133,7 @@ export function StateRewind({
 
   const stateName = STATE_NAME[postal] ?? postal;
   if (failed) return <Missing what={`county yields for ${stateName}`} />;
-  if (!data) return <div className="sr sr--loading" role="status">Loading {stateName}…</div>;
+  if (!data) return <div className="stw stw--loading" role="status">Loading {stateName}…</div>;
 
   const yi = data.years.indexOf(year);
   const scale = data.scale[crop];
@@ -147,13 +147,13 @@ export function StateRewind({
   const cropLabel = CROPS.find((c) => c.id === crop)!.label;
 
   return (
-    <section className="sr" aria-labelledby="sr-title">
-      <div className="sr__info">
-      <header className="sr__head">
-        <h2 id="sr-title" className="sr__title">
+    <section className="stw" aria-labelledby="stw-title">
+      <div className="stw__info">
+      <header className="stw__head">
+        <h2 id="stw-title" className="stw__title">
           {stateName} in {year}
         </h2>
-        <div className="sr__toggle" role="group" aria-label="Crop">
+        <div className="stw__toggle" role="group" aria-label="Crop">
           {CROPS.map((c) => (
             <button key={c.id} type="button" aria-pressed={crop === c.id} onClick={() => setCrop(c.id)}>
               {c.label}
@@ -161,7 +161,7 @@ export function StateRewind({
           ))}
         </div>
       </header>
-      <p className="sr__lede">
+      <p className="stw__lede">
         {mine !== null && rank !== null ? (
           <>
             <b>{name}</b>: {cropLabel.toLowerCase()} {mine} bu/acre, {rank} of {withData.length} {stateName} counties
@@ -174,23 +174,23 @@ export function StateRewind({
           </>
         )}
       </p>
-      <div className="sr__legend" aria-hidden="true">
+      <div className="stw__legend" aria-hidden="true">
         {scale ? (
-          <span className="sr__ramp">
+          <span className="stw__ramp">
             <span>≤{scale[0]}</span>
             <i style={{ background: `linear-gradient(90deg, ${STOPS.join(",")})` }} />
             <span>≥{scale[1]} bu/acre</span>
           </span>
         ) : null}
-        <span><i className="sr__nodata" /> No published yield</span>
-        <span><i className="sr__mine" /> {name} County</span>
+        <span><i className="stw__nodata" /> No published yield</span>
+        <span><i className="stw__mine" /> {name} County</span>
       </div>
-      <p className="sr__note">
+      <p className="stw__note">
         One color scale for all 11 years, so a bad year looks bad. Point at a county to see its yield.{" "}
         <SourceChip source={data.source} />
       </p>
       </div>
-      <div className="sr__map">
+      <div className="stw__map">
         <svg
           viewBox={`0 0 ${W} ${geo.h}`}
           role="img"
@@ -198,7 +198,7 @@ export function StateRewind({
           onMouseLeave={() => setHover(null)}
         >
           <defs>
-            <pattern id="sr-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <pattern id="stw-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
               <rect width="6" height="6" fill="#eef0eb" />
               <line x1="0" y1="0" x2="0" y2="6" stroke="#c9cec5" strokeWidth="2" />
             </pattern>
@@ -209,19 +209,19 @@ export function StateRewind({
               <path
                 key={s.id}
                 d={s.d}
-                className="sr__county"
-                style={{ fill: v !== null && scale ? colorFor(v, scale) : "url(#sr-hatch)" }}
+                className="stw__county"
+                style={{ fill: v !== null && scale ? colorFor(v, scale) : "url(#stw-hatch)" }}
                 onMouseEnter={() => setHover(s.id)}
               />
             );
           })}
-          {me ? <path d={me.d} className="sr__me-halo" /> : null}
-          {me ? <path d={me.d} className="sr__me" /> : null}
-          {hv && hv.id !== fips ? <path d={hv.d} className="sr__hover" /> : null}
+          {me ? <path d={me.d} className="stw__me-halo" /> : null}
+          {me ? <path d={me.d} className="stw__me" /> : null}
+          {hv && hv.id !== fips ? <path d={hv.d} className="stw__hover" /> : null}
         </svg>
         {hv ? (
           <p
-            className="sr__tip"
+            className="stw__tip"
             style={{ left: `${(100 * hv.cx) / W}%`, top: `${(100 * hv.cy) / geo.h}%` }}
             aria-hidden="true"
           >
