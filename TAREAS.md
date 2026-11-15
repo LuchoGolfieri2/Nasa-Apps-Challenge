@@ -60,9 +60,17 @@ Ejemplo:
     - **B · Celdas de ~1 km:** grilla con el cultivo dominante por celda, calculada a partir de A. ~25 MB.
     - **C · Retrato en cuadritos:** 100 cuadritos (1 = 1 % de la superficie) más la tendencia del % de maíz por año; sin mapa. ~2 MB. Los datos salen de `GetCDLStat`, que ya se usa en `scripts/build_crop_density.py`.
   - Recomendación: A + C. Los 3 condados a 30 m llevan "Field-level" y los demás "Lower detail", para no mezclar calidades sin aviso.
-- [ ] **F33** Estados nuevos en el globo y la historia (MN, MO, NE, OH, SD, WI y ND): polígonos, selector, historia y gemelos resaltados · Libre · Bloquea: entrega "para_front" de datos
-  - Preparado (15/11): `scripts/build_globe_geo.py` (suma polígonos y estados a `globe-data.json`), `web/src/data/states.ts` (lista única de estados) y `build_front_data.py` con los 11 estados. Probado con datos sintéticos, falta con el archivo real.
+- [ ] **F33** Estados nuevos en el globo y la historia (MN, MO, NE, OH, SD, WI y ND): polígonos, selector, historia y gemelos resaltados · Libre · En curso (15/11)
+  - Hecho (15/11): polígonos y selector de MN, MO, NE, OH, SD y WI (521 condados, del Census local `cb_2024_us_county_500k.zip`; `scripts/build_globe_geo.py`), 596 fichas de historia (rinde y clima de ML, también Kansas) y el color del globo por rinde. `web/src/data/states.ts` es la lista única.
+  - Falta: Dakota del Norte (sin modelo ni polígono); "Color by" por cultivo en los estados nuevos (`build_crop_density.py` baja ~520 tablas del CDL, hace falta OK); si llega `condados_eeuu.geojson` del equipo, comparar con el Census; regenerar las fichas de IA, IL, IN y Sumner cuando ML cierre sus datos (hoy sus textos de "años raros" son los de la versión anterior).
   - Pasos y cuidados (17 columnas solo para IA, IL e IN; Argentina fuera de alcance): `docs/datos-de-prueba.md`, sección E.
+- [ ] **F38** Verificar que se subieron los datos de todos los condados y lugares que se marcan en el globo (EE. UU. y Argentina) · Libre · Bloquea: entrega "para_front" de datos
+  - EE. UU., cantidad de condados con polígono contra los de la entrega (según "Zonas de Field Shift", a confirmar con los archivos): IA 99, IL 102, IN 92, KS 105, MN 87, MO 115, NE 93, OH 88, SD 66, WI 72 y ND 53 (hoy ND no está). Total 972.
+  - Para cada condado marcado: tiene ficha de historia (`web/public/data/county/`), archivo de Próxima campaña (`next/`, si su estado tiene modelo) y color del globo (`stat` en `globe-data.json`). Lo que no tenga dato se ve como "Missing data", nunca con 0 ni sin marcar.
+  - Cruces a buscar: condados marcados sin datos, datos de condados que no están en el globo, y condados con gemelos que apuntan a un condado sin polígono.
+  - Argentina (219 departamentos, a confirmar): Buenos Aires 135, La Pampa 22, Córdoba 26, Santa Fe 19, Entre Ríos 17; 15 en zona `dentro` (12 de Buenos Aires y 3 de La Pampa). Clima por campaña solo en Buenos Aires. Cuando lleguen `departamentos_argentina.geojson` y `.csv`, comprobar que cada departamento marcado tenga su `zona` y su dato, y no mostrar predicción en `fuera`.
+  - Cuidado: los `id_depto` de Buenos Aires empiezan con `06`, igual que el FIPS de California; guardarlos en una capa aparte o con un campo de país para que no choquen.
+  - Relacionada: F33 (estados nuevos) y `CLAUDE.md` sección 2.1 (Argentina).
 
 ## Pantalla 1 · Mapa
 
@@ -88,7 +96,8 @@ Ejemplo:
 - [x] ~~**F35** Tarjeta "This season, before USDA's map" (punto 6 de ML) en la historia: duelo regla de rotación contra satélite, fechas de corte y curva de probabilidad; barra de desplazamiento propia en la columna del año~~ · ✅ Walicki
   - Archivos: `web/src/history/SeasonCard.tsx`, `season.css`, `useScrollFade.ts`, `scripts/build_season_json.py` · Datos: `backend/Datos/front/cultivo_temporada.json`
   - Alcance: solo los 5 condados con lote de demo (Champaign IL, Tippecanoe IN, Crawford IA, Hamilton IA, Shelby IA) y solo con el año 2025; es la temporada 2025 repetida, no un pronóstico (ver fila C7 de `docs/datos-de-prueba.md`).
-  - Falta: sumar NASA HLS a la pantalla de Fuentes; más lotes (lo decide ML); decidir si el punto 6 también va en el pitch.
+  - Hecho después: NASA HLS en la pantalla de Fuentes (el contador de la cabecera pasó a 8) y su límite ("Satellite guess").
+  - Falta: más lotes (lo decide ML); decidir si el punto 6 también va en el pitch.
 - [ ] **F34** Definir cómo se ve "See more" en los condados sin PNG del mapa (hoy 291 de los 294 con historia; el resto de los estados no tiene historia) · Libre · A definir en el grupo
   - Hoy: sin mapa del CDL, "See more" abre la pantalla de rinde año a año con un aviso "Missing data" donde iría el mapa (ej. Shelby, IL). El globo con el condado pegado solo existe en Story, McLean y Sumner.
   - A decidir: qué muestra en lugar del globo con el mapa (el condado resaltado sobre el globo sin capa de cultivos, o una de las vistas livianas de F32), y qué texto acompaña.
@@ -116,6 +125,15 @@ Ejemplo:
 - [ ] **F26** Modo grabación `?take=a|b|c` (A 960×1080, B y C 1920×1080; C con rótulo "Next: Argentina, as data is added") · Libre
 - [ ] **F27** Deploy en Vercel y pasar la URL pública a Lucho · Libre · Bloquea: F01
 - [ ] **F28** Revisión final: 1920×1080, celular, teclado, contraste AA, `prefers-reduced-motion` · Libre
+- [ ] **F37** Verificar a mano, en Chrome y en Firefox con WebGL (lo que no se pudo ver en el navegador de Claude: sin WebGL y con el panel oculto) · Libre
+  - Barra de desplazamiento de la columna del año: arrastrar la píldora, clic en el riel, hover y difuminado de borde.
+  - Tarjeta "This season, before USDA's map" (Champaign, Tippecanoe, Crawford, Hamilton, Shelby): chips de fecha y de lote, botón "See how the satellite decided", que la curva y las etiquetas no se pisen.
+  - Animaciones de Próxima campaña y la historia: entrada escalonada de las tarjetas, números que cuentan, fundido entre pantallas (no debe actuar sobre el globo de la historia), hover y presión, brillo único de la sugerida, aro de la barra de tiempo.
+  - Historia con globo (Story, McLean, Sumner): íconos de cultivo en la carrera de barras y la leyenda.
+  - Globo: rótulo de la portada con los estados, selector de estado, y gemelos resaltados en los estados nuevos.
+  - Portada con WebGL: botones Map y My Farm (movimiento al pasar el cursor y al tocar) y el nombre "Field Rewind" que cambia de color; cabecera sin el contador y con My Farm al final.
+  - Contador "8 NASA & USDA datasets": que el informe y el formulario de Space Apps (`docs/entrega/informe-space-apps.md`) digan lo mismo.
+  - Celular: tarjeta del satélite, chips y que no haya scroll horizontal.
 
 ---
 

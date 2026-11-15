@@ -121,24 +121,7 @@ a {
 .topbar__long {
   white-space: pre;
 }
-.topbar__count {
-  margin-left: 8px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  border: 1px solid var(--line-strong);
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--primary-strong);
-  background: var(--primary-soft);
-  border-color: transparent;
-  white-space: nowrap;
-}
-/* Cabecera en pantallas angostas: el contador se esconde y los links se achican */
-@media (max-width: 900px) {
-  .topbar__count {
-    display: none;
-  }
-}
+/* Cabecera en pantallas angostas: los links se achican */
 @media (max-width: 640px) {
   .topbar {
     gap: 8px;

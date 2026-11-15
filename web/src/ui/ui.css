@@ -56,6 +56,12 @@
 .logo__field {
   font-weight: 500;
 }
+.logo {
+  transition: color 0.25s ease-out;
+}
+.logo:hover {
+  color: var(--primary);
+}
 
 /* Ícono de cultivo (CropIcon): en línea con el texto */
 .crop-ico {

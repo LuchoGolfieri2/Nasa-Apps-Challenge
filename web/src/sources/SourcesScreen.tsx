@@ -68,6 +68,12 @@ export function SourcesScreen() {
             are not the main crops (for example Sumner County, KS), only the usual mix has a range.
           </li>
           <li>
+            <b>Satellite guess.</b> The in-season crop guess (corn or soybeans, from NASA HLS) is a replay of the 2025 season
+            for 10 demo fields in 5 counties. It is right 99% of the time on July 15 in those fields, against 95% for last
+            year&apos;s rotation alone; that comes from 10 fields and 5 years when the farmer did not rotate, so it is not a
+            county figure.
+          </li>
+          <li>
             <b>Crop map accuracy.</b> The USDA crop map is right about 9 times out of 10 for corn and soybeans, and less often
             for minor crops.
           </li>
