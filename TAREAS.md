@@ -81,6 +81,10 @@ Ejemplo:
 
 - [ ] **F25** Pantalla de fuentes, contador "N NASA & USDA datasets" en la cabecera y avisos (no reemplaza al agrónomo, no es producto oficial de la NASA ni del USDA) · Libre
 
+## My Farm (nueva, 15/11)
+
+- [ ] **F29** My Farm: perfil del campo (condado, acres, cultivos de los últimos años, costo y precio propios, prioridades) guardado en el navegador; pantalla tipo dashboard con ilustraciones de cultivos, medidor y curva de rinde; Next season usa ese perfil · 🔨 Lucho (15/11 14:50)
+
 ## Video y entrega
 
 - [ ] **F26** Modo grabación `?take=a|b|c` (A 960×1080, B y C 1920×1080; C con rótulo "Next: Argentina, as data is added") · Libre
