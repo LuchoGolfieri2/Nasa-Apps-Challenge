@@ -11,6 +11,7 @@
  * Uso:  <NextSeason data={json} onYearClick={(y) => navigate(`#/county/${fips}?year=${y}`)} />
  */
 import React, {useMemo, useState} from 'react';
+import {CountUp} from '../ui/CountUp';
 import {Confidence, ModelRuleTag, PrototypeStamp, SourceChip} from './bits';
 import {Icon, PRIORITY_ICON, similarIcon} from './icons';
 import {commonAxis, suggest} from './suggest';
@@ -54,7 +55,6 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
   const usual = options.find((o) => o.is_current)?.yield_bu_ac?.median ?? null;
   const twinById = useMemo(() => Object.fromEntries(data.twins.map((t) => [t.fips, t])), [data.twins]);
   const focusTwins = useMemo(() => focus.twins.map((f) => twinById[f]).filter(Boolean) as Twin[], [focus, twinById]);
-  const twin = twinSel ? focusTwins.find((t) => t.fips === twinSel) ?? null : null;
   const ctx = data.rotation_context;
 
   const toggle = (p: Priority) => {
@@ -220,16 +220,6 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
                 <b className="ns-missing">Missing data:</b> county location.
               </p>
             )}
-            {twin ? (
-              <div className="ns-pop ns-paper" role="status">
-                <b>
-                  {twin.name}, {twin.state}
-                </b>
-                <small>Similar on {twin.similar_on.join(' and ')}</small>
-                <CropSplit twin={twin} />
-                <SourceChip source={twin.source} />
-              </div>
-            ) : null}
             <a className="ns-open solid-btn" href={`#/map/${data.fips}`}>
               Open in the map
               <Icon name="open" size={18} />
@@ -241,10 +231,11 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
             </h3>
             {focus.twins_note ? (
               <p className="ns-side-note">
-                {focus.twins_note.text.replace(/^Counties like yours[^:]*:\s*\d+\.\s*/, '')} <Confidence level={focus.twins_note.confidence.level} />
+                {(focus.twins_note.text ?? focus.twins_note.confidence.reason).replace(/^Counties like yours[^:]*:\s*\d+\.\s*/, '')} <Confidence level={focus.twins_note.confidence.level} />
               </p>
             ) : null}
             {focusTwins.length ? (
+              <>
               <ol className="ns-twin-list">
                 {focusTwins.map((t) => (
                   <li key={t.fips}>
@@ -275,6 +266,12 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
                   </li>
                 ))}
               </ol>
+              <p className="ns-side-src">
+                {[...new Set(focusTwins.map((t) => t.source))].map((src) => (
+                  <SourceChip key={src} source={src} />
+                ))}
+              </p>
+              </>
             ) : (
               <p className="ns-box ns-box--missing">
                 <b className="ns-missing">Missing data:</b> no county like yours backs this option yet.
@@ -350,21 +347,21 @@ const Answer: React.FC<{option: NextOption; usual: number | null; onWhy: () => v
         <li className="ns-tile">
           <Icon name="bars" />
           <span className="ns-tile-label">Typical yield</span>
-          <span className="ns-tile-value">{y ? `${fmt(y.median)} bu/ac` : <span className="ns-missing">Missing data</span>}</span>
+          <span className="ns-tile-value">{y ? <><CountUp value={y.median} /> bu/ac</> : <span className="ns-missing">Missing data</span>}</span>
           {y ? <small>Bad year {fmt(y.p10)} · good year {fmt(y.p90)}</small> : null}
         </li>
         <li className="ns-tile">
           <Icon name="arrow" />
           <span className="ns-tile-label">Vs. your usual mix</span>
           <span className={`ns-tile-value ${delta != null && delta < 0 ? 'neg' : ''}`}>
-            {o.is_current ? 'This is your usual mix' : delta != null ? `${signed(delta)} bu/ac` : <span className="ns-missing">Missing data</span>}
+            {o.is_current ? 'This is your usual mix' : delta != null ? <><CountUp value={delta} format={signed} /> bu/ac</> : <span className="ns-missing">Missing data</span>}
           </span>
           {delta != null ? <small>In a typical year</small> : null}
         </li>
         <li className="ns-tile">
           <Icon name="dollar" />
           <span className="ns-tile-label">Left per acre</span>
-          <span className="ns-tile-value">{o.income_usd_ac ? `${usd(o.income_usd_ac.median)}/ac` : <span className="ns-missing">Missing data</span>}</span>
+          <span className="ns-tile-value">{o.income_usd_ac ? <><CountUp value={o.income_usd_ac.median} format={usd} />/ac</> : <span className="ns-missing">Missing data</span>}</span>
           {o.income_usd_ac ? <small>After operating costs, typical year</small> : null}
         </li>
         <li className="ns-tile">
@@ -439,7 +436,7 @@ const OptionCard: React.FC<{
         {suggested ? (
           <span>
             <Icon name="star" size={14} />
-            Suggested for your priorities
+            Top pick
           </span>
         ) : null}
       </p>
@@ -455,15 +452,15 @@ const OptionCard: React.FC<{
           ))}
           <i className="ns-gauge-bar" style={{top: px(y.p90), height: Math.max(6, px(y.p10) - px(y.p90)), background: CROP_COLOR[o.crop]}} />
           <span className="ns-gauge-n" style={{top: hi}}>
-            {fmt(y.p90)}
+            <CountUp value={y.p90} />
             <small>good year</small>
           </span>
           <span className="ns-gauge-n ns-gauge-n--mid" style={{top: mid}}>
-            {fmt(y.median)}
+            <CountUp value={y.median} />
             <small>typical</small>
           </span>
           <span className="ns-gauge-n" style={{top: lo}}>
-            {fmt(y.p10)}
+            <CountUp value={y.p10} />
             <small>bad year</small>
           </span>
         </div>
@@ -475,7 +472,7 @@ const OptionCard: React.FC<{
       {o.income_usd_ac ? (
         <p className="ns-card-income">
           <Icon name="dollar" size={18} />
-          <b>{usd(o.income_usd_ac.median)}</b>/acre after operating costs, typical year
+          <b><CountUp value={o.income_usd_ac.median} format={usd} /></b>/acre after operating costs, typical year
           <small>
             Bad year {usd(o.income_usd_ac.p10)} · good year {usd(o.income_usd_ac.p90)} · USDA NASS prices, ERS costs
           </small>

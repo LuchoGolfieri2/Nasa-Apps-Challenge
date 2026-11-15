@@ -1,3 +1,4 @@
+import { CountUp } from "../ui/CountUp";
 import type { ReactNode } from "react";
 import type { County, CountyYear } from "../data/types";
 import { Missing, PrototypeStamp } from "../ui/Missing";
@@ -146,10 +147,12 @@ function cap(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+const decimals = (n: number) => (String(n).split(".")[1] ?? "").length;
+
 function Num({ n, unit }: { n: ReactNode; unit?: string }) {
   return (
     <>
-      <b>{n}</b>
+      <b>{typeof n === "number" ? <CountUp value={n} ms={500} format={(v) => v.toFixed(decimals(n))} /> : n}</b>
       {unit ? <small> {unit}</small> : null}
     </>
   );

@@ -1,4 +1,5 @@
 import type { County, CountyYear } from "../data/types";
+import { CountUp } from "../ui/CountUp";
 import { Missing, PrototypeStamp } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 
@@ -47,7 +48,9 @@ export function YearFacts({ county, y }: { county: County; y: CountyYear }) {
                   const v = y.yield!.crops[c]!;
                   return (
                     <span key={c}>
-                      {YIELD_NAME[c]} <b>{v.bu_ac}</b> bu/acre
+                      {YIELD_NAME[c]} <b>
+                        <CountUp value={v.bu_ac} ms={500} format={(n) => (Number.isInteger(v.bu_ac) ? Math.round(n).toString() : n.toFixed(1))} />
+                      </b> bu/acre
                       {v.vs_usual ? <em> · {VS_USUAL[v.vs_usual]}</em> : null}
                     </span>
                   );
@@ -135,7 +138,9 @@ export function YearLines({ county, y }: { county: County; y: CountyYear }) {
             return (
               <span key={c}>
                 {i ? " · " : null}
-                {YIELD_NAME[c]} <b>{v.bu_ac}</b> bu/acre
+                {YIELD_NAME[c]} <b>
+                        <CountUp value={v.bu_ac} ms={500} format={(n) => (Number.isInteger(v.bu_ac) ? Math.round(n).toString() : n.toFixed(1))} />
+                      </b> bu/acre
                 {v.vs_usual ? ` (${VS_USUAL[v.vs_usual].toLowerCase()})` : null}
               </span>
             );

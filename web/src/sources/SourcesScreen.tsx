@@ -71,8 +71,8 @@ export function SourcesScreen() {
             for minor crops.
           </li>
           <li>
-            <b>Prototype data.</b> The county colors and panel numbers on the globe are placeholders, marked "Prototype data".
-            Real and prototype data are never mixed without that mark.
+            <b>Prototype data.</b> Anything that is a stand-in and not a measurement carries the "Prototype data" mark.
+            Real and prototype data are never mixed without it.
           </li>
         </ul>
       </section>

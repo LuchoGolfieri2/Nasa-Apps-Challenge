@@ -57,11 +57,10 @@
 .ns-cards{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:20px;padding:36px var(--pad) 0;align-items:stretch}
 .ns-card{position:relative;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:26px;padding:26px 30px;margin:34px 0 20px;cursor:pointer;transition:border-color .15s}
 .ns-card:hover{border-color:var(--line-strong)}
-.ns-card.open{border-color:var(--paper)}
-.ns-card--sug{border:0;margin-top:0;padding-top:28px}
-.ns-card--sug.open{margin-bottom:0;border-radius:26px 26px 0 0;padding-bottom:20px}
+.ns-card.open{border-color:var(--field)}
+.ns-card--sug{border:2px solid var(--field);background:#dcefd4;margin-top:0;padding-top:28px}
 .ns-card-tag{min-height:24px}
-.ns-card-tag span{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:99px;background:var(--wheat-gold);color:var(--dark);font-size:12.5px;font-weight:700}
+.ns-card-tag span{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:99px;background:#1f5b3a;color:#fff;font-size:12.5px;font-weight:700}
 .ns-card h2{font-size:34px;margin:10px 0 4px;display:flex;align-items:baseline;gap:10px}
 .ns-card h2 .ns-dot{transform:translateY(-3px)}
 .ns-card-sub{color:var(--ink-2)}
@@ -92,16 +91,17 @@
 .ns-paper.open .ns-card-more{color:var(--dark-2)!important}
 
 /* detalle de la opción abierta */
+.ns-detail.ns-paper{background:#dcefd4}
 .ns-detail{position:relative;margin:0 var(--pad);border-radius:26px;padding:34px 40px 30px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:56px}
-.ns-detail::before{content:"";position:absolute;top:-11px;left:calc((100% + 20px) / var(--n,3) * (var(--at,0) + .5) - 10px);width:22px;height:22px;background:var(--paper);transform:translateX(-50%) rotate(45deg);border-radius:4px}
+.ns-detail::before{content:"";position:absolute;top:-13px;left:calc((100% + 20px) / var(--n,3) * (var(--at,0) + .5) - 10px);width:22px;height:22px;background:#dcefd4;transform:translateX(-50%) rotate(45deg);border-radius:4px}
 .ns-detail h2{font-size:26px;margin-bottom:6px}
 .ns-reason{padding:18px 0;border-top:1px solid var(--dark-line)}
 .ns-reason:first-child{border-top:0}
 .ns-reason p{font-size:17px;line-height:1.45;max-width:62ch}
 .ns-reason--none{color:var(--dark-2)}
 .ns-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
-.ns-year{min-height:32px;padding:0 10px;border:0;border-bottom:2px solid var(--wheat-gold);border-radius:6px;background:rgba(15,42,29,.06);font-size:14px!important;font-weight:500!important;font-variant-numeric:tabular-nums}
-.ns-year:hover{background:rgba(233,185,73,.35)}
+.ns-year{min-height:32px;padding:0 10px;border:0;border-bottom:2px solid var(--field);border-radius:6px;background:rgba(255,255,255,.6);font-size:14px!important;font-weight:500!important;font-variant-numeric:tabular-nums}
+.ns-year:hover{background:#fff}
 .ns-driver{margin-top:10px!important;padding-top:16px;border-top:1px solid var(--dark-line);font-size:15px;color:var(--dark-2)}
 .ns-unit{padding:16px var(--pad) 0;color:var(--ink-3);font-size:14.5px;max-width:calc(110ch + var(--pad) * 2)}
 
@@ -135,11 +135,12 @@
 .ns-hint{position:absolute;left:18px;bottom:18px;z-index:2;font-size:14px;color:var(--ink-2);background:rgba(7,26,18,.72);padding:6px 12px!important;border-radius:99px;max-width:calc(100% - 210px);pointer-events:none}
 .ns-open{position:absolute;right:18px;bottom:18px;z-index:2;display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:99px;background:var(--wheat-gold);color:var(--dark);font-size:15px;font-weight:700;text-decoration:none}
 .ns-open:hover{background:#f0c866}
-.ns-pop{position:absolute;left:18px;top:18px;z-index:2;width:min(290px,calc(100% - 96px));border-radius:16px;padding:14px 16px 16px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:grid;gap:2px;justify-items:start}
-.ns-pop b{font-family:var(--font-display);font-size:19px}
-.ns-pop small{font-size:14px;color:var(--dark-2)}
+.ns-pop{position:absolute;left:18px;top:18px;z-index:2;width:min(290px,calc(100% - 96px));border-radius:16px;padding:14px 16px 16px;box-shadow:0 18px 40px rgba(0,0,0,.45);display:grid;grid-template-columns:minmax(0,1fr);gap:2px;justify-items:stretch;overflow:hidden}
+.ns-pop > b{font-family:var(--font-display);font-size:19px}
+.ns-pop small{font-size:14px;color:var(--dark-2);overflow-wrap:anywhere}
 .ns-pop .ns-split{max-width:none;width:100%;margin:10px 0 4px}
-.ns-pop .source-chip{margin-top:8px}
+.ns-pop .source-chip{margin-top:8px;justify-self:start;max-width:100%;white-space:normal;overflow-wrap:anywhere;line-height:1.3;border-radius:14px}
+.ns-pop .source-chip b{font:inherit;font-weight:700}
 .ns-split{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-top:8px;gap:2px;max-width:260px;width:100%}
 .ns-split i{height:100%}
 .ns-side h3{font-size:22px;margin-bottom:6px}
@@ -340,3 +341,40 @@
 @media (max-width:420px){
   .ns-twins .ns-twin{grid-template-columns:1fr;row-gap:10px}
 }
+
+/* ---- Movimiento (15/11) ------------------------------------------------ */
+/* Entrada escalonada de las tres tarjetas; 'backwards' deja libre el transform para el hover */
+@keyframes ns-card-in{from{opacity:0;transform:translateY(22px)}}
+.ns-card{animation:ns-card-in .6s cubic-bezier(.2,.7,.2,1) backwards;
+  transition:border-color .15s,transform .2s cubic-bezier(.2,.7,.2,1),box-shadow .2s,background-color .2s}
+.ns-card:nth-child(2){animation-delay:.1s}
+.ns-card:nth-child(3){animation-delay:.2s}
+.ns-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(15,42,29,.12)}
+.ns-card:active{transform:translateY(-1px) scale(.992);box-shadow:0 4px 12px rgba(15,42,29,.12)}
+.ns-card--sug:hover{background:#d3eac9}
+/* La sugerida: un brillo que pasa una sola vez y un aro verde que se apaga */
+.ns-card--sug{overflow:hidden;animation:ns-card-in .6s cubic-bezier(.2,.7,.2,1) backwards,ns-glow 1.6s ease-out .75s 1}
+.ns-card--sug::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.75) 50%,transparent 65%);
+  background-size:260% 100%;background-position:160% 0;animation:ns-sheen 1.4s ease-out .8s 1 forwards}
+@keyframes ns-sheen{0%{opacity:1;background-position:160% 0}85%{opacity:1}100%{opacity:0;background-position:-60% 0}}
+@keyframes ns-glow{0%{box-shadow:0 0 0 0 rgba(47,125,79,0)}35%{box-shadow:0 0 0 10px rgba(47,125,79,.28)}100%{box-shadow:0 0 0 0 rgba(47,125,79,0)}}
+.ns-chip{transition:background .15s,border-color .15s,transform .15s,box-shadow .15s}
+.ns-chip:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(15,42,29,.1)}
+.ns-chip:active{transform:scale(.96)}
+.ns-open{transition:transform .15s,box-shadow .15s,filter .15s}
+.ns-open:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,42,29,.2);filter:brightness(1.04)}
+.ns-open:active{transform:scale(.97)}
+
+/* Bloque "respuesta primero" en el mismo verde suave que la tarjeta sugerida */
+.ns-answer{background:#dcefd4;border:2px solid var(--field);box-shadow:none}
+.ns-answer-badge{background:#1f5b3a;color:#fff}
+.ns-answer-kicker{color:#1f5b3a}
+.ns-tile{background:rgba(255,255,255,.65)}
+.ns-tile > .ns-icon{color:#1f5b3a}
+.ns-answer-why{color:#1f5b3a!important}
+.ns-tile-label{color:var(--dark-2)}
+.ns-tile small{color:var(--dark-2)}
+.ns-answer .fr-conf--high{color:var(--field)}.ns-answer .fr-conf--medium{color:#7a570c}.ns-answer .fr-conf--low{color:#b3261e}
+.ns-answer .fr-conf-reason{color:var(--dark-2)}
+.ns-side-src{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}

@@ -157,3 +157,14 @@ a {
     display: none;
   }
 }
+
+/* ---- Movimiento (15/11) ------------------------------------------------ */
+/* Cambio de pantalla: lo que está debajo de la cabecera aparece con un fundido corto.
+   Solo opacidad: un transform acá movería los elementos fijos (barra de años). */
+@keyframes page-in{from{opacity:0}}
+.app > :not(.topbar):not(.history){animation:page-in .32s ease-out backwards} /* la historia lleva un globo WebGL: sin fundido encima */
+/* Hover y presión: elevación leve y color suave en botones y enlaces de la cabecera */
+.btn,.topbar__nav a,.timeline__btn{transition:transform .15s cubic-bezier(.2,.7,.2,1),box-shadow .15s,background-color .15s,border-color .15s,color .15s}
+.btn:hover,.timeline__btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,42,29,.14)}
+.btn:active,.timeline__btn:active:not(:disabled){transform:translateY(0) scale(.97);box-shadow:none}
+.topbar__nav a:hover{background-color:rgba(47,125,79,.08)}

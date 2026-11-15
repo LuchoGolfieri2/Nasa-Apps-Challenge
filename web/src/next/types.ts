@@ -54,7 +54,7 @@ export interface NextOption {
   range_driver: {text: string; years: number[] | null; source_label?: string} | null;
   /** fips de los gemelos de esta opción */
   twins: string[];
-  twins_note: {text: string; range: Range | null; confidence: Confidence} | null;
+  twins_note: {text: string | null; range: Range | null; confidence: Confidence} | null;
   source: string;
   prototype: boolean;
 }
