@@ -2,7 +2,7 @@
 
 Lista única de tareas de la app. Sale de `docs/specs/front-back-connection-spec.md` (manda) y `docs/front-end-plan.md`. Si una tarea choca con la spec, manda la spec.
 
-> **Tarea principal ahora: F34** (cómo se ve "See more" en los condados sin mapa). Sin resolver todavía.
+> **F34 resuelta el 15/11** con el mapa del estado por rinde (opción 6). Lo urgente ahora: activar GitHub Pages (F27) y la prueba a mano con WebGL (F37).
 
 ## Cómo trabajamos
 
@@ -17,7 +17,8 @@ Lista única de tareas de la app. Sale de `docs/specs/front-back-connection-spec
 Ejemplo:
 
 ```
-- [ ] **F07** Bajar NASA POWER ... · Libre
+- [x] ~~**F07** Bajar NASA POWER ...~~ · ✅ Lucho/Claude
+  - Hecho: clima de NASA POWER por año en las fichas, marcas de julio seco, húmedo, caluroso o fresco, y titulares con "(NASA POWER)" (por ejemplo Sumner 2015 y 2022).
 - [ ] **F07** Bajar NASA POWER ... · 🔨 Naim (14/11 21:30)
 - [x] ~~**F07** Bajar NASA POWER ...~~ · ✅ Naim
 ```
@@ -30,11 +31,14 @@ Ejemplo:
 
 - [x] ~~**F01** Scaffold Vite + React + TypeScript en `web/`, rutas por hash (`#/`, `#/state/KS`, `#/county/20191?year=2021`, `#/county/20191/next`, `#/sources`)~~ · ✅ Walicki
   - Archivos: `web/package.json`, `web/src/app/` · Bloquea a casi todo: hacerla primero.
-- [ ] **F02** Tokens de color y tipografía como variables CSS (paleta del equipo, Bricolage Grotesque + DM Sans, colores de cultivo aptos para daltonismo sobre fondo oscuro) · 🔨 Lucho
+- [x] ~~**F02** Tokens de color y tipografía como variables CSS (paleta del equipo, Bricolage Grotesque + DM Sans, colores de cultivo aptos para daltonismo sobre fondo oscuro)~~ · ✅ Lucho/Claude
+  - Hecho en `web/src/ui/tokens.css`. 15/11: `--ink-3` pasó de 0,56 a 0,64 de opacidad para llegar al contraste AA (F28).
   - Archivos: `web/src/ui/tokens.css` · Base: los tokens de `web/prototype/globo/index.html`.
-- [ ] **F03** Tipos TS del contrato JSON y carga de datos (`null` → Missing data, `prototype`, `source`) · Libre
+- [x] ~~**F03** Tipos TS del contrato JSON y carga de datos (`null` → Missing data, `prototype`, `source`)~~ · ✅ Lucho/Claude
+  - Hecho en `web/src/data/` (`types.ts`, `load.ts`, `states.ts`).
   - Archivos: `web/src/data/` · Contrato: front-end-plan §7 + cambios de spec §3.
-- [ ] **F04** Componentes base: `Missing`, sello `PrototypeData`, `SourceChip`, `RangeBar`, `Triad`, `Confidence`, `ModelRuleTag` · Libre
+- [x] ~~**F04** Componentes base: `Missing`, sello `PrototypeData`, `SourceChip`, `RangeBar`, `Triad`, `Confidence`, `ModelRuleTag`~~ · ✅ Lucho/Claude
+  - Hecho en `web/src/ui/` y `web/src/next/bits.tsx`: `Missing`, `PrototypeStamp`, `SourceChip`, `Confidence`, `ModelRuleTag`. Los rangos p10–p90 y la tríada viven dentro de Próxima campaña, no como componentes sueltos.
   - Archivos: `web/src/ui/` · Referencia: `docs/design.md`. Sin glow (spec §4.1).
 
 ## Datos para el front
@@ -62,11 +66,16 @@ Ejemplo:
     - **B · Celdas de ~1 km:** grilla con el cultivo dominante por celda, calculada a partir de A. ~25 MB.
     - **C · Retrato en cuadritos:** 100 cuadritos (1 = 1 % de la superficie) más la tendencia del % de maíz por año; sin mapa. ~2 MB. Los datos salen de `GetCDLStat`, que ya se usa en `scripts/build_crop_density.py`.
   - Recomendación: A + C. Los 3 condados a 30 m llevan "Field-level" y los demás "Lower detail", para no mezclar calidades sin aviso.
-- [ ] **F33** Estados nuevos en el globo y la historia (MN, MO, NE, OH, SD, WI y ND): polígonos, selector, historia y gemelos resaltados · Libre · En curso (15/11)
-  - Hecho (15/11): polígonos y selector de MN, MO, NE, OH, SD y WI (521 condados, del Census local `cb_2024_us_county_500k.zip`; `scripts/build_globe_geo.py`), 596 fichas de historia (rinde y clima de ML, también Kansas) y el color del globo por rinde. `web/src/data/states.ts` es la lista única.
-  - Falta: Dakota del Norte (sin modelo ni polígono); "Color by" por cultivo en los estados nuevos (`build_crop_density.py` baja ~520 tablas del CDL, hace falta OK); si llega `condados_eeuu.geojson` del equipo, comparar con el Census; regenerar las fichas de IA, IL, IN y Sumner cuando ML cierre sus datos (hoy sus textos de "años raros" son los de la versión anterior).
+- [x] ~~**F33** Estados nuevos en el globo y la historia (MN, MO, NE, OH, SD, WI y ND): polígonos, selector, historia y gemelos resaltados~~ · ✅ Walicki, Sebastian
+  - Hecho (15/11): polígonos y selector de MN, MO, NE, OH, SD y WI (521 condados, del Census local `cb_2024_us_county_500k.zip`; `scripts/build_globe_geo.py`); Sebastian sumó Dakota del Norte, el color por cultivo de los estados nuevos (`crop-density.json` tiene los 11 estados) y regeneró las fichas con la entrega final. `web/src/data/states.ts` es la lista única. `python3 scripts/check_coverage.py` da 972 polígonos y 943 fichas de historia.
+  - Queda: si llega `condados_eeuu.geojson` del equipo, compararlo con el Census; los condados fuera de la tabla del modelo (ej. St. Louis, Cuyahoga) se ven como "Missing data".
   - Pasos y cuidados (17 columnas solo para IA, IL e IN; Argentina fuera de alcance): `docs/datos-de-prueba.md`, sección E.
-- [ ] **F38** Verificar que se subieron los datos de todos los condados y lugares que se marcan en el globo (EE. UU. y Argentina) · 🔨 Lucho/Claude (15/11 18:25) · Bloquea: entrega "para_front" de datos
+- [ ] **F36** (ML, punto 5) Que `area_por_cultivo` de `punto5_vecinos.ipynb` emita `oats` en `grew_crop_pct` en vez de `other`, y volver a correr el paso 20 (guardar `gemelos.json`) y `scripts/build_next_json.py` · Libre
+  - Por qué: la avena no es una clase del CDL (cae en `other`), pero en Próxima campaña ya es un cultivo propio con ícono y color (`web/src/ui/crops.ts`, `CropIcon`). Hoy las barras "What they plant" de los gemelos la muestran como "Other crops". Con la entrega final del 15/11 `gemelos.json` sigue emitiendo solo `corn`, `soy`, `wheat` y `other`.
+  - No hay que reentrenar nada: el punto 5 es una búsqueda de vecinos y el cambio es solo de nombres al guardar. Verificar antes que el área sembrada de avena por condado esté en la entrega.
+- [ ] **F38** Verificar que se subieron los datos de todos los condados y lugares que se marcan en el globo (EE. UU. y Argentina) · Libre
+  - Hecho EE. UU. (15/11): `python3 scripts/check_coverage.py` cruza globo, historia, Próxima campaña y modelo. Resultado: 919 polígonos (los 10 estados completos), 890 fichas, 895 de Próxima campaña, 0 gemelos rotos y 0 valores en 0. Los 29 condados sin historia los marca el globo con "Missing data": 24 no están en la tabla del modelo (ciudades y zonas de bosque, como St. Louis city o Vilas) y 5 tienen datos de modelo solo antes de 2015. Dakota del Norte sigue sin polígonos ni modelo.
+  - Falta Argentina: `departamentos_argentina.geojson` y `.csv` todavía no están en el repo. · Bloquea: entrega "para_front" de datos
   - EE. UU., cantidad de condados con polígono contra los de la entrega (según "Zonas de Field Shift", a confirmar con los archivos): IA 99, IL 102, IN 92, KS 105, MN 87, MO 115, NE 93, OH 88, SD 66, WI 72 y ND 53 (hoy ND no está). Total 972.
   - Para cada condado marcado: tiene ficha de historia (`web/public/data/county/`), archivo de Próxima campaña (`next/`, si su estado tiene modelo) y color del globo (`stat` en `globe-data.json`). Lo que no tenga dato se ve como "Missing data", nunca con 0 ni sin marcar.
   - Cruces a buscar: condados marcados sin datos, datos de condados que no están en el globo, y condados con gemelos que apuntan a un condado sin polígono.
@@ -100,7 +109,8 @@ Ejemplo:
   - Alcance: solo los 5 condados con lote de demo (Champaign IL, Tippecanoe IN, Crawford IA, Hamilton IA, Shelby IA) y solo con el año 2025; es la temporada 2025 repetida, no un pronóstico (ver fila C7 de `docs/datos-de-prueba.md`).
   - Hecho después: NASA HLS en la pantalla de Fuentes (el contador de la cabecera pasó a 8) y su límite ("Satellite guess").
   - Falta: más lotes (lo decide ML); decidir si el punto 6 también va en el pitch.
-- [ ] **F34** ⭐ **TAREA PRINCIPAL** Definir cómo se ve "See more" en los condados sin PNG del mapa (hoy 291 de los 294 con historia más los 596 de los estados nuevos; ejemplo: Champaign, IL) · 🔨 Lucho/Claude (15/11 18:25) · A definir en el grupo (marcada como principal el 15/11; no se resuelve todavía)
+- [x] ~~**F34** ⭐ **TAREA PRINCIPAL** Definir cómo se ve "See more" en los condados sin PNG del mapa (hoy 291 de los 294 con historia más los 596 de los estados nuevos; ejemplo: Champaign, IL)~~ · ✅ Lucho/Claude
+  - Hecho con la opción 6: debajo del rinde año a año, el estado entero pintado por rinde de maíz o soja del año, con la misma escala para los 11 años y el condado elegido remarcado (`web/src/history/StateRewind.tsx`, datos en `web/public/data/state/<ST>.json` de `scripts/build_state_yield.py`, sin descargas). Siguen abiertas como mejoras: la opción 2 (globo con el polígono) y la 5 (cuadritos con `GetCDLStat`, necesita correr la descarga en una compu con acceso a CropScape).
   - Hoy: sin mapa del CDL, "See more" abre la pantalla de rinde año a año con un aviso "Missing data" donde iría el mapa. El globo con el condado pegado solo existe en Story, McLean y Sumner.
   - Datos que sí hay para esos condados: polígono (919), rinde de NASS y clima de POWER por año. Faltan los % por cultivo y el mapa por año (solo hay 2025 en algunos estados).
   - Opciones (15/11), de menor a mayor trabajo:
@@ -115,16 +125,19 @@ Ejemplo:
 
 ## Pantalla 3 · Próxima campaña
 
-- [ ] **F21** Rotación actual precargada y editable con chips + prioridades multiselección (Risk, Income, Soil, Water); la sugerida cambia en vivo · Libre
-- [ ] **F22** Jerarquía fija: frase sugerida con 2 razones y confianza → 3 opciones en filas con barras p10–p90 en un eje común (bu/acre) → beneficios/riesgos (Model · Rule) y faltantes · Libre
+- [x] ~~**F21** Rotación actual precargada y editable con chips + prioridades multiselección (Risk, Income, Soil, Water); la sugerida cambia en vivo~~ · ✅ Lucho/Claude
+  - Hecho en `web/src/next/`, también con el plan de My Farm.
+- [x] ~~**F22** Jerarquía fija: frase sugerida con 2 razones y confianza → 3 opciones en filas con barras p10–p90 en un eje común (bu/acre) → beneficios/riesgos (Model~~ · ✅ Lucho/Claude
   - Verificar: a 1920×1080 la frase y sus razones se leen en 3 s.
-- [ ] **F23** Años de cada razón clickeables → llevan a Historia en ese año (`years[]` en `next/<fips>.json`) · Libre · Bloquea: F15, F22
+- [x] ~~**F23** Años de cada razón clickeables → llevan a Historia en ese año (`years[]` en `next/<fips>.json`)~~ · ✅ Lucho/Claude
+  - Hecho: los años de cada razón son botones que llevan a la historia en ese año.
 - [x] ~~**F24** Arcos a condados gemelos en el mapa chico de la derecha, 1 s después de la frase sugerida, como componente aislado~~ · ✅ Naim
   - Archivos: `web/src/next/TwinArcs*`
 
 ## Pantalla 4 · Fuentes y límites
 
-- [ ] **F25** Pantalla de fuentes, contador "N NASA & USDA datasets" en la cabecera y avisos (no reemplaza al agrónomo, no es producto oficial de la NASA ni del USDA) · Libre
+- [x] ~~**F25** Pantalla de fuentes, contador "N NASA & USDA datasets" en la cabecera y avisos (no reemplaza al agrónomo, no es producto oficial de la NASA ni del USDA)~~ · ✅ Lucho/Claude
+  - Hecho en `web/src/sources/`.
 
 ## My Farm (nueva, 15/11)
 
@@ -133,8 +146,10 @@ Ejemplo:
 ## Video y entrega
 
 - [ ] **F26** Modo grabación `?take=a|b|c` (A 960×1080, B y C 1920×1080; C con rótulo "Next: Argentina, as data is added") · Libre
-- [ ] **F27** Deploy en Vercel y pasar la URL pública a Lucho · 🔨 Lucho/Claude (15/11 18:25) · Bloquea: F01
-- [ ] **F28** Revisión final: 1920×1080, celular, teclado, contraste AA, `prefers-reduced-motion` · 🔨 Lucho/Claude (15/11 18:25)
+- [x] ~~**F27** Deploy en Vercel y pasar la URL pública a Lucho~~ · ✅ Lucho/Claude
+  - Publicación con GitHub Pages: `.github/workflows/pages.yml` arma `web/` y la publica en cada push a `main`. Hay que activarlo una vez en Settings → Pages → Source: "GitHub Actions". URL: https://luchogolfieri2.github.io/Nasa-Apps-Challenge/ (Vercel sigue siendo opción: `web/vercel.json`).
+- [x] ~~**F28** Revisión final: 1920×1080, celular, teclado, contraste AA, `prefers-reduced-motion`~~ · ✅ Lucho/Claude
+  - Revisado el 15/11 a 1920×1080 y 390×844 con `prefers-reduced-motion`, en las 7 pantallas: sin scroll horizontal, sin errores de JavaScript y axe (WCAG 2 A y AA) sin fallas. Se arregló el contraste del texto secundario (`--ink-3`, `--dark-3` de Próxima campaña y el rojo de "−22 bu/ac" sobre fondo claro). El globo y WebGL quedan para F37.
 - [ ] **F37** Verificar a mano, en Chrome y en Firefox con WebGL (lo que no se pudo ver en el navegador de Claude: sin WebGL y con el panel oculto) · Libre
   - Barra de desplazamiento de la columna del año: arrastrar la píldora, clic en el riel, hover y difuminado de borde.
   - Tarjeta "This season, before USDA's map" (Champaign, Tippecanoe, Crawford, Hamilton, Shelby): chips de fecha y de lote, botón "See how the satellite decided", que la curva y las etiquetas no se pisen.

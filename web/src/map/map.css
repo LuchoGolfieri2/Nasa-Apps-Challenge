@@ -200,7 +200,7 @@ body.recording .maplayer #home{pointer-events:none}
    blanco con texto oscuro; lo que flota sobre la imagen (buscador, Back) va en vidrio con texto blanco.
    Las variables de texto se redefinen adentro de las cajas blancas. */
 .maplayer #card-box,.maplayer #legend,.maplayer #tip,.maplayer #q-list{
-  --paper:#12271B;--ink-2:rgba(18,39,27,.74);--ink-3:rgba(18,39,27,.56);--rule:rgba(15,42,29,.12);color:#12271B}
+  --paper:#12271B;--ink-2:rgba(18,39,27,.74);--ink-3:rgba(18,39,27,.64);--rule:rgba(15,42,29,.12);color:#12271B}
 
 /* Abajo a la izquierda, apilados (globe.js los mete en #dock): el selector "Color by" arriba y la leyenda
    debajo. Los dos son cuadros blancos; la lista de capas se abre hacia arriba. */

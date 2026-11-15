@@ -44,11 +44,11 @@ Fuente: [Project Submission Guide](https://www.spaceappschallenge.org/resources/
 
 | Dato | Valor | De dónde |
 |---|---|---|
-| Condados con Next season | 895, en 10 estados (IA, IL, IN, KS, MN, MO, NE, OH, SD, WI) | `web/public/data/next/` |
+| Condados con Next season | 948, en 11 estados (IA, IL, IN, KS, MN, MO, ND, NE, OH, SD, WI) | `web/public/data/next/` |
 | Condados con historia | 294 (Iowa, Illinois, Indiana y Sumner, KS); mapa del CDL en Story, McLean y Sumner | `web/public/data/county/` |
-| Error del modelo de rinde | Maíz 15,3 bu/ac (baseline 18,7); soja 4,3 (baseline 5,1); gana en los 10 estados | commit `e2d1830` de ML |
-| Efecto de no rotar | Maíz continuo −19,1 %; soja continua −9,7 % | commit `e2d1830` de ML |
-| Story, maíz | Habitual 214 bu/ac ($512/ac); tras soja 226 ($566), piso en año malo 217; tras maíz 192 ($411) | `web/public/data/next/19169.json` |
+| Error del modelo de rinde | Maíz 15,3 bu/ac (baseline 18,6); soja 4,3 (baseline 5,1); gana en los 11 estados | rama `ml/datos-finales-11-estados` (entrega final del 15/11) |
+| Efecto de no rotar | Maíz continuo −18,9 %; soja continua −12,1 % | rama `ml/datos-finales-11-estados` |
+| Story, maíz | Habitual 213 bu/ac ($509/ac); tras soja 225 ($562), piso en año malo 216; tras maíz 192 ($409) | `web/public/data/next/19169.json` |
 
 ---
 
@@ -60,7 +60,7 @@ Field Rewind: rewind your land before you decide
 
 ### High-Level Project Summary
 
-Every season a farmer bets the year on one decision: what to plant, and after what. Field Rewind turns NASA and USDA open data into that decision for 895 counties in 10 Corn Belt states. First it rewinds a decade (2015–2025): the county painted field by field with the USDA Cropland Data Layer, each year's yield, NASA POWER weather, and the years that came out above or below usual, with their likely cause. Then it compares next season's options (keep the usual mix, rotate fully, or repeat the crop) as a yield range for a bad, typical and good year, in bu/acre and $/acre. Based on the farmer's priorities (lower risk, higher income, soil health), it suggests one, with two reasons, each with its source, a confidence level and counties like yours that already farm that way. With My Farm, the farmer adds their own rotation, acres, prices and costs, and sees the same answer for their whole farm. It addresses Field Shift by showing farmers, at the scale of their county, how a change would have played out, and it says plainly what it doesn't know.
+Every season a farmer bets the year on one decision: what to plant, and after what. Field Rewind turns NASA and USDA open data into that decision for 948 counties in 11 Corn Belt states. First it rewinds a decade (2015–2025): the county painted field by field with the USDA Cropland Data Layer, each year's yield, NASA POWER weather, and the years that came out above or below usual, with their likely cause. Then it compares next season's options (keep the usual mix, rotate fully, or repeat the crop) as a yield range for a bad, typical and good year, in bu/acre and $/acre. Based on the farmer's priorities (lower risk, higher income, soil health), it suggests one, with two reasons, each with its source, a confidence level and counties like yours that already farm that way. With My Farm, the farmer adds their own rotation, acres, prices and costs, and sees the same answer for their whole farm. It addresses Field Shift by showing farmers, at the scale of their county, how a change would have played out, and it says plainly what it doesn't know.
 
 ### Links
 
@@ -79,13 +79,13 @@ Every season a farmer bets the year on one decision: what to plant, and after wh
 4. **My Farm.** A five-step profile: county, acres, crops of the last three seasons, next season's plan, priorities, and optional own price and operating cost. It is saved only in the browser. The dashboard shows the farmer's own option on a yield gauge, whether it matches the suggestion, income for the whole farm, their last seasons, last year's weather and the county's yield curve. Next season then opens with their crop and priorities and marks "Your farm's plan".
 5. **Sources and limits.** Every dataset, what it gives and where it is used, plus what the app can't tell you.
 
-**Example, Story County, Iowa (corn).** Keeping the usual mix: 214 bu/acre typical, $512/acre. Corn after soybeans: 226 bu/acre typical, $566/acre, and the best bad-year floor (217 bu/acre). Corn after corn: 192 bu/acre, $411/acre. With "lower risk in bad years" selected, the app suggests corn after soybeans, with medium confidence.
+**Example, Story County, Iowa (corn).** Keeping the usual mix: 213 bu/acre typical, $509/acre. Corn after soybeans: 225 bu/acre typical, $562/acre, and the best bad-year floor (216 bu/acre). Corn after corn: 192 bu/acre, $409/acre. With "lower risk in bad years" selected, the app suggests corn after soybeans, with medium confidence.
 
 **How it works.**
 
-- **Data pipeline (Python):** downloads and cleans each source into county-year tables keyed by FIPS code for 10 states (Iowa, Illinois, Indiana, Kansas, Minnesota, Missouri, Nebraska, Ohio, South Dakota and Wisconsin), with missing values left empty, never filled.
-- **Yield model:** a shallow LightGBM model learns how each year's weather and the county's soil move corn and soybean yield away from its technology trend. Validation leaves one year out at a time. Typical error: 15.3 bu/acre for corn against 18.7 for the best baseline, and 4.3 against 5.1 for soybeans; it beats the baselines in all 10 states.
-- **Rotation effect:** estimated separately with fixed effects, not inferred from the model: continuous corn yields 19.1% less than corn after soybeans, and continuous soybeans 9.7% less.
+- **Data pipeline (Python):** downloads and cleans each source into county-year tables keyed by FIPS code for 11 states (Iowa, Illinois, Indiana, Kansas, Minnesota, Missouri, Nebraska, North Dakota, Ohio, South Dakota and Wisconsin), with missing values left empty, never filled.
+- **Yield model:** a shallow LightGBM model learns how each year's weather and the county's soil move corn and soybean yield away from its technology trend. Validation leaves one year out at a time. Typical error: 15.3 bu/acre for corn against 18.6 for the best baseline, and 4.3 against 5.1 for soybeans; it beats the baselines in all 11 states.
+- **Rotation effect:** estimated separately with fixed effects, not inferred from the model: continuous corn yields 18.9% less than corn after soybeans, and continuous soybeans 12.1% less.
 - **Explanations:** SHAP values grouped into plain phrases (July heat, dry July, wet spring) give the reasons and the risks of each option.
 - **Unusual years:** each year's yield is compared with what the model expected, and the most likely weather cause is named, or the app says weather doesn't explain it.
 - **Counties like yours:** a nearest-neighbor search on 5 soil and 4 climate values finds, among the most similar counties, the first 5 that actually used each rotation, as a second, independent range.
@@ -93,7 +93,7 @@ Every season a farmer bets the year on one decision: what to plant, and after wh
 
 **Benefits.** The decision is shown at the scale the data supports (the county), as a range instead of a promise, and every number carries its source. A farmer sees how a change would have played out in their own county's good and bad years, not in a national average. Missing data is written as "Missing data", never shown as zero.
 
-**What we hope to achieve.** A tool a farmer or an extension agent can open before buying seed, and that any team can extend as data is added. The model already covers 10 states; North Dakota is next. Then Argentina, our home: the data team has prepared 219 departments of the Pampas, where the same rotation question drives every season, and the app will only predict where the climate falls inside the range the model learned from.
+**What we hope to achieve.** A tool a farmer or an extension agent can open before buying seed, and that any team can extend as data is added. The model already covers 11 states. Next is Argentina, our home: the data team has prepared 219 departments of the Pampas, where the same rotation question drives every season, and the app will only predict where the climate falls inside the range the model learned from.
 
 **Limits we show in the app.** Results are for the whole county, not a single field, so two farmers in the same county see the same yield range; My Farm changes the option, the priorities and the money, not the prediction. They are associations, not causes. Income uses one operating cost per crop (ERS doesn't split by rotation), so corn after corn likely looks a little better than it is. Yield comparisons for 2024 and 2025 are not shown yet.
 

@@ -1,0 +1,42 @@
+Value, Category, Count,  Acreage
+1, Corn, 286101, 63627.3
+4, Sorghum, 27385, 6090.3
+5, Soybeans, 516268, 114815.2
+6, Sunflowers, 5851, 1301.2
+21, Barley, 14932, 3320.8
+22, Durum Wheat, 12030, 2675.4
+23, Spring Wheat, 139304, 30980.5
+24, Winter Wheat, 5427, 1206.9
+27, Rye, 24731, 5500.0
+28, Oats, 88045, 19580.7
+29, Millet, 20181, 4488.1
+31, Canola, 40631, 9036.1
+32, Flaxseed, 37486, 8336.7
+36, Alfalfa, 103827, 23090.6
+37, Other Hay/Non Alfalfa, 86626, 19265.2
+38, Camelina, 75, 16.7
+39, Buckwheat, 21282, 4733.0
+42, Dry Beans, 9900, 2201.7
+43, Potatoes, 19576, 4353.6
+44, Other Crops, 936, 208.2
+49, Onions, 644, 143.2
+51, Chick Peas, 1570, 349.2
+52, Lentils, 12147, 2701.4
+53, Peas, 2977, 662.1
+58, Clover/Wildflowers, 10031, 2230.8
+61, Fallow/Idle Cropland, 9573, 2129.0
+111, Open Water, 443712, 98679.2
+121, Developed/Open Space, 82342, 18312.4
+122, Developed/Low Intensity, 24510, 5450.9
+123, Developed/Medium Intensity, 5596, 1244.5
+124, Developed/High Intensity, 375, 83.4
+131, Barren, 19488, 4334.0
+141, Deciduous Forest, 14418, 3206.5
+142, Evergreen Forest, 431, 95.9
+143, Mixed Forest, 7, 1.6
+152, Shrubland, 2518, 560.0
+176, Grass/Pasture, 1746739, 388465.4
+190, Woody Wetlands, 5829, 1296.3
+195, Herbaceous Wetlands, 280714, 62429.3
+205, Triticale, 121, 26.9
+247, Turnips, 61, 13.6

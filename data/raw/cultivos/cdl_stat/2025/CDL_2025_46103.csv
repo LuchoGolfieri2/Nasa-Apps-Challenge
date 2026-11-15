@@ -1,0 +1,41 @@
+Value, Category, Count,  Acreage
+1, Corn, 74891, 16655.4
+4, Sorghum, 42556, 9464.2
+5, Soybeans, 22827, 5076.6
+6, Sunflowers, 24408, 5428.2
+21, Barley, 1629, 362.3
+23, Spring Wheat, 90844, 20203.2
+24, Winter Wheat, 151418, 33674.6
+27, Rye, 2786, 619.6
+28, Oats, 11069, 2461.7
+29, Millet, 36756, 8174.3
+31, Canola, 465, 103.4
+32, Flaxseed, 327, 72.7
+33, Safflower, 17228, 3831.4
+36, Alfalfa, 81870, 18207.4
+37, Other Hay/Non Alfalfa, 152623, 33942.5
+38, Camelina, 1, 0.2
+39, Buckwheat, 5, 1.1
+42, Dry Beans, 665, 147.9
+44, Other Crops, 9, 2.0
+51, Chick Peas, 4, 0.9
+52, Lentils, 688, 153.0
+53, Peas, 248, 55.2
+59, Sod/Grass Seed, 1165, 259.1
+61, Fallow/Idle Cropland, 110505, 24575.7
+111, Open Water, 28688, 6380.1
+121, Developed/Open Space, 130239, 28964.5
+122, Developed/Low Intensity, 161873, 35999.7
+123, Developed/Medium Intensity, 56673, 12603.8
+124, Developed/High Intensity, 11778, 2619.4
+131, Barren, 507670, 112903.1
+141, Deciduous Forest, 30091, 6692.1
+142, Evergreen Forest, 1765248, 392581.7
+143, Mixed Forest, 126744, 28187.2
+152, Shrubland, 221386, 49235.1
+176, Grass/Pasture, 4071274, 905429.5
+190, Woody Wetlands, 31720, 7054.4
+195, Herbaceous Wetlands, 43697, 9718.0
+205, Triticale, 365, 81.2
+225, Dbl Crop WinWht/Corn, 2, 0.4
+228, Dbl Crop Triticale/Corn, 13, 2.9

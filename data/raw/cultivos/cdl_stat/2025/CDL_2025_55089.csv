@@ -1,0 +1,42 @@
+Value, Category, Count,  Acreage
+1, Corn, 89090, 19813.1
+4, Sorghum, 349, 77.6
+5, Soybeans, 52913, 11767.6
+12, Sweet Corn, 2024, 450.1
+21, Barley, 77, 17.1
+23, Spring Wheat, 3, 0.7
+24, Winter Wheat, 21342, 4746.3
+26, Dbl Crop WinWht/Soybeans, 1, 0.2
+27, Rye, 447, 99.4
+28, Oats, 2065, 459.2
+36, Alfalfa, 40802, 9074.1
+37, Other Hay/Non Alfalfa, 13605, 3025.7
+41, Sugarbeets, 118, 26.2
+42, Dry Beans, 791, 175.9
+44, Other Crops, 23, 5.1
+53, Peas, 153, 34.0
+58, Clover/Wildflowers, 31, 6.9
+59, Sod/Grass Seed, 18, 4.0
+61, Fallow/Idle Cropland, 1860, 413.7
+67, Peaches, 8, 1.8
+68, Apples, 1023, 227.5
+69, Grapes, 23, 5.1
+70, Christmas Trees, 199, 44.3
+111, Open Water, 9855, 2191.7
+121, Developed/Open Space, 62904, 13989.5
+122, Developed/Low Intensity, 92652, 20605.3
+123, Developed/Medium Intensity, 34775, 7733.8
+124, Developed/High Intensity, 6492, 1443.8
+131, Barren, 8351, 1857.2
+141, Deciduous Forest, 28846, 6415.2
+142, Evergreen Forest, 3456, 768.6
+143, Mixed Forest, 5014, 1115.1
+152, Shrubland, 7326, 1629.3
+176, Grass/Pasture, 88005, 19571.8
+190, Woody Wetlands, 85851, 19092.8
+195, Herbaceous Wetlands, 16648, 3702.4
+205, Triticale, 20, 4.4
+226, Dbl Crop Oats/Corn, 41, 9.1
+228, Dbl Crop Triticale/Corn, 24, 5.3
+229, Pumpkins, 164, 36.5
+240, Dbl Crop Soybeans/Oats, 3, 0.7

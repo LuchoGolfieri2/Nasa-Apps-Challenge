@@ -23,7 +23,7 @@ export const STATES: StateInfo[] = [
   { fips: "39", postal: "OH", name: "Ohio", model: true },
   { fips: "46", postal: "SD", name: "South Dakota", model: true },
   { fips: "55", postal: "WI", name: "Wisconsin", model: true },
-  { fips: "38", postal: "ND", name: "North Dakota", model: false }, // 11.º estado: la entrega todavía no lo trae
+  { fips: "38", postal: "ND", name: "North Dakota", model: true }, // 11.º estado: entrega final del 15/11
 ];
 
 export const POSTAL_BY_FIPS: Record<string, string> = Object.fromEntries(STATES.map((s) => [s.fips, s.postal]));
