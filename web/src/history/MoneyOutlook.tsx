@@ -97,7 +97,7 @@ export function OutlookCard({ county }: { county: County }) {
   if (!o) {
     return (
       <div className="card outlook">
-        <h3>Climate outlook, 2041–2070</h3>
+        <h3>Climate scenario, 2041–2070</h3>
         <Missing what="the climate scenario for this county" />
       </div>
     );
@@ -105,7 +105,8 @@ export function OutlookCard({ county }: { county: County }) {
   const rows = OUTLOOK_CROPS.flatMap((c) => (o.crops[c] ? [{ id: c, ...o.crops[c]! }] : []));
   return (
     <div className="card outlook">
-      <h3>Climate outlook, {o.scenario}</h3>
+      <h3>Climate scenario, {o.scenario}</h3>
+      <p className="outlook__warn">A “what if” with assumptions, not a forecast: it keeps emissions high and changes only the climate.</p>
       <ul className="outlook__rows">
         {rows.map((r) => {
           const d = Math.round(r.suit_future - r.suit_now);
@@ -128,8 +129,7 @@ export function OutlookCard({ county }: { county: County }) {
       </ul>
       <p className="outlook__key"><i className="is-now" />Climate {o.baseline} <i className="is-fut" />Scenario {o.scenario}</p>
       <p className="history__small">
-        Climate suitability from 0 to 100 (high inputs, rain-fed). A scenario with assumptions, not a yield forecast. Bushels are the
-        attainable yield in that scenario.{" "}
+        Climate suitability from 0 to 100 (high inputs, rain-fed). Bushels are the ceiling the climate allows in each period, not the yield a farm will get.{" "}
         <SourceChip source={o.source} />
       </p>
     </div>

@@ -29,3 +29,4 @@
 .outlook__key { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 14px 0 0; font-size: 12px; color: var(--ink-2); }
 .outlook__key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; background: var(--field); }
 .outlook__key i.is-now { background: rgba(15,42,29,.38); }
+.outlook__warn { margin: -4px 0 12px; font-size: 13px; color: var(--ink-2); }
