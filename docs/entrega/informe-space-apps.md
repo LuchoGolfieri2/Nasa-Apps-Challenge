@@ -32,7 +32,7 @@ Fuente: [Project Submission Guide](https://www.spaceappschallenge.org/resources/
 
 - [ ] Nombres de los 6 integrantes en la página del equipo.
 - [ ] Subir el video v3 a YouTube ("No listado") o a Drive con acceso público, probar el link en incógnito y pegarlo.
-- [ ] Publicar la app (tarea F27, Vercel; ya está `web/vercel.json`) y pegar el link.
+- [x] Publicar la app (tarea F27): **https://field-rewind.vercel.app** (Vercel, se actualiza en cada push a `main`). Pegar este link en el formulario.
 - [ ] Subir 2 o 3 capturas: globo, Next season y My Farm.
 - [ ] Confirmar las cifras de Story contra la app publicada.
 - [ ] Datos de agencias socias: Argentina (CONAE) es agencia socia; hoy no usamos ninguno y así lo dice el texto.

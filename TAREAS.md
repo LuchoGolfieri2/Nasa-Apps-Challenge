@@ -2,7 +2,7 @@
 
 Lista única de tareas de la app. Sale de `docs/specs/front-back-connection-spec.md` (manda) y `docs/front-end-plan.md`. Si una tarea choca con la spec, manda la spec.
 
-> **F34 resuelta el 15/11** con el mapa del estado por rinde (opción 6). Lo urgente ahora: activar GitHub Pages (F27) y la prueba a mano con WebGL (F37).
+> **F34 resuelta el 15/11** con el mapa del estado por rinde (opción 6). Sitio publicado: https://field-rewind.vercel.app (F27). Lo urgente ahora: la prueba a mano con WebGL (F37).
 
 ## Cómo trabajamos
 
@@ -147,7 +147,8 @@ Ejemplo:
 
 - [ ] **F26** Modo grabación `?take=a|b|c` (A 960×1080, B y C 1920×1080; C con rótulo "Next: Argentina, as data is added") · Libre
 - [x] ~~**F27** Deploy en Vercel y pasar la URL pública a Lucho~~ · ✅ Lucho/Claude
-  - Publicación con GitHub Pages: `.github/workflows/pages.yml` arma `web/` y la publica en cada push a `main`. Hay que activarlo una vez en Settings → Pages → Source: "GitHub Actions". URL: https://luchogolfieri2.github.io/Nasa-Apps-Challenge/ (Vercel sigue siendo opción: `web/vercel.json`).
+  - ✅ **Listo (15/11): https://field-rewind.vercel.app** · proyecto `field-rewind` en Vercel (cuenta de Lucho), raíz `web/`, se republica solo en cada push a `main`. Probado en vivo: historia, mapa del estado y Próxima campaña cargan sus datos.
+  - Respaldo: `.github/workflows/pages.yml` publica en GitHub Pages si se activa en Settings → Pages → Source: "GitHub Actions".
 - [x] ~~**F28** Revisión final: 1920×1080, celular, teclado, contraste AA, `prefers-reduced-motion`~~ · ✅ Lucho/Claude
   - Revisado el 15/11 a 1920×1080 y 390×844 con `prefers-reduced-motion`, en las 7 pantallas: sin scroll horizontal, sin errores de JavaScript y axe (WCAG 2 A y AA) sin fallas. Se arregló el contraste del texto secundario (`--ink-3`, `--dark-3` de Próxima campaña y el rojo de "−22 bu/ac" sobre fondo claro). El globo y WebGL quedan para F37.
 - [ ] **F37** Verificar a mano, en Chrome y en Firefox con WebGL (lo que no se pudo ver en el navegador de Claude: sin WebGL y con el panel oculto) · Libre
