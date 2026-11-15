@@ -1,0 +1,107 @@
+{
+ "country": "AR",
+ "generated": "2026-11-15",
+ "departments": 219,
+ "zones": {
+  "dentro": {
+   "label": "Within the Corn Belt weather range",
+   "color_hint": "in",
+   "departments": 15
+  },
+  "cerca": {
+   "label": "Close to the Corn Belt weather range",
+   "color_hint": "near",
+   "departments": 102
+  },
+  "fuera": {
+   "label": "Outside the Corn Belt weather range",
+   "color_hint": "out",
+   "departments": 102
+  }
+ },
+ "by_province": {
+  "Buenos Aires": {
+   "cerca": 93,
+   "fuera": 30,
+   "dentro": 12
+  },
+  "Córdoba": {
+   "fuera": 26
+  },
+  "Entre Ríos": {
+   "fuera": 17
+  },
+  "La Pampa": {
+   "fuera": 10,
+   "cerca": 9,
+   "dentro": 3
+  },
+  "Santa Fe": {
+   "fuera": 19
+  }
+ },
+ "median_ratio_ar_us_by_zone": {
+  "cerca": {
+   "corn": 0.78,
+   "soy": 0.87,
+   "wheat": 0.98
+  },
+  "dentro": {
+   "corn": 0.49,
+   "soy": 0.47,
+   "wheat": 0.73
+  },
+  "fuera": {
+   "corn": 0.92,
+   "soy": 1.16,
+   "wheat": 0.92
+  }
+ },
+ "headline": "Similar weather is not enough for similar yields: the southern Buenos Aires departments whose weather falls within the Corn Belt range yield about half of their U.S. analogs.",
+ "note": "Argentina is shown as an extension test: there is no yield estimate here yet, because the model was trained on U.S. counties. Each department is compared with the U.S. counties that have the most similar weather, and with its own official yields (MAGyP). Similar weather does not mean similar yield.",
+ "rules": {
+  "prediction": "none in Argentina yet",
+  "zone_dentro": "comparison shown without warning",
+  "zone_cerca": "comparison shown with the out-of-range measures",
+  "zone_fuera": "say that U.S.-trained estimates would not apply",
+  "magyp": "comparison only, never a model input"
+ },
+ "sources": [
+  {
+   "id": "magyp",
+   "name": "MAGyP Estimaciones agrícolas (Argentina)",
+   "gives": "Department yield and area",
+   "resolution": "department",
+   "period": "2000/01–2024/25"
+  },
+  {
+   "id": "power",
+   "name": "NASA POWER",
+   "gives": "Weather by growing season (October–March)",
+   "resolution": "0.5°",
+   "period": "2001–2024 (Buenos Aires: 2000–2025)"
+  },
+  {
+   "id": "soilgrids",
+   "name": "ISRIC SoilGrids v2.0",
+   "gives": "Soil texture, organic carbon and pH, 0–30 cm",
+   "resolution": "1 km",
+   "period": "static"
+  },
+  {
+   "id": "nass",
+   "name": "USDA NASS Quick Stats",
+   "gives": "Yield of the U.S. analog counties",
+   "resolution": "county",
+   "period": "2001–2024"
+  },
+  {
+   "id": "georef",
+   "name": "Argentina Georef API (datos.gob.ar)",
+   "gives": "Department boundaries and INDEC codes",
+   "resolution": "department",
+   "period": "current"
+  }
+ ],
+ "prototype": false
+}
