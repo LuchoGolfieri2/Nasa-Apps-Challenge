@@ -1,0 +1,40 @@
+Value, Category, Count,  Acreage
+1, Corn, 208675, 46408.2
+4, Sorghum, 5197, 1155.8
+5, Soybeans, 454579, 101095.9
+6, Sunflowers, 118, 26.2
+11, Tobacco, 1, 0.2
+12, Sweet Corn, 323, 71.8
+13, Pop or Orn Corn, 54, 12.0
+24, Winter Wheat, 5984, 1330.8
+26, Dbl Crop WinWht/Soybeans, 16274, 3619.3
+27, Rye, 301, 66.9
+28, Oats, 784, 174.4
+29, Millet, 334, 74.3
+36, Alfalfa, 2634, 585.8
+37, Other Hay/Non Alfalfa, 22929, 5099.3
+41, Sugarbeets, 16, 3.6
+44, Other Crops, 725, 161.2
+58, Clover/Wildflowers, 181, 40.3
+59, Sod/Grass Seed, 1881, 418.3
+60, Switchgrass, 17, 3.8
+61, Fallow/Idle Cropland, 630, 140.1
+68, Apples, 3, 0.7
+74, Pecans, 765, 170.1
+111, Open Water, 22156, 4927.4
+121, Developed/Open Space, 39056, 8685.8
+122, Developed/Low Intensity, 26106, 5805.8
+123, Developed/Medium Intensity, 7829, 1741.1
+124, Developed/High Intensity, 2123, 472.1
+131, Barren, 13231, 2942.5
+141, Deciduous Forest, 186478, 41471.7
+142, Evergreen Forest, 1400, 311.4
+143, Mixed Forest, 5059, 1125.1
+152, Shrubland, 2314, 514.6
+176, Grass/Pasture, 424419, 94388.5
+190, Woody Wetlands, 80684, 17943.7
+195, Herbaceous Wetlands, 16429, 3653.7
+205, Triticale, 87, 19.3
+229, Pumpkins, 3, 0.7
+236, Dbl Crop WinWht/Sorghum, 1, 0.2
+240, Dbl Crop Soybeans/Oats, 25, 5.6
