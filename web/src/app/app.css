@@ -184,3 +184,17 @@ a {
     padding: 0 9px;
   }
 }
+
+/* Transición de pantalla (ui/wipe.ts): un círculo verde que cubre y deja ver la pantalla nueva */
+.wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 40%, #2f7d4f, #1f5b3a 70%);
+  color: #f6f1e4;
+  font: 800 clamp(30px, 5vw, 60px) / 1 var(--font-display);
+  letter-spacing: -0.02em;
+  pointer-events: auto;
+}

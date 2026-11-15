@@ -7,6 +7,7 @@
  *   - ingreso con su precio y su costo (o los del USDA), por acre y para todo el campo
  *   - sus últimas campañas, el clima del último año (NASA POWER) y la curva de rinde del condado (USDA NASS)
  */
+import { wipeTo } from "../ui/wipe";
 import { useEffect, useMemo, useState } from "react";
 import { dataUrl, loadCounty } from "../data/load";
 import type { County } from "../data/types";
@@ -146,7 +147,7 @@ function FarmDashboard({ farm }: { farm: Farm }) {
           <a className="btn" href="#/farm/edit">
             Edit my farm
           </a>
-          <a className="btn btn--primary" href={`#/county/${farm.fips}/next`}>
+          <a className="btn btn--primary" href={`#/county/${farm.fips}/next`} onClick={(e) => wipeTo(e, "Next season")}>
             All options for next season →
           </a>
         </div>
