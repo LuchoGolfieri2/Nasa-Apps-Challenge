@@ -2,6 +2,7 @@
 // Portada → globo → estado → condado (tarjeta al lado del condado). Maneja sus propias rutas (ver README.md).
 // El color de los condados y el número de la tarjeta son reales: rinde de maíz del USDA NASS, media
 // 2021–2025 ("stat" en globe-data.json, lo escribe scripts/build_front_data.py). Sin dato: "Missing data".
+import {POSTAL_BY_FIPS, FIPS_BY_POSTAL} from '../data/states';
 import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
 import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
@@ -31,8 +32,7 @@ const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream), NIGHT 
 const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
 const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
 const NEXT_AVAILABLE = NEXT_LIST; // condados con datos del modelo para la pantalla Next season
-const POSTAL = {19: 'IA', 17: 'IL', 18: 'IN', 20: 'KS'};
-const FIPS_OF = {IA: '19', IL: '17', IN: '18', KS: '20'};
+const POSTAL = POSTAL_BY_FIPS, FIPS_OF = FIPS_BY_POSTAL; // data/states.ts: un solo lugar para sumar estados
 // Estados sin salidas del modelo de rinde (hoy Kansas): se siguen mostrando, con el aviso escrito.
 const hasModel = (stateId) => NEXT_AVAILABLE.some((id) => id.startsWith(stateId));
 const NO_MODEL = 'Missing data: no yield model for this state yet';

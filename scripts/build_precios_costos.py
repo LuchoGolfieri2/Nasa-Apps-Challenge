@@ -3,10 +3,11 @@
 Precio y costo por acre para pasar el rango de rinde a ingreso ($/acre) en "Next season".
 
 Entrada (de la entrega, fuera de Git):
-  <entrega>/condado/extras/economia_anual.csv
+  economia_anual.csv de cada grupo de la entrega de 10 estados (IA/IL/IN en ia_il_in_v3/condado/extras/,
+  y oh_ne_mn/, mo_wi_sd/ y ks/ en <grupo>/economia/data/processed/economia/)
     precio_usd_bu           precio recibido por el productor, NASS, por estado y año comercial
     costo_operativo_usd_ac  costos operativos por acre sembrado, USDA ERS, región Heartland
-                            (el mismo valor para IA, IL e IN)
+                            (el mismo valor para los estados de una misma región ERS)
 
 Salida (va a Git, es chica):
   backend/Datos/precios_costos.csv   una fila por estado y cultivo:
@@ -29,7 +30,7 @@ Límites (se muestran en el front):
   - El rango p10–p90 del ingreso refleja solo el clima (el rango de rinde), con el precio fijo.
 
 Uso (desde la raíz del repo):
-  python -X utf8 scripts/build_precios_costos.py [ruta/a/economia_anual.csv]
+  python -X utf8 scripts/build_precios_costos.py [ruta/a/economia_anual.csv ...]
 """
 import sys
 from pathlib import Path
@@ -40,23 +41,29 @@ ROOT = Path(__file__).resolve().parent.parent
 ENTREGAS = ROOT / "backend" / "Datos" / "entregas"
 SALIDA = ROOT / "backend" / "Datos" / "precios_costos.csv"
 ANIOS = list(range(2021, 2026))
-ESTADOS = ["17", "18", "19"]  # IL, IN, IA: los del modelo
+ESTADOS = ["17", "18", "19", "20", "27", "29", "31", "39", "46", "55"]  # los 10 estados del modelo (punto 2)
+ENTREGA_10 = ENTREGAS / "fieldshift_datos_todo_10estados_20261115"
+GRUPOS_10 = [ENTREGA_10 / "ia_il_in_v3" / "condado" / "extras" / "economia_anual.csv"] + [
+    ENTREGA_10 / g / "economia" / "data" / "processed" / "economia" / "economia_anual.csv" for g in ("oh_ne_mn", "mo_wi_sd", "ks")]
 CULTIVOS = ["maiz", "soja", "trigo_invierno", "avena"]
 
 
-def buscar_entrada():
+def buscar_entradas():
     if len(sys.argv) > 1:
-        return Path(sys.argv[1])
-    for v in ("fieldshift_datos_v3", "fieldshift_datos_v2"):  # el archivo es idéntico en las dos
+        return [Path(a) for a in sys.argv[1:]]
+    if all(p.exists() for p in GRUPOS_10):  # entrega de 10 estados: un archivo por grupo
+        return GRUPOS_10
+    for v in ("fieldshift_datos_v3", "fieldshift_datos_v2"):  # solo IA, IL e IN (el archivo es idéntico en las dos)
         p = ENTREGAS / v / "condado" / "extras" / "economia_anual.csv"
         if p.exists():
-            return p
-    sys.exit(f"No encontré economia_anual.csv en {ENTREGAS}/fieldshift_datos_v3 ni v2. Pasá la ruta como argumento.")
+            return [p]
+    sys.exit(f"No encontré economia_anual.csv en {ENTREGA_10} ni en v3/v2. Pasá las rutas como argumento.")
 
 
 def main():
-    entrada = buscar_entrada()
-    eco = pd.read_csv(entrada, dtype={"fips_estado": str})
+    entradas = buscar_entradas()
+    eco = pd.concat([pd.read_csv(p, dtype={"fips_estado": str}) for p in entradas], ignore_index=True)
+    eco = eco.drop_duplicates(["fips_estado", "anio", "cultivo"])  # un estado aparece en un solo grupo
     eco = eco[eco["anio"].isin(ANIOS) & eco["fips_estado"].isin(ESTADOS) & eco["cultivo"].isin(CULTIVOS)]
 
     filas = []
@@ -83,7 +90,7 @@ def main():
 
     out = pd.DataFrame(filas).sort_values(["fips_estado", "cultivo"])
     out.to_csv(SALIDA, index=False)
-    print(f"Leído {entrada}")
+    print("Leído:", ", ".join(str(p.relative_to(ROOT)) for p in entradas))
     print(out.to_string(index=False))
     print(f"Guardado {SALIDA.relative_to(ROOT)}")
 

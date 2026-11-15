@@ -45,6 +45,24 @@ Ejemplo:
 - [ ] **F08** Condados del Census (IA, IL, KS) simplificados → `geo/counties_<ST>.geojson` con `fips` y `name` · Libre
 - [ ] **F09** `state_layer.json` con la variable del mapa de estado (propuesta: % de maíz NASS); sin dato → `null` · Libre · Bloquea: NASS, decisión abierta 2
 - [ ] **F10** Meter NASS, MODIS, SMAP y ML a medida que lleguen (solo regenerar JSON, sacar el sello "Prototype data" donde haya dato real) · Libre
+- [ ] **F31** Chequear: mapas lote a lote para 10 estados (viabilidad, peso y aprobación) · Libre
+  - Medición (15/11, un condado-año en CropScape): unos 5 s y 2 MB por archivo del CDL a 30 m.
+  - Volumen: unos 1.000 condados (supuesto, falta contar los 6 estados nuevos) por 11 años son unos 11.000 archivos y ~22 GB en bruto.
+  - Tiempo: unas 15 h en serie, o 2–3 h con 8 descargas en paralelo, más 1 h de procesado.
+  - Aprobación: ese volumen pasa el límite de 5 GB de `CLAUDE.md` (regla 6); hace falta el OK del equipo antes de empezar.
+  - Peso en el sitio: a 30 m serían ~2,5 GB, demasiado para hospedarlos junto al repo; a 60 m, unos 0,7 GB; otra salida es alojarlos en un almacenamiento aparte.
+  - Decisión actual: por ahora solo algunos condados llevan el mapa lote a lote (Story, McLean, Sumner); el resto usa una vista liviana (ver F32). Los datos de modelo y de los 10 estados los suben los de ML: no tocar acá.
+- [ ] **F32** Vista liviana para los condados sin mapa lote a lote · Libre · En pausa (decisión 15/11: por ahora no se hace)
+  - Hoy esos condados (ej. Perry, IL) muestran solo rinde, clima y "Missing data" donde iría el mapa.
+  - Probado: CropScape devuelve un mapa real reducido (~160 m por píxel) en un PNG de ~18 KB y 3 s, con `GetMap` de `wms_cdlall.cgi` (capa `cdl_<año>`, bbox del condado, 256 px de ancho), sin bajar los 2 MB del original.
+  - Opciones bocetadas (elegir una al retomar):
+    - **A · Mapa real en baja resolución:** el mismo mapa con play, rotulado "Lower detail". ~100–200 MB para ~1.000 condados × 11 años, ~1,5 h de descarga liviana.
+    - **B · Celdas de ~1 km:** grilla con el cultivo dominante por celda, calculada a partir de A. ~25 MB.
+    - **C · Retrato en cuadritos:** 100 cuadritos (1 = 1 % de la superficie) más la tendencia del % de maíz por año; sin mapa. ~2 MB. Los datos salen de `GetCDLStat`, que ya se usa en `scripts/build_crop_density.py`.
+  - Recomendación: A + C. Los 3 condados a 30 m llevan "Field-level" y los demás "Lower detail", para no mezclar calidades sin aviso.
+- [ ] **F33** Estados nuevos en el globo y la historia (MN, MO, NE, OH, SD, WI y ND): polígonos, selector, historia y gemelos resaltados · Libre · Bloquea: entrega "para_front" de datos
+  - Preparado (15/11): `scripts/build_globe_geo.py` (suma polígonos y estados a `globe-data.json`), `web/src/data/states.ts` (lista única de estados) y `build_front_data.py` con los 11 estados. Probado con datos sintéticos, falta con el archivo real.
+  - Pasos y cuidados (17 columnas solo para IA, IL e IN; Argentina fuera de alcance): `docs/datos-de-prueba.md`, sección E.
 
 ## Pantalla 1 · Mapa
 
@@ -80,6 +98,10 @@ Ejemplo:
 ## Pantalla 4 · Fuentes y límites
 
 - [ ] **F25** Pantalla de fuentes, contador "N NASA & USDA datasets" en la cabecera y avisos (no reemplaza al agrónomo, no es producto oficial de la NASA ni del USDA) · Libre
+
+## My Farm (nueva, 15/11)
+
+- [ ] **F29** My Farm: perfil del campo (condado, acres, cultivos de los últimos años, costo y precio propios, prioridades) guardado en el navegador; pantalla tipo dashboard con ilustraciones de cultivos, medidor y curva de rinde; Next season usa ese perfil · 🔨 Lucho (15/11 14:50)
 
 ## Video y entrega
 
