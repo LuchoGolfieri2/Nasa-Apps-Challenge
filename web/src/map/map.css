@@ -25,36 +25,38 @@
 .maplayer #home b{font:800 21px/1 var(--display);letter-spacing:-.01em}
 .maplayer #home b span{font-weight:500}
 
-/* Panel lateral: una sola superficie opaca, pegada al borde, sin vidrio ni tarjetas anidadas. */
-.maplayer #panel{right:0;top:0;bottom:0;width:372px;overflow:auto;overscroll-behavior:contain;background:var(--night);border-left:1px solid var(--rule);padding:28px 28px 32px}
+/* Panel lateral: columna Verde noche con cajas apiladas (encabezado, datos, acciones, gemelos).
+   Cajas un paso más claras, radio 12, sombra suave, 8 px entre ellas; sin cajas dentro de cajas. */
+.maplayer #panel{right:0;top:0;bottom:0;width:372px;overflow:auto;overscroll-behavior:contain;background:var(--night);border-left:1px solid var(--rule);padding:12px;display:flex;flex-direction:column;gap:8px}
+.maplayer .box{position:relative;flex:none;padding:16px;border-radius:12px;background:#143424;box-shadow:0 1px 2px rgba(0,0,0,.28),0 6px 16px rgba(0,0,0,.22)}
 .maplayer #panel[hidden],.maplayer #p-stats[hidden],.maplayer #p-twins[hidden],.maplayer #p-next[hidden],.maplayer #p-twinlist[hidden],.maplayer #legend[hidden]{display:none}
-.maplayer #p-close{position:absolute;top:18px;right:18px;display:grid;place-items:center;width:44px;height:44px;padding:0;background:none;border:0;border-radius:var(--radius);color:var(--ink-2);cursor:pointer;-webkit-tap-highlight-color:transparent}
-.maplayer #p-name{margin:0;padding-right:40px;font:800 32px/1.05 var(--display);letter-spacing:-.015em;text-wrap:balance}
+.maplayer #p-close{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:44px;height:44px;padding:0;background:none;border:0;border-radius:var(--radius);color:var(--ink-2);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.maplayer #p-name{margin:0;padding-right:40px;font:800 28px/1.05 var(--display);letter-spacing:-.015em;text-wrap:balance}
 .maplayer #p-state{margin:6px 0 0;color:var(--ink-2);font-size:14px;font-variant-numeric:tabular-nums}
-.maplayer #p-status{margin:16px 0 0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.maplayer #p-status{margin:12px 0 0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
 .maplayer #p-status.ok{color:var(--sprout)}
 .maplayer #p-status.missing{color:var(--ink-2)}
 .maplayer #p-status.missing::before{content:"";flex:none;width:14px;height:14px;border:1px dashed var(--ink-3);border-radius:2px;background:repeating-linear-gradient(135deg,rgba(246,241,228,.28) 0 2px,transparent 2px 5px)}
-.maplayer .proto{display:flex;align-items:center;gap:8px;margin:28px 0 12px;font-size:12.5px;color:var(--ink-3)}
+.maplayer .proto{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:12.5px;color:var(--ink-3)}
 .maplayer .tag{flex:none;font:700 11px/1 var(--text);letter-spacing:.04em;text-transform:uppercase;color:var(--night);background:var(--wheat);border-radius:3px;padding:4px 5px 3px}
 .maplayer .stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--rule)}
-.maplayer .stats div{padding:12px 12px 0 0}
-.maplayer .stats div+div{padding-left:12px;border-left:1px solid var(--rule)}
-.maplayer .stats b{display:block;white-space:nowrap;font:800 20px/1.1 var(--display);font-variant-numeric:tabular-nums}
-.maplayer .stats small .ico{margin-right:4px;vertical-align:-2px}
-.maplayer .stats small{display:block;margin-top:4px;font-size:12px;line-height:1.3;color:var(--ink-2)}
-.maplayer .seg{display:inline-flex;margin-top:8px;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.maplayer .stats div{display:grid;grid-row:span 3;grid-template-rows:subgrid;align-content:start;padding:12px 10px 0 0}
+.maplayer .stats div+div{padding-left:10px;border-left:1px solid var(--rule)}
+.maplayer .stats small{display:flex;justify-content:space-between;align-items:flex-start;gap:4px;font-size:12px;line-height:1.3;color:var(--ink-2)}
+.maplayer .stats small .ico{color:var(--ink-3)}
+.maplayer .stats b{display:block;align-self:end;margin-top:6px;white-space:nowrap;font:600 24px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.maplayer .seg{display:inline-flex;justify-self:start;align-self:start;margin-top:8px;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
 .maplayer .seg button{min-width:36px;min-height:32px;padding:0 8px;background:none;border:0;font-size:12px;font-weight:700;color:var(--ink-2)}
 .maplayer .seg button+button{border-left:1px solid var(--rule)}
 .maplayer .seg button[aria-pressed="true"]{background:var(--paper);color:var(--night)}
-.maplayer .actions{display:flex;flex-direction:column;gap:8px;margin-top:28px}
+.maplayer .actions{display:flex;flex-direction:column;gap:8px}
 .maplayer .ico{display:inline-flex;flex:none}
 .maplayer .ico svg{width:100%;height:100%}
 .maplayer .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border-radius:var(--radius);border:1px solid var(--rule);background:transparent;font-weight:700;transition:background-color .15s ease-out,border-color .15s ease-out}
 .maplayer .btn.primary{background:var(--sprout);border-color:transparent;color:var(--night)}
 .maplayer .btn:disabled{background:rgba(246,241,228,.07);border-color:transparent;color:var(--ink-3);cursor:not-allowed}
 .maplayer .twins button{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--rule);padding:12px 0;min-height:48px}
-.maplayer .twins button:last-child{border-bottom:1px solid var(--rule)}
+.maplayer .twins button:last-child{padding-bottom:0}
 .maplayer .twins b{display:block;font-size:15px}
 .maplayer .twins small{display:block;margin-top:2px;font-size:12.5px;line-height:1.35;color:var(--ink-2)}
 
@@ -118,7 +120,7 @@ body.recording .maplayer #home{pointer-events:none}
   .maplayer #search{order:3;width:100%}
   .maplayer #home b{font-size:18px;white-space:nowrap}
   .maplayer #legend{display:none}
-  .maplayer #panel{top:auto;left:0;width:auto;max-height:62vh;border-left:0;border-top:1px solid var(--rule);border-radius:16px 16px 0 0;padding:20px 20px 24px}
-  .maplayer #p-name{font-size:26px}
+  .maplayer #panel{top:auto;left:0;width:auto;max-height:62vh;border-left:0;border-top:1px solid var(--rule);border-radius:16px 16px 0 0;padding:16px}
+  .maplayer #p-name{font-size:24px}
   .maplayer #sources{left:16px}
 }
