@@ -3,10 +3,13 @@
 Arma los JSON de la pantalla 3 ("Next season") con datos reales:
 
   backend/Datos/escenarios_rotacion_resumen.csv  → rango p10 / mediana / p90 por opción (modelo del punto 2)
+  backend/Datos/escenarios_rotacion.csv          → predicción por clima de cada año (2009–2023): la "prediction" de la pantalla
   backend/Datos/front/explicaciones.json         → razones, riesgos, confianza y años (punto 3)
   backend/Datos/front/gemelos.json               → condados gemelos por opción y cultivos nuevos (punto 5)
   backend/Datos/precios_costos.csv               → precio NASS y costo operativo ERS por estado (scripts/build_precios_costos.py)
   web/public/data/county/<fips>.json             → mezcla de rotaciones del CDL (si el condado tiene historia)
+  backend/Datos/tabla_modelado.csv               → % del maíz sobre maíz y % de la soja sobre soja por año (CDL): la "mix"
+  backend/Datos/gemelos_vecinos.csv              → los 5 condados más parecidos por suelo y clima, para el rango de la "mix"
 
 Salida:
   web/public/data/next/<fips>.json   uno por condado de IA, IL y KS que tenga datos del modelo
@@ -20,6 +23,7 @@ Uso:  python3 scripts/build_next_json.py
 """
 import csv
 import json
+import statistics
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -85,7 +89,7 @@ def income(rng, pc):
 
 def load_ranges():
     out = {}
-    with open(ML / "escenarios_rotacion_resumen.csv", newline="") as f:
+    with open(ML / "escenarios_rotacion_resumen.csv", newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
             out[(r["fips"].zfill(5), CROP[r["cultivo"]], r["rotacion"])] = {
                 "p10": round(float(r["p10_clima"]), 1),
@@ -93,6 +97,59 @@ def load_ranges():
                 "p90": round(float(r["p90_clima"]), 1),
             }
     return out
+
+
+def load_scenarios():
+    """{fips: {año_clima: {(cultivo, rotación): rinde predicho}}} del modelo del punto 2."""
+    out = {}
+    with open(ML / "escenarios_rotacion.csv", newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            out.setdefault(r["fips"].zfill(5), {}).setdefault(int(r["anio_clima"]), {})[(CROP[r["cultivo"]], r["rotacion"])] = float(r["pred"])
+    return out
+
+
+def predict(fips, scen, prices):
+    """
+    Predicción de la pantalla (15/11): una sola opción para la próxima campaña, sin elecciones del usuario.
+    Para cada clima pasado (2009–2023) el modelo predice el rinde de las 6 opciones (maíz y soja × habitual, rotado,
+    continuo); se pasa a ingreso sobre costos operativos (precio NASS − costo ERS del estado) para poder comparar maíz con
+    soja, y gana la que más deja ese año. Probabilidad = años en que ganó / años con dato. Sin precio del estado no se puede
+    comparar maíz con soja: queda null ("Missing data").
+    """
+    by_year = scen.get(fips)
+    pcs = {crop: prices.get((fips[:2], PRICE_CROP[crop])) for crop in CROP.values()}
+    if not by_year or not all(pcs.values()):
+        return None
+    wins = {}
+    for year in sorted(by_year):
+        best = None
+        for (crop, rot), y in by_year[year].items():
+            v = y * pcs[crop]["price"] - pcs[crop]["cost"]
+            if best is None or v > best[0]:
+                best = (v, f"{crop}_{rot}")
+        if best:
+            wins.setdefault(best[1], []).append(year)
+    seasons = sum(len(v) for v in wins.values())
+    if not seasons:
+        return None
+    ranked = sorted(wins.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+    top, years = ranked[0]
+    years_all = sorted(by_year)
+    return {
+        "option_id": top,
+        "crop": top.split("_")[0],
+        "probability": round(len(years) / seasons, 2),
+        "wins": len(years),
+        "seasons": seasons,
+        "years": years_all,
+        "best_years": years,
+        "others": [{"option_id": k, "wins": len(v), "best_years": v} for k, v in ranked[1:]],
+        "basis": "income",
+        "method": "Share of past seasons' weather (2009–2023) in which this option leaves the most per acre over operating costs, "
+                  "among corn and soybeans in three rotations. Same price and cost every year: only the weather changes.",
+        "source": f"{MODEL_SRC} · USDA ERS costs",
+        "prototype": False,
+    }
 
 
 def reason(r, priority, pro):
@@ -106,11 +163,153 @@ def reason(r, priority, pro):
     }
 
 
+# ---------------------------------------------------------------- mezcla esperada de cultivos (capas 1 y 2)
+# Capa 1: la costumbre del condado. Del CDL salen, por año, a = % del maíz sembrado sobre maíz y b = % de la soja
+#   sembrada sobre soja. Con la mediana de sus últimos MIX_YEARS años y suponiendo que el área de maíz y de soja se
+#   mantiene estable de un año al otro (solo maíz y soja), la parte de maíz es c = (1 - b) / (2 - a - b) y las cuatro
+#   transiciones son: maíz tras maíz c·a, maíz tras soja c·(1-a), soja tras soja (1-c)·b, soja tras maíz (1-c)·(1-b).
+# Capa 2: los condados parecidos. El rango sale de cuánto se apartaron de su propia costumbre, año a año, el condado
+#   y sus 5 condados más parecidos (percentiles 5 y 95 de esos desvíos). Si al condado le falta a o b, usa la mediana
+#   de los parecidos. Probado prediciendo 2024 y 2025 solo con los años anteriores: error medio de 1,4 a 1,6 puntos;
+#   el valor real cae dentro del rango en el 72 al 84 % de los condados. Usar a los parecidos para mover la cifra
+#   central lo empeoró (1,7 a 2,0 puntos), por eso solo entran en el rango.
+# No es un modelo de ML: no usa precios ni la predicción. Eso es la capa 3 (docs/specs/pedido-ml-mezcla-capa3.md).
+MIX_YEARS = 5
+MIX_KEYS = (("soy", "corn"), ("corn", "soy"), ("corn", "corn"), ("soy", "soy"))
+MIX_SRC = "USDA CDL · 30 m · similar counties (Field Rewind)"
+
+
+def load_rotation_rates():
+    rates = {}
+    with open(ML / "tabla_modelado.csv", newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            y = int(r["anio"])
+            if r["cultivo"] == "maiz" and r["pct_maiz_tras_maiz"]:
+                rates.setdefault(r["fips"], {}).setdefault(y, {})["a"] = float(r["pct_maiz_tras_maiz"]) / 100
+            if r["cultivo"] == "soja" and r["pct_soja_tras_soja"]:
+                rates.setdefault(r["fips"], {}).setdefault(y, {})["b"] = float(r["pct_soja_tras_soja"]) / 100
+    return rates
+
+
+def load_neighbors(n=5):
+    nb = {}
+    with open(ML / "gemelos_vecinos.csv", newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if int(r["orden"]) <= n:
+                nb.setdefault(r["fips"], []).append(r["fips_vecino"])
+    return nb
+
+
+def _shares(a, b):
+    if a + b >= 2:
+        return None
+    c = (1 - b) / (2 - a - b)
+    return {("corn", "corn"): c * a, ("soy", "corn"): c * (1 - a), ("soy", "soy"): (1 - c) * b,
+            ("corn", "soy"): (1 - c) * (1 - b), "corn": c}
+
+
+def _pctl(v, q):
+    v = sorted(v)
+    i = q * (len(v) - 1)
+    lo = int(i)
+    return v[lo] + (v[min(lo + 1, len(v) - 1)] - v[lo]) * (i - lo)
+
+
+def _habit(rates, fips, year):
+    """Mediana de a y de b en los MIX_YEARS años anteriores a `year` (los que haya), y cuántos años hubo."""
+    r = rates.get(fips, {})
+    a = [r[y]["a"] for y in range(year - MIX_YEARS, year) if "a" in r.get(y, {})]
+    b = [r[y]["b"] for y in range(year - MIX_YEARS, year) if "b" in r.get(y, {})]
+    return (statistics.median(a) if a else None, statistics.median(b) if b else None, len(a), len(b))
+
+
+def _deviations(rates, fips):
+    """Cuánto se apartó cada año de la costumbre de sus 5 años anteriores, por transición."""
+    out = {}
+    r = rates.get(fips, {})
+    for y in sorted(r):
+        if "a" in r[y] and "b" in r[y]:
+            a, b, _, _ = _habit(rates, fips, y)
+            if a is None or b is None:
+                continue
+            p, act = _shares(a, b), _shares(r[y]["a"], r[y]["b"])
+            if p and act:
+                for k in p:
+                    out.setdefault(k, []).append(act[k] - p[k])
+    return out
+
+
+def crop_mix(fips, rates, neighbors, nxt):
+    """Mezcla esperada para la temporada `nxt` (la siguiente al último mapa del CDL, igual para todos los condados)."""
+    a, b, na, nb_ = _habit(rates, fips, nxt)
+    near = [g for g in neighbors.get(fips, []) if g in rates]
+    filled = []
+    if a is None or b is None:
+        ta = [x for x in (_habit(rates, g, nxt)[0] for g in near) if x is not None]
+        tb = [x for x in (_habit(rates, g, nxt)[1] for g in near) if x is not None]
+        if a is None and ta:
+            a = statistics.median(ta)
+            filled.append("corn after corn")
+        if b is None and tb:
+            b = statistics.median(tb)
+            filled.append("soybeans after soybeans")
+    if a is None or b is None:
+        return None
+    mid = _shares(a, b)
+    if not mid:
+        return None
+    dev = {}
+    for g in [fips] + near:
+        for k, v in _deviations(rates, g).items():
+            dev.setdefault(k, []).extend(v)
+
+    def pct(x):
+        return round(100 * min(1, max(0, x)), 1)
+
+    def rng(k):
+        v = dev.get(k, [])
+        if len(v) < 4:
+            return {"pct": pct(mid[k]), "low": None, "high": None}
+        return {"pct": pct(mid[k]), "low": pct(mid[k] + _pctl(v, 0.05)), "high": pct(mid[k] + _pctl(v, 0.95))}
+
+    corn = rng("corn")
+    width = (corn["high"] - corn["low"]) if corn["low"] is not None else None
+    years = sorted(y for y in range(nxt - MIX_YEARS, nxt) if y in rates.get(fips, {}))
+    if filled or width is None or min(na, nb_) < 3 or width > 10:
+        level = "low"
+    elif width <= 6:
+        level = "high"
+    else:
+        level = "medium"
+    if filled:
+        reason = f"Filled from similar counties: {', '.join(filled)}."
+    elif width is None:
+        reason = "Too few past years to know how much it moves."
+    else:
+        reason = (f"From {min(na, nb_)} of the last {MIX_YEARS} USDA crop maps. In most years the corn share here and in "
+                  f"similar counties moved within about {width:.0f} points.")
+    return {
+        "season": nxt,
+        "basis": "corn_soy_ground",
+        "years": years,
+        "items": [{"from": f, "to": t, **rng((f, t))} for f, t in MIX_KEYS],
+        "corn_pct": corn,
+        "neighbors": near,
+        "filled_from_neighbors": filled,
+        "confidence": {"level": level, "reason": reason},
+        "method": (f"This county's usual crop changes over its last {MIX_YEARS} USDA crop maps, assuming its corn and soybean "
+                   "area stays about the same. The range is how far this county and its 5 most similar counties moved away "
+                   "from their own habit in past years (most years fall inside). It does not use prices or the yield model yet."),
+        "source": MIX_SRC,
+        "prototype": False,
+    }
+
+
 def cdl_context(fips, explic):
     """Mezcla de rotaciones del condado: del CDL de la pantalla 2 si existe; si no, la frase del modelo."""
     p = WEB / "public" / "data" / "county" / f"{fips}.json"
     if p.exists():
-        c = json.loads(p.read_text())
+        c = json.loads(p.read_text(encoding="utf-8"))
         rot = c.get("common_rotations")
         if rot and rot.get("items"):
             items = [{"from": i["from"], "to": i["to"], "label": i["label"], "pct": round(i["pct"], 1)}
@@ -224,8 +423,12 @@ def income_missing(fips, prices):
 def main():
     ranges = load_ranges()
     prices = load_prices()
-    explic = json.loads((ML / "front" / "explicaciones.json").read_text())
-    twins = json.loads((ML / "front" / "gemelos.json").read_text())
+    scen = load_scenarios()
+    rates = load_rotation_rates()
+    neighbors = load_neighbors()
+    mix_season = max(y for r in rates.values() for y in r) + 1
+    explic = json.loads((ML / "front" / "explicaciones.json").read_text(encoding="utf-8"))
+    twins = json.loads((ML / "front" / "gemelos.json").read_text(encoding="utf-8"))
     OUT.mkdir(parents=True, exist_ok=True)
     written = []
     for fips, ex in explic["counties"].items():
@@ -251,6 +454,8 @@ def main():
             "prototype": False,
             "note": explic.get("note"),
             "default_crop": "corn",
+            "prediction": predict(fips, scen, prices),
+            "mix": crop_mix(fips, rates, neighbors, mix_season),
             "rotation_context": cdl_context(fips, ex),
             "crops": crops,
             "twins": [{**t, "source": t.get("source", ""), "prototype": bool(t.get("prototype"))} for t in (tc or {}).get("twins", [])],

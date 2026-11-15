@@ -23,10 +23,23 @@ export type IconName =
   | 'pin'
   | 'bars'
   | 'arrow'
-  | 'open';
+  | 'open'
+  | 'expand'
+  | 'close'
+  | 'recenter';
 
 const PATHS: Record<IconName, ReactNode> = {
   back: <path d="M15 5l-7 7 7 7" />,
+  // cuatro esquinas hacia afuera: pantalla completa
+  expand: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,
+  close: <path d="M6 6l12 12M18 6L6 18" />,
+  // mira: volver al encuadre
+  recenter: (
+    <>
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
+    </>
+  ),
   // Escudo con tilde: menos riesgo
   shield: (
     <>

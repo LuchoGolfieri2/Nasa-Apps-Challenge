@@ -1,6 +1,7 @@
 /**
  * F24 — "Counties like yours" sobre el globo: el mismo globo de la pantalla 1 (deck.gl, NASA Blue Marble de GIBS)
- * de fondo, quieto (el usuario no lo mueve), con arcos en 3D del condado a sus condados gemelos.
+ * de fondo, con arcos en 3D del condado a sus condados gemelos. Quieto por defecto; con `interactive` el usuario lo
+ * gira arrastrando y lo acerca con la rueda (pantalla completa de Next season), y `recenterKey` lo devuelve al encuadre.
  * Reemplaza al mapa plano que había antes (TwinArcs).
  * Los arcos se dibujan `delayMs` después de montarse o de cambiar `animateKey`.
  */
@@ -22,7 +23,14 @@ export interface TwinGlobeProps {
   delayMs?: number;
   selected?: string | null;
   onSelect?: (fips: string | null) => void;
+  /** Márgenes del encuadre en fracción del contenedor (para dejar libre el lugar de paneles que flotan encima) */
+  frame?: Frame;
+  /** true: se arrastra y se hace zoom libremente (pantalla completa) */
+  interactive?: boolean;
+  /** al cambiar, la cámara vuelve al encuadre del condado y sus gemelos */
+  recenterKey?: number;
 }
+export type Frame = {left: number; right: number; top: number; bottom: number};
 
 type RGB = [number, number, number];
 type Pt = [number, number];
@@ -52,6 +60,9 @@ const FLOW_KM_S = 90;
 const PULSE_MS = 1800;
 /** Encuadre mínimo (km de ancho): con gemelos muy cerca, el zoom no se pasa de largo */
 const MIN_SPAN_KM = 260;
+/** Límites del zoom cuando el usuario mueve el globo */
+const ZOOM_MIN = 1.2;
+const ZOOM_MAX = 9;
 // las capas no escriben profundidad: entre ellas manda el orden (ver la nota en map/globe.js)
 const SURFACE = {depthWriteEnabled: false, depthCompare: 'always' as const};
 
@@ -69,7 +80,7 @@ const COUNTY_BOUNDS = new Map(
   (D.counties as unknown as Array<{id: string; bounds: [Pt, Pt]}>).map((c) => [c.id, c.bounds] as const),
 );
 /** Márgenes del encuadre, en fracción del contenedor: arriba hay más lugar para los rótulos. */
-const PAD = {x: 0.1, top: 0.16, bottom: 0.1};
+const PAD: Frame = {left: 0.1, right: 0.1, top: 0.16, bottom: 0.1};
 
 const groundKm = (a: Pt, b: Pt) => Math.hypot((b[0] - a[0]) * Math.cos(((a[1] + b[1]) / 2) * rad), b[1] - a[1]) * 111.32;
 
@@ -119,7 +130,7 @@ function dashes(path: number[][], km: number, shift: number, reach: number): num
  * altura) dentro de los márgenes PAD. Al cambiar de opción, la cámara viaja al encuadre nuevo. Se mide con la
  * proyección real del globo (varias pasadas: cada una corrige centro y zoom).
  */
-function fitView(w: number, h: number, origin: Pt, twins: Twin[], fipsList: string[]) {
+function fitView(w: number, h: number, origin: Pt, twins: Twin[], fipsList: string[], pad: Frame = PAD) {
   const probe: number[][] = [];
   for (const id of fipsList) {
     const bounds = COUNTY_BOUNDS.get(id);
@@ -143,10 +154,10 @@ function fitView(w: number, h: number, origin: Pt, twins: Twin[], fipsList: stri
   let longitude = (Math.min(...lons) + Math.max(...lons)) / 2;
   let latitude = (Math.min(...lats) + Math.max(...lats)) / 2;
   let zoom = 4;
-  const usableW = w * (1 - 2 * PAD.x);
-  const usableH = h * (1 - PAD.top - PAD.bottom);
-  const targetX = w / 2;
-  const targetY = h * PAD.top + usableH / 2;
+  const usableW = w * (1 - pad.left - pad.right);
+  const usableH = h * (1 - pad.top - pad.bottom);
+  const targetX = w * pad.left + usableW / 2;
+  const targetY = h * pad.top + usableH / 2;
   for (let pass = 0; pass < 4; pass++) {
     const vp = new GlobeViewport({width: w, height: h, longitude, latitude, zoom});
     const xy = probe.map((p) => vp.project(p));
@@ -172,7 +183,7 @@ type Box = [number, number, number, number];
 const overlaps = (a: Box, b: Box) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
 type Label = {fips: string; text: string; x: number; y: number; anchor: 'start' | 'end'; origin?: boolean; dim?: boolean};
 
-export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, animateKey, delayMs = 1000, selected, onSelect}) => {
+export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, animateKey, delayMs = 1000, selected, onSelect, frame, interactive = false, recenterKey = 0}) => {
   const host = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const deckRef = useRef<Deck<any> | null>(null);
@@ -213,7 +224,7 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
       parent: el,
       views: new GlobeView({id: 'twin-globe', resolution: 5}),
       initialViewState: {longitude: -93, latitude: 40, zoom: 3},
-      controller: false, // quieto: el usuario no lo mueve
+      controller: false, // quieto hasta que `interactive` lo habilita
       useDevicePixels: 2,
       style: {position: 'absolute', inset: '0'},
       getCursor: ({isHovering}) => (isHovering ? 'pointer' : 'default'),
@@ -231,6 +242,32 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
       deckRef.current = null;
     };
   }, []);
+
+  // con `interactive`, el usuario gira (arrastrando) y acerca (rueda o pellizco); la cámara queda donde la deja
+  const [dragging, setDragging] = useState(false);
+  useEffect(() => {
+    const deck = deckRef.current;
+    if (!deck) return;
+    deck.setProps({
+      controller: interactive ? {inertia: 300, scrollZoom: {speed: 0.01, smooth: true}, dragRotate: false, touchRotate: false, keyboard: true} : false,
+      onViewStateChange: interactive
+        ? ({viewState, interactionState}) => {
+            // la vista la controla este componente (viewState en las capas): acá solo se guarda, acotada
+            const vs = viewState as unknown as {longitude: number; latitude: number; zoom: number};
+            const v = {
+              longitude: vs.longitude,
+              latitude: Math.max(-80, Math.min(80, vs.latitude)),
+              zoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, vs.zoom)),
+            };
+            setDragging(Boolean(interactionState?.isDragging || interactionState?.isPanning));
+            viewRef.current = v;
+            setView(v);
+            setSettled(true);
+          }
+        : undefined,
+      getCursor: ({isHovering, isDragging}) => (isHovering ? 'pointer' : interactive ? (isDragging ? 'grabbing' : 'grab') : 'default'),
+    });
+  }, [interactive]);
 
   // reloj continuo para el latido de los recuadros y el avance de los trazos; quieto con movimiento reducido
   useEffect(() => {
@@ -268,9 +305,10 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
   const fit = useMemo(
     () =>
       size[0] && size[1]
-        ? fitView(size[0], size[1], origin.centroid, on, [origin.fips, ...on.map((t) => t.fips)])
+        ? fitView(size[0], size[1], origin.centroid, on, [origin.fips, ...on.map((t) => t.fips)], frame)
         : null,
-    [size, origin.centroid, origin.fips, on],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [size, origin.centroid, origin.fips, on, frame && `${frame.left},${frame.right},${frame.top},${frame.bottom}`, recenterKey],
   );
   // cámara: la primera vez baja hacia el encuadre; después viaja de un encuadre al otro
   useEffect(() => {
@@ -544,7 +582,11 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
   });
 
   return (
-    <div className="fr-twinglobe" role="img" aria-label={`Globe with arcs from ${origin.name} County to ${on.length} similar counties, listed below`}>
+    <div
+      className={`fr-twinglobe${interactive ? ' is-interactive' : ''}${dragging ? ' is-dragging' : ''}`}
+      role="img"
+      aria-label={`Globe with arcs from ${origin.name} County to ${on.length} similar counties${interactive ? '. Drag to turn it, scroll or pinch to zoom' : ', listed below'}`}
+    >
       <div ref={host} className="fr-twinglobe-canvas" />
       <div className="fr-twinglobe-labels" aria-hidden="true">
         {shownLabels.map((l) => (

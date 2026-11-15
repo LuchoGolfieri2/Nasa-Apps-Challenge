@@ -1,177 +1,315 @@
 /**
- * Pantalla 3 — "Next season" (F21, F22, F23, F24), con datos reales de ML y del CDL.
+ * Pantalla 3 — "Next season" (F21, F22, F24), con datos reales de ML y del CDL.
  *
- * La página se recorre con scroll, una idea por tramo:
- *   1. Qué vas a sembrar y qué te importa (arriba, al lado del título), con las secuencias más comunes del condado (CDL)
- *   2. Las tres opciones lado a lado, cada una con su rango (mal año / típico / buen año) sobre el mismo eje en bu/acre.
- *      La sugerida va en tarjeta clara. Al abrir una tarjeta, el panel de abajo muestra sus razones y sus riesgos.
- *   3. Lo que todavía no se sabe (faltantes, escritos)
- *   4. Condados parecidos de la opción abierta, sobre el globo, y cultivos nuevos para explorar
+ * Desde el 15/11 la pantalla no tiene elecciones: muestra la predicción del modelo para la próxima campaña, una sola
+ * opción. Para cada clima pasado (2009–2023) el modelo predice maíz y soja en tres rotaciones; gana la que más deja por
+ * acre ese año, y la probabilidad es la parte de esos años en que ganó (scripts/build_next_json.py, `prediction`).
+ * El cultivo y las prioridades del productor quedan en My Farm.
+ *
+ * La página se recorre con scroll:
+ *   1. Escenario (como "See more" de la historia): el globo con los condados parecidos y, encima en vidrio,
+ *      - la mezcla esperada de cultivos (`mix`): qué parte del terreno de maíz y soja va a cada cambio de cultivo,
+ *        con su rango (capas 1 y 2: costumbre del condado en el CDL y desvíos de los condados parecidos)
+ *      - lo que paga más por acre (`prediction`), con su probabilidad y los 15 climas pasados (cada uno lleva a la
+ *        historia en ese año). No es lo que va a sembrar todo el condado.
+ *   2. De dónde sale cada parte (mapas del CDL, clima, modelo, precios y costos, gemelos)
+ *   3. Las cifras de lo que paga más: rinde típico, diferencia con lo habitual, ingreso y confianza
+ *   4. Por qué y qué puede salir mal
+ *   5. El detalle de los condados parecidos
+ *   6. Lo que todavía no se sabe
  *
  * Uso:  <NextSeason data={json} onYearClick={(y) => navigate(`#/county/${fips}?year=${y}`)} />
  */
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {CropIcon} from '../ui/CropIcon';
 import {CountUp} from '../ui/CountUp';
 import {Confidence, ModelRuleTag, PrototypeStamp, SourceChip} from './bits';
 import {Icon, PRIORITY_ICON, similarIcon} from './icons';
-import {commonAxis, suggest} from './suggest';
+import type {IconName} from './icons';
 import {TwinGlobe} from './TwinGlobe';
+import type {Frame} from './TwinGlobe';
 import {CROP_COLOR, CROP_LABEL, type DisplayCrop} from '../ui/crops';
-import {PRIORITY_LABEL} from './types';
-import type {CropId, NextData, NextOption, PlanCrop, Priority, Reason, Twin} from './types';
+import type {CropId, CropMix, MixValue, NextData, NextOption, Prediction, Reason, Twin} from './types';
 import './next.css';
 
-const PRIORITIES: Priority[] = ['risk', 'income', 'soil', 'water'];
-const COUNT_WORD = ['No', 'One', 'Two', 'Three', 'Four', 'Five'];
-
 const CropDot: React.FC<{crop: DisplayCrop; size?: number}> = ({crop, size = 20}) => <CropIcon crop={crop} size={size} />;
-/** La avena llega del modelo como "other" (no es una clase del CDL): aquí vuelve a ser avena. */
-const exploreCrop = (x: {id: string; crop: CropId}): DisplayCrop => (x.id === 'oats' ? 'oats' : x.crop);
+
+/** El globo deja libre la columna de vidrio de la derecha y la fila de gemelos de abajo */
+const STAGE_FRAME: Frame = {left: 0.08, right: 0.44, top: 0.2, bottom: 0.2};
+/** En pantalla completa el globo usa casi todo el lugar (solo los botones de arriba y los gemelos de abajo) */
+const FULL_FRAME: Frame = {left: 0.08, right: 0.08, top: 0.16, bottom: 0.18};
+
+type StagePhase = 'in' | 'opening' | 'open' | 'closing';
+type Box = {top: number; left: number; width: number; height: number};
+const FULL_MS = 480;
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const boxOf = (el: Element): Box => {
+  const r = el.getBoundingClientRect();
+  return {top: r.top, left: r.left, width: r.width, height: r.height};
+};
+
+/**
+ * Globo a pantalla completa con animación (FLIP): el escenario pasa a `position: fixed` en el mismo lugar donde
+ * estaba, y en el cuadro siguiente viaja a ocupar toda la ventana. Al cerrar hace el camino inverso hasta el hueco
+ * que dejó en la página. Escape cierra, la página no se desplaza mientras está abierto y el foco va y vuelve.
+ */
+function useFullStage() {
+  const stageRef = useRef<HTMLElement>(null);
+  const holeRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const [phase, setPhase] = useState<StagePhase>('in');
+  const [box, setBox] = useState<Box | null>(null);
+  const [holeH, setHoleH] = useState(0);
+  const [recenter, setRecenter] = useState(0);
+  const backFromFull = useRef(false);
+
+  const open = () => {
+    const el = stageRef.current;
+    if (!el || phase !== 'in') return;
+    const b = boxOf(el);
+    setHoleH(b.height);
+    setBox(b);
+    setPhase('opening');
+  };
+  const close = () => {
+    if (phase !== 'open' && phase !== 'opening') return;
+    const hole = holeRef.current;
+    if (hole) setBox(boxOf(hole));
+    setPhase('closing');
+  };
+
+  useEffect(() => {
+    if (phase === 'opening') {
+      // dos cuadros: primero se pinta fijo en su lugar; después viaja a pantalla completa
+      let r2 = 0;
+      const r1 = requestAnimationFrame(() => {
+        r2 = requestAnimationFrame(() => {
+          setBox(null);
+          setPhase('open');
+        });
+      });
+      return () => {
+        cancelAnimationFrame(r1);
+        cancelAnimationFrame(r2);
+      };
+    }
+    if (phase === 'open') {
+      closeRef.current?.focus({preventScroll: true});
+    }
+    // el foco vuelve al botón que abrió, ya visible otra vez
+    if (phase === 'in' && backFromFull.current) {
+      backFromFull.current = false;
+      openerRef.current?.focus({preventScroll: true});
+    }
+    if (phase === 'closing') {
+      const t = window.setTimeout(() => {
+        setBox(null);
+        setPhase('in');
+        backFromFull.current = true;
+      }, reduceMotion() ? 0 : FULL_MS);
+      return () => window.clearTimeout(t);
+    }
+    return undefined;
+  }, [phase]);
+
+  const active = phase !== 'in';
+  useEffect(() => {
+    if (!active) return;
+    const html = document.documentElement;
+    const prev = html.style.overflow;
+    html.style.overflow = 'hidden';
+    return () => {
+      html.style.overflow = prev;
+    };
+  }, [active]);
+
+  useEffect(() => {
+    if (phase !== 'open') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  return {phase, active, box, holeH, recenter, stageRef, holeRef, openerRef, closeRef, open, close, recenterNow: () => setRecenter((n) => n + 1)};
+}
+
 
 const fmt = (v: number) => Math.round(v).toString();
 const usd = (v: number) => `$${Math.round(v).toLocaleString('en-US')}`;
 const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${Math.abs(Math.round(v))}`;
-/** El JSON trae "→" en las secuencias; en pantalla se lee mejor con palabras. */
-const sequence = (label: string) => label.replace(/\s*→\s*/g, ', then ').replace(/, then ([A-Z])/g, (_, c: string) => `, then ${c.toLowerCase()}`);
 
 export interface NextSeasonProps {
   data: NextData;
-  initialPriorities?: Priority[];
-  /** My Farm (F29): el cultivo que el productor piensa sembrar y la opción que coincide con su rotación */
-  initialCrop?: PlanCrop;
-  farmPlanId?: string | null;
-  /** F23: clic en un año de una razón → Historia del condado en ese año */
+  /** F23: clic en un año → Historia del condado en ese año */
   onYearClick?: (year: number) => void;
 }
 
-export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities = ['risk'], initialCrop, farmPlanId = null, onYearClick}) => {
-  const [crop, setCrop] = useState<PlanCrop>(initialCrop && data.crops[initialCrop] ? initialCrop : data.default_crop);
-  const [priorities, setPriorities] = useState<Priority[]>(initialPriorities);
-  const [focusId, setFocusId] = useState<string | null>(null); // tarjeta que el usuario abrió
+/** Busca una opción por id en los dos cultivos */
+function findOption(data: NextData, id: string): NextOption | undefined {
+  for (const plan of Object.values(data.crops)) {
+    const o = plan.options.find((x) => x.id === id);
+    if (o) return o;
+  }
+  return undefined;
+}
+
+export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
   const [twinSel, setTwinSel] = useState<string | null>(null);
-
-  const plan = data.crops[crop];
-  const options = plan.options;
-  const result = useMemo(() => suggest(options, priorities), [options, priorities]);
-  const axis = useMemo(() => commonAxis(options), [options]);
-  const winner = result.winner;
-  const focus = options.find((o) => o.id === focusId) ?? winner ?? options[0];
-  const focusIndex = options.indexOf(focus);
-  const usual = options.find((o) => o.is_current)?.yield_bu_ac?.median ?? null;
+  const full = useFullStage();
+  const pred = data.prediction ?? null;
+  const option = pred ? findOption(data, pred.option_id) : undefined;
   const twinById = useMemo(() => Object.fromEntries(data.twins.map((t) => [t.fips, t])), [data.twins]);
-  const focusTwins = useMemo(() => focus.twins.map((f) => twinById[f]).filter(Boolean) as Twin[], [focus, twinById]);
-  const ctx = data.rotation_context;
+  const goYear = (year: number) => (onYearClick ? onYearClick(year) : (window.location.hash = `#/county/${data.fips}?year=${year}`));
 
-  const toggle = (p: Priority) => {
-    setPriorities((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
-    setFocusId(null);
-  };
-  const pickCrop = (c: PlanCrop) => {
-    setCrop(c);
-    setFocusId(null);
-    setTwinSel(null);
-  };
-  const open = (id: string, reveal = false) => {
-    setFocusId(id);
-    setTwinSel(null);
-    // en pantallas angostas las tarjetas van apiladas y el detalle queda lejos: se lo trae a la vista
-    if (reveal && window.matchMedia('(max-width: 860px)').matches) {
-      requestAnimationFrame(() => document.getElementById('ns-detail')?.scrollIntoView({behavior: 'smooth', block: 'start'}));
+  if (!pred || !option) {
+    return (
+      <div className="ns">
+        <header className="ns-head ns-head--pred">
+          <div>
+            <p className="ns-kicker">Model prediction for next season</p>
+            <h1>Next season</h1>
+          </div>
+        </header>
+        <p className="ns-box ns-box--missing ns-pred-missing">
+          <b className="ns-missing">Missing data:</b> no prediction for this county. The model needs a USDA price and cost for corn and
+          soybeans in {data.state} to compare them.
+        </p>
+      </div>
+    );
+  }
+
+  const plan = data.crops[option.crop];
+  const usual = plan.options.find((o) => o.is_current)?.yield_bu_ac?.median ?? null;
+  const twins = option.twins.map((f) => twinById[f]).filter(Boolean) as Twin[];
+  const pros = option.reasons.filter((r) => r.pro);
+  const cons = option.reasons.filter((r) => !r.pro);
+  const title = option.is_current ? `${plan.label}, the usual mix` : option.label;
+  const anyPrototype = data.prototype || option.prototype || pred.prototype;
+
+  const optName = option.is_current ? 'the usual mix' : option.label.toLowerCase();
+  const pickTwin = (f: string | null, scroll = false) => {
+    setTwinSel(f);
+    if (scroll && f) {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      document.getElementById('ns-stage')?.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'});
     }
   };
-  const goYear = (year: number) => (onYearClick ? onYearClick(year) : (window.location.hash = `#/county/${data.fips}?year=${year}`));
-  const anyPrototype = data.prototype || options.some((o) => o.prototype);
-
-  /** La razón que ya se lee en la tarjeta: la primera a favor de la sugerida, o la primera de la opción. */
-  const lead = (o: NextOption): Reason | undefined => (o.id === winner?.id ? result.reasons[0] : o.reasons[0]);
-  const focusLead = lead(focus);
-  const pros = focus.reasons.filter((r) => r.pro && r !== focusLead);
-  const cons = focus.reasons.filter((r) => !r.pro && r !== focusLead);
 
   return (
     <div className="ns">
-      <header className="ns-head">
-        <div>
-          {anyPrototype ? (
-            <p className="ns-where">
-              <PrototypeStamp />
+      {/* ESCENARIO: el globo con los condados parecidos y, encima en vidrio, la predicción y de dónde sale */}
+      {/* el hueco que deja el escenario mientras está a pantalla completa, para que la página no salte */}
+      {full.active ? <div ref={full.holeRef} className="ns-stage-hole" style={{height: full.holeH}} aria-hidden="true" /> : null}
+      <section
+        id="ns-stage"
+        ref={full.stageRef}
+        className={`ns-stage${full.active ? ' is-fixed' : ''}${full.phase === 'open' ? ' is-full' : ''}`}
+        style={full.box ?? undefined}
+        aria-label={full.phase === 'open' ? `${data.name} County and similar counties on the globe` : 'Next season prediction over the globe'}
+        role={full.active ? 'dialog' : undefined}
+        aria-modal={full.active ? true : undefined}
+      >
+        {data.centroid ? (
+          <TwinGlobe
+            origin={{fips: data.fips, name: data.name, centroid: data.centroid}}
+            twins={data.twins}
+            highlight={option.twins}
+            animateKey={option.id}
+            selected={twinSel}
+            onSelect={setTwinSel}
+            frame={full.phase === 'opening' || full.phase === 'open' ? FULL_FRAME : STAGE_FRAME}
+            interactive={full.phase === 'open'}
+            recenterKey={full.recenter}
+          />
+        ) : (
+          <p className="ns-glass ns-nogeo">
+            <b>Missing data:</b> county location.
+          </p>
+        )}
+
+        <div className="ns-stage-left">
+          <p className="ns-glass ns-pill">
+            <Icon name="pin" size={16} />
+            {twins.length} similar {twins.length === 1 ? 'county' : 'counties'} grew {optName}
+          </p>
+          {anyPrototype ? <PrototypeStamp /> : null}
+        </div>
+
+        <aside className="ns-scol">
+          <MixCard mix={data.mix} />
+          <section className="ns-glass ns-best" aria-labelledby="ns-best-h">
+            <p className="ns-kicker">
+              <Icon name="star" size={16} />
+              What pays best per acre
             </p>
-          ) : null}
-          <h1>
-            {COUNT_WORD[options.length] ?? options.length} ways to plant {plan.label.toLowerCase()} next season
-          </h1>
-        </div>
-        <div className="ns-picks">
-          <span id="ns-pick-crop">Planting</span>
-          <div className="ns-chips" role="radiogroup" aria-labelledby="ns-pick-crop">
-            {(Object.keys(data.crops) as PlanCrop[]).map((c) => (
-              <button key={c} type="button" role="radio" aria-checked={c === crop} className={`ns-chip ${c === crop ? 'on' : ''}`} onClick={() => pickCrop(c)}>
-                <CropDot crop={c} />
-                {data.crops[c].label}
-              </button>
-            ))}
+            <h2 id="ns-best-h">
+              <span className="ns-shead-ico">
+                <CropDot crop={option.crop} size={24} />
+              </span>
+              {title}
+            </h2>
+            <Odds pred={pred} />
+            <Seasons data={data} pred={pred} onYear={goYear} />
+          </section>
+        </aside>
+
+        {full.active ? (
+          <div className="ns-full-bar">
+            <p className="ns-glass ns-full-hint">Drag to turn the globe · scroll or pinch to zoom</p>
+            <button type="button" className="ns-glass ns-full-btn" onClick={full.recenterNow}>
+              <Icon name="recenter" size={18} />
+              Recenter
+            </button>
+            <button type="button" ref={full.closeRef} className="ns-full-close solid-btn" onClick={full.close}>
+              <Icon name="close" size={18} />
+              Close
+            </button>
           </div>
-          <span id="ns-pick-prio">What matters most</span>
-          <div className="ns-chips" role="group" aria-labelledby="ns-pick-prio">
-            {PRIORITIES.map((p) => (
-              <button key={p} type="button" aria-pressed={priorities.includes(p)} className={`ns-chip ${priorities.includes(p) ? 'on' : ''}`} onClick={() => toggle(p)}>
-                <Icon name={PRIORITY_ICON[p]} size={18} />
-                {PRIORITY_LABEL[p]}
-              </button>
-            ))}
-          </div>
+        ) : null}
+
+        <div className="ns-stage-foot">
+          {twins.length ? (
+            <ul className="ns-stage-twins" aria-label="Similar counties">
+              {twins.map((t) => (
+                <li key={t.fips}>
+                  <button type="button" className={`ns-glass ns-stwin ${twinSel === t.fips ? 'on' : ''}`} aria-pressed={twinSel === t.fips} onClick={() => pickTwin(twinSel === t.fips ? null : t.fips)}>
+                    <b>{t.name}</b>
+                    <small>{t.state}</small>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="ns-glass ns-pill">
+              <b>Missing data:</b> no similar county backs this option yet.
+            </p>
+          )}
+          <button type="button" ref={full.openerRef} className="ns-open solid-btn" onClick={full.open} aria-expanded={full.active}>
+            Open in the map
+            <Icon name="expand" size={18} />
+          </button>
         </div>
-      </header>
-
-      {result.unscored.length ? (
-        <p className="ns-unscored">
-          {result.unscored.map((p) => (
-            <span key={p}>
-              <b className="ns-missing">Missing data:</b> {PRIORITY_LABEL[p].toLowerCase()} ({p === 'income' ? 'no yield range to turn into income' : 'no data separates these options'}). Not used in the suggestion.{' '}
-            </span>
-          ))}
-        </p>
-      ) : null}
-
-      {ctx.items.length ? (
-        <p className="ns-seq">
-          <span>Most common here</span>
-          {ctx.items.slice(0, 3).map((it) => (
-            <b key={it.label}>
-              {sequence(it.label)} {fmt(it.pct)}%
-            </b>
-          ))}
-          <SourceChip source={ctx.source} />
-        </p>
-      ) : ctx.text?.[crop] ? (
-        <p className="ns-seq">
-          <b>{ctx.text[crop]}</b> <SourceChip source={ctx.source} />
-        </p>
-      ) : null}
-
-      {!winner ? (
-        <p className="ns-nowinner" aria-live="polite">
-          <b>Pick a priority to get a suggestion.</b>{' '}
-          {priorities.length ? 'The priorities you picked cannot be scored yet. The options below stay comparable.' : 'The options below stay comparable, each with its range.'}
-        </p>
-      ) : null}
-
-      {/* LA RESPUESTA PRIMERO: la sugerida en cifras, para el que quiere el dato directo */}
-      {winner ? <Answer option={winner} usual={usual} onWhy={() => open(winner.id, true)} /> : null}
-
-      {/* TRES OPCIONES, EJE COMÚN EN BU/ACRE */}
-      <section className="ns-cards" aria-label="Options for next season" style={{['--n' as string]: options.length}}>
-        {options.map((o) => (
-          <OptionCard key={o.id} option={o} axis={axis} usual={usual} suggested={winner?.id === o.id} mine={farmPlanId === o.id} open={focus.id === o.id} note={lead(o)?.text ?? null} onOpen={() => open(o.id, true)} />
-        ))}
       </section>
 
-      <section id="ns-detail" className="ns-detail ns-paper" aria-live="polite" style={{['--at' as string]: focusIndex, ['--n' as string]: options.length}}>
+      <Sources data={data} pred={pred} option={option} twins={twins} />
+
+      <h2 className="ns-sec-h ns-best-h">
+        <span className="ns-shead-ico">
+          <CropDot crop={option.crop} size={24} />
+        </span>
+        {title}: what pays best, in numbers
+      </h2>
+      <Answer option={option} usual={usual} />
+
+      <section id="ns-detail" className="ns-detail ns-paper ns-detail--single" aria-label="Why and what could go wrong">
         <div>
           <h2 className="ns-detail-h ns-detail-h--pro">
             <Icon name="check" size={24} />
-            Why {focus.is_current ? 'keep your usual mix' : focus.label.toLowerCase()}
+            Why the model picks it
           </h2>
           <ul>
             {pros.length ? pros.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">Nothing else stands out in favor of this option in the data.</li>}
@@ -185,126 +323,71 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
           <ul>
             {cons.length ? cons.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">No risk specific to this option shows up in the data.</li>}
           </ul>
-          {focus.range_driver ? (
+          {option.range_driver ? (
             <p className="ns-driver">
-              {focus.range_driver.text} <SourceChip source={focus.range_driver.source_label ?? 'NASA POWER'} />
+              {option.range_driver.text} <SourceChip source={option.range_driver.source_label ?? 'NASA POWER'} />
             </p>
           ) : null}
         </div>
       </section>
       <p className="ns-unit">
         {plan.label} yield in bushels per acre, for the whole county: bad year (low 10%), typical year, good year (top 10%), with this county&apos;s weather since 2009. Tap a year to see it in the county history.{' '}
-        <SourceChip source={focus.source || 'Field Rewind model · 2009–2023'} />
+        <SourceChip source={option.source || 'Field Rewind model · 2009–2023'} />
       </p>
 
-      {/* GEMELOS: van antes que los faltantes, son la prueba de que la opción funciona cerca */}
-      <section className="ns-sec ns-twins" aria-labelledby="ns-twins-title">
-        <h2 id="ns-twins-title" className="ns-sec-h">
-          <Icon name="pin" size={30} />
-          Counties like yours
-        </h2>
-        <p className="ns-lead">
-          Counties with the same kind of soil and weather as {data.name} County. See what they plant, and why they count as a match.
-        </p>
-        <div className="ns-tabs">
-          <span id="ns-twins-for">Show counties for</span>
-          <div className="ns-chips" role="radiogroup" aria-labelledby="ns-twins-for">
-            {options.map((o) => (
-              <button key={o.id} type="button" role="radio" aria-checked={o.id === focus.id} className={`ns-chip ns-chip--sm ${o.id === focus.id ? 'on' : ''}`} onClick={() => open(o.id)}>
-                {o.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="ns-world">
-          <div className="ns-world-map">
-            {data.twins.some((t) => t.prototype) ? <PrototypeStamp /> : null}
-            {data.centroid ? (
-              <TwinGlobe origin={{fips: data.fips, name: data.name, centroid: data.centroid}} twins={data.twins} highlight={focus.twins} animateKey={focus.id} selected={twinSel} onSelect={setTwinSel} />
-            ) : (
-              <p className="ns-box ns-box--missing">
-                <b className="ns-missing">Missing data:</b> county location.
-              </p>
-            )}
-            <a className="ns-open solid-btn" href={`#/map/${data.fips}`}>
-              Open in the map
-              <Icon name="open" size={18} />
-            </a>
-          </div>
-          <div className="ns-side">
-            <h3>
-              {focusTwins.length} {focusTwins.length === 1 ? 'county' : 'counties'} for {focus.is_current ? 'your usual mix' : focus.label.toLowerCase()}
-            </h3>
-            {focus.twins_note ? (
-              <p className="ns-side-note">
-                {(focus.twins_note.text ?? focus.twins_note.confidence.reason).replace(/^Counties like yours[^:]*:\s*\d+\.\s*/, '')} <Confidence level={focus.twins_note.confidence.level} />
-              </p>
-            ) : null}
-            {focusTwins.length ? (
+      {/* GEMELOS de la opción predicha: el detalle de los que se ven en el globo de arriba */}
+      {twins.length ? (
+        <section className="ns-sec ns-twins ns-twins--list" aria-labelledby="ns-twins-title">
+          <h2 id="ns-twins-title" className="ns-sec-h">
+            <Icon name="pin" size={30} />
+            Similar counties
+          </h2>
+          <p className="ns-lead">
+            Counties with the same kind of soil and weather as {data.name} County that grew {optName}. Tap one to find it on the globe.
+            {option.twins_note ? (
               <>
-              <ol className="ns-twin-list">
-                {focusTwins.map((t) => (
-                  <li key={t.fips}>
-                    <button type="button" className={`ns-twin ${twinSel === t.fips ? 'on' : ''}`} aria-pressed={twinSel === t.fips} onClick={() => setTwinSel(twinSel === t.fips ? null : t.fips)}>
-                      <span className="ns-twin-name">
-                        <b>{t.name}</b>, {t.state}
-                      </span>
-                      <span className="ns-twin-why">
-                        <span className="ns-twin-label">Why it&apos;s like yours</span>
-                        <span className="ns-twin-reasons">
-                          {t.similar_on.length ? (
-                            t.similar_on.map((s) => (
-                              <span key={s} className="ns-why">
-                                <Icon name={similarIcon(s)} size={16} />
-                                {s.charAt(0).toUpperCase() + s.slice(1)}
-                              </span>
-                            ))
-                          ) : (
-                            <small className="ns-missing">Missing data: what makes it similar</small>
-                          )}
-                        </span>
-                      </span>
-                      <span className="ns-twin-why">
-                        <span className="ns-twin-label">What they plant</span>
-                        <CropSplit twin={t} />
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ol>
-              <p className="ns-side-src">
-                {[...new Set(focusTwins.map((t) => t.source))].map((src) => (
-                  <SourceChip key={src} source={src} />
-                ))}
-              </p>
+                {' '}
+                <Confidence level={option.twins_note.confidence.level} />
               </>
-            ) : (
-              <p className="ns-box ns-box--missing">
-                <b className="ns-missing">Missing data:</b> no county like yours backs this option yet.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {data.explore.map((x) => (
-          <div key={x.id} className="ns-new">
-            <div>
-              <h3>
-                <CropDot crop={exploreCrop(x)} /> Something new nearby: {x.label.toLowerCase()}
-              </h3>
-              <p>
-                {x.twins.length} counties like yours grow it. From those counties, not from the model: similar soil and weather doesn&apos;t guarantee the same result.
-              </p>
-            </div>
-            <p className="ns-new-range">
-              {fmt(x.range.p10)}–{fmt(x.range.p90)}
-              <small>bu/ac, typical {fmt(x.range.median)}</small>
-              {x.income_usd_ac ? <small className="ns-new-income">About {usd(x.income_usd_ac.median)}/acre after operating costs</small> : null}
-            </p>
-            <Confidence level={x.confidence.level} />
-          </div>
-        ))}
-      </section>
+            ) : null}
+          </p>
+          <ol className="ns-twin-grid">
+            {twins.map((t) => (
+              <li key={t.fips}>
+                <button type="button" className={`ns-twin ${twinSel === t.fips ? 'on' : ''}`} aria-pressed={twinSel === t.fips} onClick={() => pickTwin(t.fips, true)}>
+                  <span className="ns-twin-name">
+                    <b>{t.name}</b>, {t.state}
+                  </span>
+                  <span className="ns-twin-why">
+                    <span className="ns-twin-label">Why it&apos;s similar</span>
+                    <span className="ns-twin-reasons">
+                      {t.similar_on.length ? (
+                        t.similar_on.map((s) => (
+                          <span key={s} className="ns-why">
+                            <Icon name={similarIcon(s)} size={16} />
+                            {s.charAt(0).toUpperCase() + s.slice(1)}
+                          </span>
+                        ))
+                      ) : (
+                        <small className="ns-missing">Missing data: what makes it similar</small>
+                      )}
+                    </span>
+                  </span>
+                  <span className="ns-twin-why">
+                    <span className="ns-twin-label">What they plant</span>
+                    <CropSplit twin={t} />
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+          <p className="ns-side-src">
+            {[...new Set(twins.map((t) => t.source))].map((src) => (
+              <SourceChip key={src} source={src} />
+            ))}
+          </p>
+        </section>
+      ) : null}
 
       {/* FALTANTES */}
       {data.missing.length ? (
@@ -323,32 +406,197 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
         </section>
       ) : null}
 
-      <p className="ns-foot">Decision support for the whole county, not a single field. It does not replace your agronomist.</p>
+      <p className="ns-foot">
+        A prediction for the whole county, not a single field. To compare options for one farm, with its crop and priorities, use My Farm. It does not replace an agronomist.
+      </p>
     </div>
   );
 };
 
-/** La sugerida en cuatro cifras, arriba de todo: rinde típico, diferencia con lo habitual, ingreso y confianza. */
-const Answer: React.FC<{option: NextOption; usual: number | null; onWhy: () => void}> = ({option: o, usual, onWhy}) => {
+/** La mezcla esperada: qué parte del terreno de maíz y soja va a cada cambio de cultivo (capas 1 y 2) */
+const MixCard: React.FC<{mix: CropMix | null | undefined}> = ({mix}) => {
+  if (!mix) {
+    return (
+      <section className="ns-glass ns-mix" aria-labelledby="ns-mix-h">
+        <p className="ns-kicker">
+          <Icon name="layers" size={16} />
+          Expected crop mix next season
+        </p>
+        <h1 id="ns-mix-h" className="visually-hidden">
+          Expected crop mix next season
+        </h1>
+        <p className="ns-mix-missing">
+          <b>Missing data:</b> no recent USDA crop maps for this county or its similar counties.
+        </p>
+      </section>
+    );
+  }
+  const corn = mix.corn_pct;
+  const soy = 100 - corn.pct;
+  const top = Math.max(50, ...mix.items.map((i) => i.high ?? i.pct));
+  const at = (v: number) => `${(v / top) * 100}%`;
+  const r = (v: number) => Math.round(v);
+  const span = (v: MixValue) => (v.low != null && v.high != null ? `${r(v.low)}–${r(v.high)}%` : null);
+  return (
+    <section className="ns-glass ns-mix" aria-labelledby="ns-mix-h">
+      {mix.prototype ? <PrototypeStamp /> : null}
+      <p className="ns-kicker">
+        <Icon name="layers" size={16} />
+        Expected crop mix next season
+      </p>
+      <h1 id="ns-mix-h">
+        About {r(corn.pct)}% corn, {r(soy)}% soybeans
+      </h1>
+      <div className="ns-mix-split" aria-hidden="true">
+        <i style={{flexGrow: corn.pct, background: CROP_COLOR.corn}} />
+        <i style={{flexGrow: soy, background: CROP_COLOR.soy}} />
+      </div>
+      <p className="ns-mix-sub">
+        Of the county&apos;s corn and soybean ground.{span(corn) ? ` Corn lands between ${span(corn)} in most years.` : ''}
+      </p>
+      <ol className="ns-mix-rows" aria-label="Crop changes from last season">
+        {mix.items.map((it) => (
+          <li key={`${it.from}-${it.to}`}>
+            <span className="ns-mix-seq" aria-hidden="true">
+              <i style={{background: CROP_COLOR[it.from]}} />
+              <i style={{background: CROP_COLOR[it.to]}} />
+            </span>
+            <span className="ns-mix-label">
+              {CROP_LABEL[it.to]} after {CROP_LABEL[it.from].toLowerCase()}
+            </span>
+            <span className="ns-mix-bar" aria-hidden="true">
+              {it.low != null && it.high != null ? <i className="rng" style={{left: at(it.low), width: `calc(${at(it.high - it.low)} + 2px)`, background: CROP_COLOR[it.to]}} /> : null}
+              <i className="mid" style={{left: at(it.pct)}} />
+            </span>
+            <b className="ns-mix-n">{r(it.pct)}%</b>
+            <small className="ns-mix-r">{span(it) ?? 'Missing data'}</small>
+          </li>
+        ))}
+      </ol>
+      <p className="ns-mix-foot">
+        <Confidence level={mix.confidence.level} />
+        <SourceChip source={mix.source} />
+      </p>
+    </section>
+  );
+};
+
+/** De dónde sale la predicción: los cuatro insumos, cada uno con su fuente */
+const Sources: React.FC<{data: NextData; pred: Prediction; option: NextOption; twins: Twin[]}> = ({data, pred, option, twins}) => {
+  const first = pred.years[0];
+  const last = pred.years[pred.years.length - 1];
+  const twinSrc = [...new Set(twins.map((t) => t.source))].join(' · ');
+  const mix = data.mix;
+  const rows: Array<{icon: IconName; title: string; text: string; src: string}> = [
+    {
+      icon: 'layers',
+      title: 'Crop changes',
+      text: mix
+        ? `The expected mix: this county's last ${mix.years.length} USDA crop maps (${mix.years[0]}–${mix.years[mix.years.length - 1]}). The range: how much it and its 5 most similar counties moved in past years. Prices don't move it yet.`
+        : 'No recent USDA crop maps for this county.',
+      src: mix?.source ?? '',
+    },
+    {icon: 'thermo', title: `${pred.seasons} past seasons of weather`, text: `${data.name} County, ${first} to ${last}.`, src: 'NASA POWER'},
+    {icon: 'bars', title: 'Yield in each of those seasons', text: 'Corn and soybeans in three rotations, with that weather.', src: option.source || 'Field Rewind model · USDA NASS · NASA POWER'},
+    {icon: 'dollar', title: 'Money left per acre', text: 'Yield times the state price, minus the operating cost.', src: 'USDA NASS prices · USDA ERS costs'},
+    {icon: 'pin', title: `${twins.length} similar ${twins.length === 1 ? 'county' : 'counties'}`, text: 'Same soil and weather, and they grew what pays best: the lines on the globe.', src: twinSrc},
+  ];
+  return (
+    <section className="ns-sources" aria-labelledby="ns-sources-h">
+      <h2 id="ns-sources-h" className="ns-sources-title">Where this comes from</h2>
+      <ol>
+        {rows.map((r) => (
+          <li key={r.title}>
+            <span className="ns-sources-ico">
+              <Icon name={r.icon} size={18} />
+            </span>
+            <div>
+              <b>{r.title}</b>
+              <p>
+                {r.text} {r.src ? <SourceChip source={r.src} /> : <small className="ns-missing">Missing data: source</small>}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+};
+
+/** La probabilidad, grande, con lo que significa escrito al lado */
+const Odds: React.FC<{pred: Prediction}> = ({pred}) => (
+  <div className="ns-odds">
+    <p className="ns-odds-n">
+      <CountUp value={pred.probability * 100} format={(v) => `${Math.round(v)}%`} />
+    </p>
+    <p className="ns-odds-txt">
+      <b>
+        Best option in {pred.wins} of {pred.seasons} past seasons
+      </b>
+      With each season&apos;s weather from {pred.years[0]} to {pred.years[pred.years.length - 1]}, out of corn or soybeans in three rotations. It is what pays best, not what every farm will plant.
+    </p>
+  </div>
+);
+
+/** Los climas pasados, uno por caja: lleno = ganó la predicha; con borde = ganó otra (su color) */
+const Seasons: React.FC<{data: NextData; pred: Prediction; onYear: (y: number) => void}> = ({data, pred, onYear}) => {
+  const winnerOf = new Map<number, string>();
+  for (const y of pred.best_years) winnerOf.set(y, pred.option_id);
+  for (const o of pred.others) for (const y of o.best_years) winnerOf.set(y, o.option_id);
+  const label = (id: string) => {
+    const o = findOption(data, id);
+    return o ? (o.is_current ? `${data.crops[o.crop].label}, usual mix` : o.label) : id;
+  };
+  return (
+    <section className="ns-seasons" aria-label="Which option was best with each past season's weather">
+      <ol>
+        {pred.years.map((y) => {
+          const id = winnerOf.get(y);
+          const o = id ? findOption(data, id) : undefined;
+          const won = id === pred.option_id;
+          return (
+            <li key={y}>
+              <button
+                type="button"
+                className={`ns-season ${won ? 'won' : id ? 'lost' : 'none'}`}
+                style={o ? {['--c' as string]: CROP_COLOR[o.crop]} : undefined}
+                onClick={() => onYear(y)}
+                title={`${y}: ${id ? label(id) : 'Missing data'} was best. See ${y} in the county history`}
+              >
+                <i aria-hidden="true" />
+                <span aria-hidden="true">&rsquo;{String(y).slice(2)}</span>
+                <span className="visually-hidden">{y}</span>
+                <span className="visually-hidden">: {id ? label(id) : 'Missing data'} was best</span>
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="ns-seasons-key">
+        <span>
+          <i className="won" style={{['--c' as string]: CROP_COLOR[pred.crop]}} />
+          {label(pred.option_id)} best ({pred.wins})
+        </span>
+        {pred.others.map((o) => {
+          const x = findOption(data, o.option_id);
+          return (
+            <span key={o.option_id}>
+              <i className="lost" style={x ? {['--c' as string]: CROP_COLOR[x.crop]} : undefined} />
+              {label(o.option_id)} best ({o.wins})
+            </span>
+          );
+        })}
+      </p>
+    </section>
+  );
+};
+
+/** La predicha en cuatro cifras: rinde típico, diferencia con lo habitual, ingreso y confianza. */
+const Answer: React.FC<{option: NextOption; usual: number | null}> = ({option: o, usual}) => {
   const y = o.yield_bu_ac;
   const delta = y && usual != null && !o.is_current ? y.median - usual : null;
   return (
-    <section className="ns-answer" aria-labelledby="ns-answer-title">
-      <div className="ns-answer-pick">
-        <span className="ns-answer-badge">
-          <Icon name="star" size={22} />
-        </span>
-        <div>
-          <p className="ns-answer-kicker">Suggested for your priorities</p>
-          <h2 id="ns-answer-title">
-            <CropDot crop={o.crop} size={30} />
-            {o.label}
-          </h2>
-          <button type="button" className="ns-answer-why" onClick={onWhy}>
-            See why
-          </button>
-        </div>
-      </div>
+    <section className="ns-answer ns-answer--plain" aria-label="The prediction in numbers">
       <ul className="ns-answer-tiles">
         <li className="ns-tile">
           <Icon name="bars" />
@@ -358,9 +606,9 @@ const Answer: React.FC<{option: NextOption; usual: number | null; onWhy: () => v
         </li>
         <li className="ns-tile">
           <Icon name="arrow" />
-          <span className="ns-tile-label">Vs. your usual mix</span>
+          <span className="ns-tile-label">Vs. the usual mix</span>
           <span className={`ns-tile-value ${delta != null && delta < 0 ? 'neg' : ''}`}>
-            {o.is_current ? 'This is your usual mix' : delta != null ? <><CountUp value={delta} format={signed} /> bu/ac</> : <span className="ns-missing">Missing data</span>}
+            {o.is_current ? 'This is the usual mix' : delta != null ? <><CountUp value={delta} format={signed} /> bu/ac</> : <span className="ns-missing">Missing data</span>}
           </span>
           {delta != null ? <small>In a typical year</small> : null}
         </li>
@@ -421,101 +669,5 @@ const CropSplit: React.FC<{twin: Twin}> = ({twin}) => {
         ))}
       </small>
     </>
-  );
-};
-
-const GAUGE_H = 280; // alto del eje en px
-const GAP = 36; // separación mínima entre las tres cifras
-
-const OptionCard: React.FC<{
-  option: NextOption;
-  axis: {min: number; max: number; ticks: number[]};
-  usual: number | null;
-  suggested: boolean;
-  mine?: boolean;
-  open: boolean;
-  note: string | null;
-  onOpen: () => void;
-}> = ({option: o, axis, usual, suggested, mine = false, open, note, onOpen}) => {
-  const y = o.yield_bu_ac;
-  const px = (v: number) => ((axis.max - v) / (axis.max - axis.min)) * GAUGE_H;
-  // las cifras se corren si el rango es angosto, para que no se pisen; la barra queda en su lugar
-  const mid = y ? px(y.median) : 0;
-  const hi = y ? Math.min(px(y.p90), mid - GAP) : 0;
-  const lo = y ? Math.max(px(y.p10), mid + GAP) : 0;
-  const ticks = axis.ticks.length > 6 ? axis.ticks.filter((_, i) => i % 2 === 0) : axis.ticks;
-  const delta = y && usual != null && !o.is_current ? y.median - usual : null;
-  return (
-    <article className={`ns-card ${suggested ? 'ns-card--sug ns-paper' : ''} ${open ? 'open' : ''}`} onClick={onOpen}>
-      <p className="ns-card-tag">
-        {suggested ? (
-          <span>
-            <Icon name="star" size={14} />
-            Top pick
-          </span>
-        ) : null}
-        {mine ? (
-          <span className="ns-card-mine">
-            <Icon name="pin" size={14} />
-            Your farm's plan
-          </span>
-        ) : null}
-      </p>
-      <h2>{o.label}</h2>
-      <p className="ns-card-sub">{o.sublabel}</p>
-      <p className={`ns-card-delta ${delta != null && delta < 0 ? 'neg' : ''}`}>{delta != null ? `${signed(delta)} bu/ac vs. your usual mix` : ' '}</p>
-      {y ? (
-        <div className="ns-gauge" style={{height: GAUGE_H}} role="img" aria-label={`${o.label}: ${fmt(y.p10)} bushels per acre in a bad year, ${fmt(y.median)} in a typical year, ${fmt(y.p90)} in a good year`}>
-          {ticks.map((t) => (
-            <i key={t} className="ns-gauge-line" style={{top: px(t)}}>
-              <em>{t}</em>
-            </i>
-          ))}
-          <i className="ns-gauge-bar" style={{top: px(y.p90), height: Math.max(6, px(y.p10) - px(y.p90)), background: CROP_COLOR[o.crop]}} />
-          <span className="ns-gauge-n" style={{top: hi}}>
-            <CountUp value={y.p90} />
-            <small>good year</small>
-          </span>
-          <span className="ns-gauge-n ns-gauge-n--mid" style={{top: mid}}>
-            <CountUp value={y.median} />
-            <small>typical</small>
-          </span>
-          <span className="ns-gauge-n" style={{top: lo}}>
-            <CountUp value={y.p10} />
-            <small>bad year</small>
-          </span>
-        </div>
-      ) : (
-        <p className="ns-box ns-box--missing">
-          <b className="ns-missing">Missing data:</b> no yield range for this option.
-        </p>
-      )}
-      {o.income_usd_ac ? (
-        <p className="ns-card-income">
-          <Icon name="dollar" size={18} />
-          <b><CountUp value={o.income_usd_ac.median} format={usd} /></b>/acre after operating costs, typical year
-          <small>
-            Bad year {usd(o.income_usd_ac.p10)} · good year {usd(o.income_usd_ac.p90)} · USDA NASS prices, ERS costs
-          </small>
-        </p>
-      ) : null}
-      <div className="ns-card-conf">
-        <Confidence level={o.confidence.level} />
-        <small>{o.confidence.reason.replace(/^Low confidence:\s*/i, '')}</small>
-      </div>
-      {note ? <p className="ns-card-note">{note}</p> : null}
-      <button
-        type="button"
-        className="ns-card-more"
-        aria-expanded={open}
-        aria-controls="ns-detail"
-        onClick={(e) => {
-          e.stopPropagation();
-          onOpen();
-        }}
-      >
-        {open ? 'Details open below' : 'See the details'}
-      </button>
-    </article>
   );
 };

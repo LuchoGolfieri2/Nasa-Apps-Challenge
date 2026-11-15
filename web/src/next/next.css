@@ -387,3 +387,207 @@
 .ns-split-text{display:inline}
 .ns-split-item{white-space:nowrap}
 .ns-split-item .crop-ico{margin:0 3px 0 4px;vertical-align:-3px}
+
+/* ------------------------------------------------------------------ predicción (15/11): una sola opción, sin elecciones */
+.ns-head--pred{align-items:center}
+.ns-kicker{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:var(--primary-strong);margin-bottom:10px!important}
+.ns-kicker svg{color:var(--wheat-gold)}
+.ns-head--pred h1{display:flex;align-items:center;gap:16px;max-width:none}
+.ns-pred-sub{margin-top:10px!important;font-size:18px;color:var(--ink-2)}
+.ns-odds{display:flex;align-items:center;gap:20px;padding:18px 24px;border-radius:24px;background:var(--surface-1);box-shadow:var(--shadow-card);max-width:500px}
+.ns-odds-n{font:800 76px/.9 var(--font-display);letter-spacing:-.04em;color:var(--primary);font-variant-numeric:tabular-nums}
+.ns-odds-txt{font-size:14.5px;color:var(--ink-2);line-height:1.4}
+.ns-odds-txt b{display:block;font:700 18px/1.2 var(--font-display);color:var(--ink);margin-bottom:4px}
+/* los climas pasados: una caja por año, como la línea de tiempo de la historia */
+.ns-seasons{margin:28px var(--pad) 0;padding:16px 20px;border-radius:24px;background:var(--surface-1);border:1px solid var(--line)}
+.ns-seasons ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(54px,1fr));gap:6px}
+.ns-season{display:grid;justify-items:center;gap:6px;width:100%;padding:6px 0;border:0;border-radius:10px;background:transparent;font-size:13.5px!important;font-weight:600!important;color:var(--ink-2)!important;font-variant-numeric:tabular-nums}
+.ns-season:hover{background:var(--surface-2)}
+.ns-season i{display:block;width:36px;height:30px;border-radius:7px}
+.ns-season.won i{background:var(--c)}
+.ns-season.won{color:var(--ink)!important}
+.ns-season.lost i{background:repeating-linear-gradient(135deg,var(--c) 0 3px,transparent 3px 7px);box-shadow:inset 0 0 0 2px var(--c)}
+.ns-season.none i{border:1px dashed var(--line-strong)}
+.ns-seasons-key{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin-top:12px!important;padding-top:12px;border-top:1px solid var(--line);font-size:14px;color:var(--ink-2)}
+.ns-seasons-key span{display:inline-flex;align-items:center;gap:8px}
+.ns-seasons-key i{display:inline-block;width:18px;height:14px;border-radius:4px}
+.ns-seasons-key i.won{background:var(--c)}
+.ns-seasons-key i.lost{background:repeating-linear-gradient(135deg,var(--c) 0 2px,transparent 2px 5px);box-shadow:inset 0 0 0 1.5px var(--c)}
+.ns-seasons-key .source-chip{margin-left:auto}
+.ns-answer--plain{grid-template-columns:1fr}
+.ns-detail--single{margin-top:20px}
+.ns-detail--single::before{display:none}
+.ns-pred-missing{margin:28px var(--pad) 0}
+@media (max-width:1180px){
+  .ns-odds{max-width:none}
+}
+@media (max-width:860px){
+  .ns-head--pred h1{gap:10px}
+  .ns-odds{padding:14px 16px;gap:14px}
+  .ns-odds-n{font-size:56px}
+  .ns-seasons{padding:12px}
+  .ns-seasons ol{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+
+/* ------------------------------------------------------------------ escenario (15/11): el globo arriba, como "See more" */
+.ns{--gl-bg:linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.05)),rgba(8,26,17,.4);--gl-line:rgba(255,255,255,.32);
+  --gl-blur:blur(20px) saturate(1.5);--gl-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 10px 30px rgba(0,0,0,.25);--gl-ts:0 1px 2px rgba(0,0,0,.35);
+  --scol-w:clamp(380px,34%,480px)}
+.ns-glass{background:var(--gl-bg);border:1px solid var(--gl-line);-webkit-backdrop-filter:var(--gl-blur);backdrop-filter:var(--gl-blur);box-shadow:var(--gl-shadow);color:#fff;text-shadow:var(--gl-ts)}
+.ns-glass .source-chip{color:rgba(255,255,255,.85);border-color:rgba(255,255,255,.3);background:rgba(8,26,17,.45);text-shadow:none}
+.ns-glass .source-chip b{color:#fff}
+.ns-stage{position:relative;width:calc(100% - 64px);max-width:1656px;height:clamp(700px,calc(100dvh - 150px),860px);margin:14px auto 0;border-radius:26px;overflow:clip;background:#0e2e5c;isolation:isolate}
+.ns-stage::after{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(170,215,255,.18),inset 0 0 70px 10px rgba(6,22,44,.6)}
+.ns-stage .fr-twinglobe{position:absolute;inset:0;aspect-ratio:auto;height:100%;border-radius:0}
+.ns-stage .fr-twinglobe::after{display:none}
+.ns-nogeo{position:absolute;left:16px;top:64px;padding:12px 14px;border-radius:14px;z-index:2}
+.ns-stage-left{position:absolute;z-index:2;left:16px;top:16px;display:grid;justify-items:start;gap:10px;max-width:calc(100% - var(--scol-w) - 64px)}
+.ns-pill{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:700}
+/* columna de vidrio a la derecha */
+.ns-scol{position:absolute;z-index:2;top:16px;right:16px;bottom:16px;width:var(--scol-w);display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-right:4px;scrollbar-color:rgba(255,255,255,.35) transparent}
+.ns-scol > *{flex:none}
+.ns-shead{padding:16px 18px;border-radius:20px}
+.ns-shead .ns-kicker{margin-bottom:6px!important;font-size:13.5px;color:var(--sprout)}
+.ns-shead h1{display:flex;align-items:center;gap:12px;font:800 clamp(30px,2.6vw,40px)/1 var(--font-display);letter-spacing:-.035em;color:var(--sprout)}
+.ns-shead .ns-pred-sub{margin-top:6px!important;font-size:15px;color:rgba(255,255,255,.86)}
+.ns-shead .ns-odds{margin-top:14px;padding:12px 0 0;gap:16px;background:none;box-shadow:none;border-radius:0;border-top:1px solid rgba(255,255,255,.2);max-width:none}
+.ns-shead .ns-odds-n{font-size:60px;color:#fff}
+.ns-shead .ns-odds-txt{font-size:13px;color:rgba(255,255,255,.82)}
+.ns-shead .ns-odds-txt b{font-size:16px;color:#fff}
+/* los 15 climas, en vidrio */
+.ns-scol .ns-seasons{margin:0;padding:12px 12px 10px;border-radius:20px;background:var(--gl-bg);border-color:var(--gl-line)}
+.ns-scol .ns-seasons ol{grid-template-columns:repeat(auto-fit,minmax(22px,1fr));gap:3px}
+.ns-scol .ns-season{gap:4px;padding:4px 0;border-radius:7px;font-size:11px!important;color:rgba(255,255,255,.78)!important;text-shadow:none}
+.ns-scol .ns-season.won{color:#fff!important}
+.ns-scol .ns-season:hover{background:rgba(255,255,255,.14)}
+.ns-scol .ns-season i{width:100%;max-width:24px;height:22px;border-radius:5px}
+.ns-scol .ns-season.none i{border-color:rgba(255,255,255,.4)}
+.ns-scol .ns-seasons-key{gap:6px 14px;margin-top:8px!important;padding-top:8px;border-top-color:rgba(255,255,255,.2);font-size:12.5px;color:rgba(255,255,255,.88)}
+.ns-scol .ns-seasons-key .source-chip{margin-left:0}
+/* de dónde sale */
+.ns-sources{padding:14px 16px 16px;border-radius:20px}
+.ns-sources h2{font-size:17px;margin-bottom:10px!important}
+.ns-sources ol{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.ns-sources li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:10px;align-items:start}
+.ns-sources-ico{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.16);color:var(--sprout)}
+.ns-sources li > div > b{display:block;font:700 14.5px/1.25 var(--font-display)}
+.ns-sources p{margin:2px 0 6px!important;font-size:13px;line-height:1.4;color:rgba(255,255,255,.84)}
+.ns-sources .ns-missing{color:#fff}
+/* abajo: los gemelos como botones de vidrio y el botón al mapa */
+.ns-stage-foot{position:absolute;z-index:2;left:16px;bottom:16px;right:calc(var(--scol-w) + 32px);display:flex;align-items:flex-end;gap:12px}
+.ns-stage-foot .ns-open{position:static;margin-left:auto;flex:none}
+.ns-stage-twins{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.ns-stwin{display:grid;gap:0;min-height:44px;padding:6px 14px;border-radius:14px;text-align:left;font-size:14px;line-height:1.2}
+.ns-stwin small{font-size:12px;color:rgba(255,255,255,.78)}
+.ns-stwin:hover{background:linear-gradient(135deg,rgba(255,255,255,.3),rgba(255,255,255,.1)),rgba(8,26,17,.4)}
+.ns-stwin.on{border-color:var(--wheat-gold);box-shadow:var(--gl-shadow),0 0 0 2px var(--wheat-gold)}
+/* el detalle de los gemelos, debajo y sin otro globo */
+.ns-twins--list .ns-twin-grid{list-style:none;margin:24px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.ns-twins--list .ns-twin{grid-template-columns:1fr;height:100%;background:var(--surface-1);box-shadow:var(--shadow-card)}
+.ns-twins--list .ns-lead .fr-conf{vertical-align:middle}
+@media (max-width:1100px){
+  .ns-stage{width:calc(100% - 32px);height:auto;padding:0 12px 12px}
+  .ns-stage .fr-twinglobe{position:relative;height:62vw;margin:0 -12px}
+  .ns-stage-left{max-width:none}
+  .ns-stage-foot{position:relative;inset:auto;margin:-60px 0 12px;flex-wrap:wrap}
+  .ns-scol{position:relative;inset:auto;width:auto;overflow:visible;padding:0}
+}
+@media (max-width:640px){
+  .ns-stage .fr-twinglobe{height:90vw}
+  .ns-stage-foot{margin:12px 0}
+  .ns-scol .ns-seasons ol{grid-template-columns:repeat(8,minmax(0,1fr))}
+}
+.ns-shead-ico{display:grid;place-items:center;flex:none;width:48px;height:48px;border-radius:50%;background:var(--paper);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.ns-sources ol{gap:10px}
+.ns-sources p{margin-bottom:0!important}
+.ns-sources p .source-chip{vertical-align:middle}
+.ns-shead .ns-odds-n{font-size:56px}
+
+/* ------------------------------------------------------------------ mezcla esperada + lo que paga más (15/11) */
+.ns-mix,.ns-best{padding:16px 18px;border-radius:20px}
+.ns-mix .ns-kicker,.ns-best .ns-kicker{margin-bottom:6px!important;font-size:13.5px;color:var(--sprout)}
+.ns-mix h1{font:800 clamp(28px,2.4vw,36px)/1.02 var(--font-display);letter-spacing:-.03em;color:#fff}
+.ns-mix-split{display:flex;gap:3px;height:12px;margin-top:12px;border-radius:99px;overflow:hidden}
+.ns-mix-split i{display:block;min-width:4px}
+.ns-mix-sub{margin-top:8px!important;font-size:13.5px;color:rgba(255,255,255,.86)}
+.ns-mix-rows{list-style:none;margin:12px 0 0;padding:10px 0 0;border-top:1px solid rgba(255,255,255,.2);display:grid;gap:8px}
+.ns-mix-rows li{display:grid;grid-template-columns:22px minmax(0,1.25fr) minmax(70px,1fr) 42px 64px;align-items:center;gap:8px;font-size:14px}
+.ns-mix-seq{display:grid;grid-template-rows:6px 12px;gap:2px;width:22px}
+.ns-mix-seq i{display:block;border-radius:3px}
+.ns-mix-label{font-weight:700;line-height:1.2}
+.ns-mix-bar{position:relative;height:10px;border-radius:99px;background:rgba(255,255,255,.14)}
+.ns-mix-bar .rng{position:absolute;top:0;bottom:0;border-radius:99px;opacity:.9}
+.ns-mix-bar .mid{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1.5px;border-radius:2px;background:#fff;box-shadow:0 0 0 1px rgba(8,26,17,.5)}
+.ns-mix-n{font:800 16px/1 var(--font-display);text-align:right;font-variant-numeric:tabular-nums}
+.ns-mix-r{font-size:12px;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums;text-shadow:none}
+.ns-mix-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px!important}
+.ns-mix-foot .fr-conf{text-shadow:none}
+.ns-glass .fr-conf--high{color:var(--sprout)}
+.ns-glass .fr-conf--medium{color:#f6d47e}
+.ns-glass .fr-conf--low{color:#ff9b9e}
+.ns-mix-missing{margin-top:6px!important;font-size:15px}
+.ns-best h2{display:flex;align-items:center;gap:10px;font:800 24px/1.05 var(--font-display);letter-spacing:-.02em;color:var(--sprout)}
+.ns-best .ns-shead-ico{width:38px;height:38px}
+.ns-best .ns-odds{margin-top:10px;padding:10px 0 0;gap:14px;background:none;box-shadow:none;border-radius:0;border-top:1px solid rgba(255,255,255,.2);max-width:none}
+.ns-best .ns-odds-n{font-size:44px;color:#fff}
+.ns-best .ns-odds-txt{font-size:12.5px;color:rgba(255,255,255,.82)}
+.ns-best .ns-odds-txt b{font-size:15px;color:#fff}
+.ns-best .ns-seasons{margin:10px 0 0;padding:0;border:0;border-radius:0;background:none}
+.ns-best .ns-seasons ol{grid-template-columns:repeat(auto-fit,minmax(20px,1fr));gap:3px}
+.ns-best .ns-season{gap:3px;padding:3px 0;border-radius:6px;font-size:10.5px!important;color:rgba(255,255,255,.78)!important;text-shadow:none}
+.ns-best .ns-season.won{color:#fff!important}
+.ns-best .ns-season:hover{background:rgba(255,255,255,.14)}
+.ns-best .ns-season i{width:100%;max-width:22px;height:18px;border-radius:5px}
+.ns-best .ns-season.none i{border-color:rgba(255,255,255,.4)}
+.ns-best .ns-seasons-key{gap:4px 12px;margin-top:6px!important;padding-top:6px;border-top-color:rgba(255,255,255,.2);font-size:12px;color:rgba(255,255,255,.88)}
+/* de dónde sale: debajo del escenario, una fila de cajas */
+.ns-sources{margin:20px auto 0;width:calc(100% - 64px);max-width:1656px;padding:0;border-radius:0;color:var(--ink);text-shadow:none}
+.ns-sources-title{font:700 20px/1.2 var(--font-display);margin-bottom:10px!important}
+.ns-sources ol{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.ns-sources li{padding:14px;border-radius:18px;background:var(--surface-1);box-shadow:var(--shadow-card)}
+.ns-sources-ico{background:var(--primary-soft,#dcefd4);color:var(--field)}
+.ns-sources p{color:var(--ink-2)}
+.ns-sources .ns-missing{color:var(--ink-2)}
+.ns-best-h{display:flex;align-items:center;gap:12px;margin:48px var(--pad) 0!important;font-size:30px}
+.ns-best-h .ns-shead-ico{width:44px;height:44px}
+.ns-best-h + .ns-answer{margin-top:16px}
+@media (max-width:1100px){
+  .ns-sources{width:calc(100% - 32px)}
+}
+@media (max-width:860px){
+  .ns-best-h{font-size:24px}
+  .ns-mix-rows li{grid-template-columns:22px minmax(0,1fr) 42px 64px}
+  .ns-mix-bar{display:none}
+}
+.ns-sources .source-chip{white-space:normal;line-height:1.35;display:inline}
+
+/* ------------------------------------------------------------------ globo a pantalla completa ("Open in the map") */
+.ns-stage-hole{width:calc(100% - 64px);max-width:1656px;margin:14px auto 0}
+.ns-stage.is-fixed{position:fixed;z-index:1000;margin:0;max-width:none;padding:0;
+  transition:top .48s cubic-bezier(.2,.8,.2,1),left .48s cubic-bezier(.2,.8,.2,1),width .48s cubic-bezier(.2,.8,.2,1),height .48s cubic-bezier(.2,.8,.2,1),border-radius .48s cubic-bezier(.2,.8,.2,1)}
+.ns-stage.is-full{top:0;left:0;width:100vw;height:100dvh;border-radius:0}
+.ns-stage.is-fixed .fr-twinglobe{position:absolute;inset:0;height:100%;margin:0}
+/* la columna de la predicción se va; quedan el globo, los gemelos y los controles */
+/* al volver se ven (y reciben el foco) en el acto; al irse, se ocultan cuando terminó el fundido */
+.ns-stage .ns-scol,.ns-stage .ns-stage-left,.ns-stage .ns-open{transition:opacity .25s ease-out,visibility 0s}
+.ns-stage.is-fixed .ns-scol,.ns-stage.is-fixed .ns-stage-left,.ns-stage.is-fixed .ns-open{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease-out,visibility 0s .25s}
+.ns-stage.is-fixed .ns-scol{position:absolute}
+.ns-stage.is-fixed .ns-stage-foot{position:absolute;left:16px;right:16px;bottom:16px;margin:0;transition:right .48s cubic-bezier(.2,.8,.2,1)}
+.ns-full-bar{position:absolute;z-index:4;top:16px;left:16px;right:16px;display:flex;align-items:center;gap:10px;animation:ns-full-in .3s ease-out .2s both}
+.ns-full-hint{margin-right:auto!important;padding:8px 14px;border-radius:999px;font-size:13.5px;font-weight:600}
+.ns-full-btn,.ns-full-close{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:700}
+.ns-full-btn:hover{background:linear-gradient(135deg,rgba(255,255,255,.3),rgba(255,255,255,.1)),rgba(8,26,17,.4)}
+.ns-full-close{border:0;background:var(--solid-bg);color:var(--solid-ink)}
+.ns-stage.is-fixed .fr-twinglobe.is-interactive{cursor:grab}
+.ns-stage.is-fixed .fr-twinglobe.is-dragging{cursor:grabbing}
+.ns-stage.is-fixed .fr-twinglobe::after{display:none}
+@keyframes ns-full-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (max-width:1100px){
+  .ns-stage-hole{width:calc(100% - 32px)}
+  .ns-full-hint{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .ns-stage.is-fixed,.ns-stage.is-fixed .ns-stage-foot{transition:none}
+  .ns-full-bar{animation:none}
+}
+.ns-stage .ns-full-close.solid-btn{display:inline-flex;flex-direction:row;align-items:center}

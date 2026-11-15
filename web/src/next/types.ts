@@ -88,6 +88,44 @@ export interface ExploreCrop {
   income_usd_ac?: Range | null;
 }
 
+/**
+ * Predicción de la próxima campaña (15/11): una sola opción, sin elecciones del usuario. Para cada clima pasado
+ * (2009–2023) gana la opción que más deja por acre; probability = años ganados / años con dato.
+ */
+export interface Prediction {
+  option_id: string;
+  crop: PlanCrop;
+  probability: number;
+  wins: number;
+  seasons: number;
+  years: number[];
+  best_years: number[];
+  others: Array<{option_id: string; wins: number; best_years: number[]}>;
+  basis: 'income';
+  method: string;
+  source: string;
+  prototype: boolean;
+}
+
+/** Mezcla esperada de cultivos (capas 1 y 2): % del terreno de maíz y soja, con rango (low/high = la mayoría de los años) */
+export interface MixValue {
+  pct: number;
+  low: number | null;
+  high: number | null;
+}
+export interface CropMix {
+  season: number;
+  basis: 'corn_soy_ground';
+  years: number[];
+  items: Array<{from: PlanCrop; to: PlanCrop} & MixValue>;
+  corn_pct: MixValue;
+  neighbors: string[];
+  filled_from_neighbors: string[];
+  confidence: {level: ConfidenceLevel; reason: string};
+  method: string;
+  source: string;
+  prototype: boolean;
+}
 export interface NextData {
   fips: string;
   name: string;
@@ -98,6 +136,10 @@ export interface NextData {
   prototype: boolean;
   note: string | null;
   default_crop: PlanCrop;
+  /** null = no se puede predecir (sin precio del estado para comparar maíz con soja) */
+  prediction?: Prediction | null;
+  /** null = sin mapas del CDL recientes ni condados parecidos que los tengan */
+  mix?: CropMix | null;
   rotation_context: {
     items: Array<{from: CropId; to: CropId; label: string; pct: number}>;
     text?: Partial<Record<PlanCrop, string>>;
