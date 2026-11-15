@@ -38,6 +38,7 @@ const CropDot: React.FC<{crop: CropId}> = ({crop}) => <i className="fr-cropdot" 
 const CROP_INK: Partial<Record<CropId, string>> = {corn: '#8a5a00', soy: '#0f7a55', wheat: '#b01f52', sorghum: '#5b35d5'};
 
 const fmt = (v: number) => Math.round(v).toString();
+const usd = (v: number) => `$${Math.round(v).toLocaleString('en-US')}`;
 const signed = (v: number) => `${v > 0 ? '+' : v < 0 ? '−' : '±'}${Math.abs(Math.round(v))}`;
 
 export interface NextSeasonProps {
@@ -138,7 +139,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
               </div>
               {result.unscored.map((p) => (
                 <p key={p} className="fr-control-note">
-                  <b>{PRIORITY_LABEL[p]}:</b> <Missing>{p === 'income' ? 'costs not loaded yet' : 'no data separates these options'}</Missing>. Not used in the suggestion.
+                  <b>{PRIORITY_LABEL[p]}:</b> <Missing>{p === 'income' ? 'no yield range to turn into income' : 'no data separates these options'}</Missing>. Not used in the suggestion.
                 </p>
               ))}
             </div>
@@ -331,6 +332,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, initialPriorities =
               {data.explore.map((x) => (
                 <p key={x.id}>
                   <CropDot crop={x.crop} /> <b>{x.label}:</b> counties like yours that grow it get {fmt(x.range.p10)}–{fmt(x.range.p90)} bu/ac (typical {fmt(x.range.median)}).{' '}
+                  {x.income_usd_ac ? <>About {usd(x.income_usd_ac.median)}/acre after operating costs.{' '}</> : null}
                   <Confidence level={x.confidence.level} />
                 </p>
               ))}
@@ -364,6 +366,11 @@ const OptionRow: React.FC<{option: NextOption; axis: {min: number; max: number; 
           {suggested ? ' · Suggested' : ''}
         </small>
         {y && usual != null && !o.is_current ? <small className="fr-row-abs">{signed(y.median - usual)} bu/ac vs. your usual mix</small> : null}
+        {o.income_usd_ac ? (
+          <small className="fr-row-abs">
+            {usd(o.income_usd_ac.median)}/acre after operating costs ({usd(o.income_usd_ac.p10)}–{usd(o.income_usd_ac.p90)})
+          </small>
+        ) : null}
       </span>
       <span className="fr-row-bar">
         {axis.ticks.map((t) => (

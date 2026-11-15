@@ -84,6 +84,8 @@ export interface ExploreCrop {
   range: Range;
   confidence: Confidence;
   text: string;
+  /** rango de los gemelos × precio NASS del estado − costo operativo ERS; null si el estado no tiene precio */
+  income_usd_ac?: Range | null;
 }
 
 export interface NextData {

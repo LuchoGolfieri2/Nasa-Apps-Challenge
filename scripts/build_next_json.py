@@ -5,6 +5,7 @@ Arma los JSON de la pantalla 3 ("Next season") con datos reales:
   backend/Datos/escenarios_rotacion_resumen.csv  → rango p10 / mediana / p90 por opción (modelo del punto 2)
   backend/Datos/front/explicaciones.json         → razones, riesgos, confianza y años (punto 3)
   backend/Datos/front/gemelos.json               → condados gemelos por opción y cultivos nuevos (punto 5)
+  backend/Datos/precios_costos.csv               → precio NASS y costo operativo ERS por estado (scripts/build_precios_costos.py)
   web/public/data/county/<fips>.json             → mezcla de rotaciones del CDL (si el condado tiene historia)
 
 Salida:
@@ -51,6 +52,33 @@ SOIL_RULE = {
 }
 SOIL_SCORE = {"rotado": 0.9, "actual": 0.55, "continuo": 0.15}
 MODEL_SRC = "Field Rewind model · USDA NASS · NASA POWER"
+INCOME_SRC = "Field Rewind model · USDA NASS prices · USDA ERS costs"
+PRICE_CROP = {"corn": "maiz", "soy": "soja", "wheat": "trigo_invierno", "oats": "avena"}
+STATE_NAME = {"19": "Iowa", "17": "Illinois", "18": "Indiana", "20": "Kansas"}
+
+
+def load_prices():
+    """{(fips_estado, cultivo): {"price", "cost", "years"}}; sin precio o sin costo, no entra."""
+    out = {}
+    p = ML / "precios_costos.csv"
+    if not p.exists():
+        return out
+    with open(p, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["precio_usd_bu"] and r["costo_operativo_usd_ac"]:
+                out[(r["fips_estado"].zfill(2), r["cultivo"])] = {
+                    "price": float(r["precio_usd_bu"]),
+                    "cost": float(r["costo_operativo_usd_ac"]),
+                    "years": r["anios"].replace("-", "–"),
+                }
+    return out
+
+
+def income(rng, pc):
+    """Ingreso sobre costos operativos ($/acre) = rinde × precio − costo. El precio queda fijo: el rango es el del clima."""
+    if not rng or not pc:
+        return None
+    return {k: round(rng[k] * pc["price"] - pc["cost"]) for k in ("p10", "median", "p90")}
 
 
 def load_ranges():
@@ -94,7 +122,7 @@ def cdl_context(fips, explic):
     return {"items": [], "text": texts, "source": "USDA CDL + NASS", "prototype": False}
 
 
-def build_crop(fips, crop, ranges, explic_crop, twins_county):
+def build_crop(fips, crop, ranges, explic_crop, twins_county, pc):
     opts = []
     for rot in ("actual", "rotado", "continuo"):
         rng = ranges.get((fips, crop, rot))
@@ -122,7 +150,7 @@ def build_crop(fips, crop, ranges, explic_crop, twins_county):
             "sublabel": sub,
             "is_current": rot == "actual",
             "yield_bu_ac": rng,
-            "income_usd_ac": None,
+            "income_usd_ac": income(rng, pc),
             "scores": {"risk": None, "income": None, "soil": SOIL_SCORE[rot], "water": None},
             "suggested_for": [],
             "confidence": ex.get("confidence") or {"level": "low", "reason": "Missing data: no model explanation for this option."},
@@ -155,6 +183,26 @@ def build_crop(fips, crop, ranges, explic_crop, twins_county):
             "source": MODEL_SRC, "kind": "model", "years": bad_years[:3], "pro": True,
         })
 
+    # Ingreso: lo que deja un año típico (mediana), comparado entre las tres opciones.
+    # El precio y el costo son los mismos para las tres (ERS no separa rotaciones), así que el orden
+    # es el del rinde mediano; lo que suma es pasarlo a dólares.
+    meds = [o["income_usd_ac"]["median"] for o in opts if o["income_usd_ac"]]
+    if len(meds) >= 2:
+        lo, hi = min(meds), max(meds)
+        for o in opts:
+            if o["income_usd_ac"]:
+                o["scores"]["income"] = round(0.5 if hi == lo else (o["income_usd_ac"]["median"] - lo) / (hi - lo), 2)
+        best = max((o for o in opts if o["income_usd_ac"]), key=lambda o: o["income_usd_ac"]["median"])
+        inc = best["income_usd_ac"]
+        best["reasons"].insert(0, {
+            "priority": "income",
+            "text": f"In a typical year, {best['label'].lower() if not best['is_current'] else 'your usual mix'} would leave about "
+                    f"${inc['median']:,}/acre over operating costs (${inc['p10']:,} in a bad year), the most of the three. "
+                    f"Uses the {pc['years']} median {STATE_NAME[fips[:2]]} price (${pc['price']:.2f}/bu) and the same "
+                    f"${pc['cost']:.0f}/acre operating cost for every option.",
+            "source": INCOME_SRC, "kind": "model", "years": [], "pro": True,
+        })
+
     for p in ("risk", "income", "soil", "water"):
         scored = [o for o in opts if o["scores"][p] is not None]
         if scored:
@@ -162,8 +210,18 @@ def build_crop(fips, crop, ranges, explic_crop, twins_county):
     return {"crop": crop, "label": CROP_LABEL[crop], "options": opts}
 
 
+def income_missing(fips, prices):
+    st = STATE_NAME[fips[:2]]
+    if not all((fips[:2], es) in prices for es in CROP):
+        return [{"what": "Income ($/acre)", "why": f"No USDA NASS price or ERS cost for {st}."}]
+    return [{"what": "Cost by rotation",
+             "why": "USDA ERS gives one operating cost per crop, so every option uses the same cost. "
+                    "Corn after corn usually needs more nitrogen, so its income here is likely too high."}]
+
+
 def main():
     ranges = load_ranges()
+    prices = load_prices()
     explic = json.loads((ML / "front" / "explicaciones.json").read_text())
     twins = json.loads((ML / "front" / "gemelos.json").read_text())
     OUT.mkdir(parents=True, exist_ok=True)
@@ -172,13 +230,15 @@ def main():
         if fips[:2] not in STATES:
             continue
         tc = twins["counties"].get(fips)
-        crops = {crop: build_crop(fips, crop, ranges, ex.get(es, {}), tc) for es, crop in CROP.items()}
+        crops = {crop: build_crop(fips, crop, ranges, ex.get(es, {}), tc, prices.get((fips[:2], es)))
+                 for es, crop in CROP.items()}
         explore = []
         for key in ("wheat", "oats"):
             o = (tc or {}).get("options", {}).get(key)
             if o and o.get("use_as_range") and not o.get("county_does_it"):
                 explore.append({"id": key, "crop": o["crop"], "label": CROP_LABEL.get(o["crop"], key.title()),
-                                "twins": o["twins"], "range": o["twins_range"], "confidence": o["confidence"], "text": o["text"]})
+                                "twins": o["twins"], "range": o["twins_range"], "confidence": o["confidence"], "text": o["text"],
+                                "income_usd_ac": income(o["twins_range"], prices.get((fips[:2], PRICE_CROP[key])))})
         data = {
             "fips": fips,
             "name": tc["name"] if tc else fips,
@@ -193,8 +253,7 @@ def main():
             "crops": crops,
             "twins": [{**t, "source": t.get("source", ""), "prototype": bool(t.get("prototype"))} for t in (tc or {}).get("twins", [])],
             "explore": explore,
-            "missing": [
-                {"what": "Income ($/acre)", "why": "Costs dataset not loaded yet."},
+            "missing": income_missing(fips, prices) + [
                 {"what": "Water use", "why": "No data separates these options for water."},
             ],
             "contract": {"explicaciones": explic.get("version_contrato"), "gemelos": twins.get("version_contrato")},
