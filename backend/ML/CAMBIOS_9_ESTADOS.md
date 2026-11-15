@@ -1,8 +1,11 @@
 # Pasar ML a 9 estados: cambios en los puntos 3, 4, 5 y el front
 
-El **punto 2 ya está adaptado** y probado (`punto2_rotaciones.ipynb`, rama `ml/punto2-9-estados`). Corre de punta a
-punta sin errores con la entrega del 15/11. Las salidas de `backend/Datos/` **no** se regeneraron en ese commit: si se
-corre el punto 2 antes de adaptar los puntos 3 a 5, quedan inconsistentes (ver abajo).
+El **punto 2 ya está adaptado** y en `main` (`punto2_rotaciones.ipynb`). Corre de punta a punta sin errores con la
+entrega del 15/11. Sus salidas en `backend/Datos/` **no** se regeneraron: si se corre el punto 2 antes de hacer los
+cambios obligatorios de los puntos 3 y 4, quedan inconsistentes (ver abajo).
+
+El PR #34 ya resolvió parte de esta lista (puntos 3, 5 y 6 con la entrega nueva). Lo que ya está en `main` dice
+**Hecho (PR #34)**.
 
 Este archivo lista lo que hay que cambiar en **las otras partes** para que sigan andando con el punto 2 nuevo. No
 toqué esas notebooks. Lo marcado **Obligatorio** rompe algo o da números mal si no se hace.
@@ -102,26 +105,16 @@ por:
         for rotacion in [r for r in ("actual", "rotado", "continuo") if r in med.index]:   # fuera de la zona maíz-soja solo hay "actual"
 ```
 
-Probado: con ese cambio corre y quedan 790 condados en `explicaciones.json`.
+Probado con la versión del punto 3 anterior al PR #34: con ese cambio corre y quedan 790 condados en
+`explicaciones.json`. La línea sigue igual en `main`.
 
-### 2.c Obligatorio: los 9 estados
+### 2.c Hecho (PR #34): los 9 estados
 
-En la celda de parámetros:
+Ya está en `main`.
 
-```python
-NOMBRES_ESTADO = {"17": "Illinois", "18": "Indiana", "19": "Iowa", "20": "Kansas", "27": "Minnesota",
-                  "29": "Missouri", "31": "Nebraska", "39": "Ohio", "46": "South Dakota", "55": "Wisconsin"}
-```
+### 2.d Hecho (PR #34): la frase "+0 bu/ac"
 
-### 2.d Recomendado: la frase "+0 bu/ac"
-
-En 2 condados de soja de Nebraska (`31047` Dawson y `31111` Lincoln) casi no se siembra soja sobre soja, así que
-rotar del todo suma 0,0 bu/ac. La frase dice "Rotating fully is linked to about +0 bu/ac", y por eso falla el
-chequeo `rotado_suma_y_continuo_resta`. Opciones:
-
-- en `frase_rotacion`, si `abs(delta_bu) < 0.5`: "This county already grows almost no {c} after {c}, so rotating
-  fully changes little here.";
-- en el chequeo, aceptar `>= 0` en `rotado` (y `<= 0` en `continuo`).
+Ya está en `main`: si rotar cambia casi nada, la frase lo dice.
 
 ### 2.e Recomendado: Missouri con confianza baja
 
@@ -175,27 +168,19 @@ Con la tendencia por condado, el modelo aprende sobre todo el clima (paso 11 del
 
 ## 4. Punto 5 (`punto5_vecinos.ipynb`)
 
-### 4.a Obligatorio: los datos y los estados
+### 4.a Hecho (PR #34): los datos y los estados
 
-En la celda de parámetros:
+El punto 5 ya lee la entrega `todo_20261115` directo, con los 9 estados y sus siglas.
 
-```python
-VERSION_ENTREGA = "todo_20261115"
-RUTA_ENTREGA = RAIZ / "backend" / "Datos" / "entregas" / f"fieldshift_datos_{VERSION_ENTREGA}" / "unido_9_estados"
-NOMBRES_ESTADO = {"17": "Illinois", "18": "Indiana", "19": "Iowa", "20": "Kansas", "27": "Minnesota",
-                  "29": "Missouri", "31": "Nebraska", "39": "Ohio", "46": "South Dakota", "55": "Wisconsin"}
-SIGLAS_ESTADO = {"17": "IL", "18": "IN", "19": "IA", "20": "KS", "27": "MN", "29": "MO", "31": "NE",
-                 "39": "OH", "46": "SD", "55": "WI"}
-```
+### 4.b Recomendado: el motivo de la confianza fuera de la zona
 
-Sin `SIGLAS_ESTADO`, `gemelos.json` muestra el código del estado en vez de la sigla.
+El texto que ve el productor (`text` en `gemelos.json`) ya revisa si el punto 2 tiene estimación para ese condado y
+esa opción (PR #34). Fuera de la zona maíz-soja dice "there is no model estimate for this county yet". Ahí no es
+"yet": el punto 2 no compara rotaciones fuera de la zona a propósito.
 
-### 4.b Recomendado: el texto de los condados fuera de la zona
-
-En el paso 16 (chequeo contra el punto 2), en maíz los gemelos apuntan al revés que el modelo, y a las opciones
-`rotado` y `continuo` les pone "The range comes from the model". Pero en los 200 condados de maíz fuera de la zona
-maíz-soja **el modelo no tiene rango** para esas opciones: son 326 filas con un texto que no se cumple. Propuesta,
-dentro de `if not mismo_lado:`:
+Queda el motivo de la confianza del paso 16 (`confidence.reason`). En maíz pone "The range comes from the model" en
+todas las opciones `rotado` y `continuo`, también en los 200 condados fuera de la zona, donde el modelo no tiene
+rango. Propuesta, dentro de `if not mismo_lado:`:
 
 ```python
                 tiene_modelo = (rango.merge(modelo_p2[["fips", "cultivo", "rotacion"]], how="left", indicator=True)
@@ -211,9 +196,8 @@ dentro de `if not mismo_lado:`:
 
 ### 4.c Para saber
 
-Con 9 estados, el control importante (paso 19) sigue pasando: los gemelos le ganan a los vecinos del mapa en las 6
-opciones. En el paso 9, con todos los condados, los parecidos pierden contra el mapa por 1,3 bu/ac (antes
-empataban).
+Corrido en el PR #34: los gemelos le ganan a los vecinos del mapa en las 6 opciones cuando el condado busca lo
+que no hace; con todos los condados pierden (9,5 contra 8,1 bu/ac).
 
 ---
 
@@ -247,12 +231,12 @@ Sin eso, el ingreso por acre de esos estados sale "Missing data".
 ## 6. Orden para correr
 
 1. `punto2_rotaciones.ipynb` con `CULTIVO = "maiz"` y después con `"soja"`
-2. `punto3_explicaciones.ipynb` (después de 2.a, 2.b y 2.c)
+2. `punto3_explicaciones.ipynb` (después de 2.a y 2.b)
 3. `punto4_anomalias.ipynb` con maíz y con soja (después de 3.a y 3.b)
-4. `punto5_vecinos.ipynb` (después de 4.a)
+4. `punto5_vecinos.ipynb`
 5. `scripts/build_precios_costos.py` y `scripts/build_next_json.py`
 
-El punto 6 no cambia: usa `lotes/`, y el zip no trae lotes nuevos.
+El punto 6 ya lee la entrega nueva (PR #34) y no depende del punto 2.
 
 ## 7. Lo que sigue pendiente
 
