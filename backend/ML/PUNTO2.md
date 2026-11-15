@@ -270,6 +270,33 @@ Los números finales están en [`docs/ml/model_card.md`](../../docs/ml/model_car
   en el núcleo (IL, IN, IA). Lo útil de la app es la comparación de rotaciones (efectos fijos) y el rango, no
   pronosticar el rinde de maíz de un año.
 
+### Test final de entrega (15/11, 20:30)
+
+Se corrió de punta a punta **solo con los datos del repo** (`data/fieldshift_final/`), para que cualquiera pueda
+repetir el resultado sin la entrega completa:
+
+1. **Datos:** `unir.py` rearma `tabla_mensual.csv` y `tabla_anual.zip` se descomprime. Sus sha256 son **idénticos**
+   a los de la carpeta con la que se entrenó el modelo (`a900f4…` y `eae482…`, como dice `contenido.csv`).
+2. **Punto 2, maíz y soja, con `MIRAR_PRUEBA = True`**, en una copia aparte (no pisa nada del repo). Corre en unos
+   25 s por cultivo, sin errores, y da los mismos números de la tabla de arriba:
+
+| | Maíz | Soja |
+|---|---:|---:|
+| Desarrollo (MAE modelo / tendencia del condado) | 15,3 / 18,6 (gana 14 de 15 años) | 4,3 / 5,1 (gana 13 de 15) |
+| Prueba 2024–2025 (MAE modelo / tendencia) | 15,2 / 14,9 | 4,5 / 5,6 |
+| Filas de la prueba | 1.251 | 1.195 |
+| Banda p10–p90 en la prueba, una sola banda para todos | 80,5 % | 78,7 % |
+| Efecto de rotar (continuo contra rotado) | −18,9 % | −12,1 % |
+| Chequeo agronómico | pasa | pasa |
+
+3. **Mismas salidas:** el modelo guardado tiene las mismas features y la misma banda (maíz −25,3 a +23,4; soja −7,5
+   a +6,3). `escenarios_rotacion.csv` y `escenarios_rotacion_resumen.csv`, que son lo que lee el sitio, dan igual
+   (ninguna predicción cambia más de 0,05 bu/ac). En `predicciones_oof.csv` (las usa el punto 4) cambian 1.655 de
+   23.046 filas, en promedio 0,03 bu/ac: LightGBM con varios hilos no da siempre el mismo número. No cambia ningún
+   MAE.
+4. **Sitio:** `scripts/build_next_json.py` vuelve a armar los 948 `next/<fips>.json` sin una sola diferencia contra
+   el repo, `scripts/check_coverage.py` da "Sin errores" y el front compila (`tsc --noEmit` y `npm run build`).
+
 ## Cómo se valida
 
 - **Un año afuera por vez** (2009–2023), nunca filas al azar: los condados de un mismo año comparten el clima.
