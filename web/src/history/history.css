@@ -1294,3 +1294,46 @@
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 36px, #000 calc(100% - 44px), transparent);
   mask-image: linear-gradient(to bottom, transparent, #000 36px, #000 calc(100% - 44px), transparent);
 }
+
+/* ---- F34 · el estado se rebobina (condados sin mapa del CDL), debajo del rinde año por año ---- */
+.history__nomap { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.history__nomap .yh { gap: 14px; }
+.history__nomap .yh__bar { grid-template-rows: 20px 84px 20px; }
+.stw {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 20px; align-items: start;
+  background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-card);
+  padding: 18px 20px;
+}
+.stw__info { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.stw--loading { color: var(--ink-3); font-size: 14px; padding: 12px 0; }
+.stw__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.stw__title { font-family: var(--font-display); font-size: 22px; line-height: 1.1; margin: 0; color: var(--ink); }
+.stw__toggle { display: inline-flex; background: var(--surface-2); border-radius: 999px; padding: 3px; }
+.stw__toggle button {
+  font: 600 13px var(--font-body); color: var(--ink-2); background: none; border: 0;
+  border-radius: 999px; padding: 6px 12px; min-height: 32px; cursor: pointer;
+}
+.stw__toggle button[aria-pressed="true"] { background: var(--surface-1); color: var(--ink); box-shadow: var(--shadow-card); }
+.stw__toggle button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.stw__lede { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.stw__lede b { color: var(--ink); }
+.stw__map { position: relative; min-width: 0; }
+.stw__map svg { display: block; width: 100%; height: auto; max-height: 300px; }
+.stw__county { stroke: #fff; stroke-width: 0.7; vector-effect: non-scaling-stroke; transition: fill 0.45s ease; }
+.stw__me-halo { fill: none; stroke: #fff; stroke-width: 5; vector-effect: non-scaling-stroke; stroke-linejoin: round; pointer-events: none; }
+.stw__me { fill: none; stroke: var(--night); stroke-width: 2.4; vector-effect: non-scaling-stroke; stroke-linejoin: round; pointer-events: none; }
+.stw__hover { fill: none; stroke: var(--ink-2); stroke-width: 1.6; vector-effect: non-scaling-stroke; pointer-events: none; }
+.stw__tip {
+  position: absolute; transform: translate(-50%, calc(-100% - 8px)); margin: 0; pointer-events: none; white-space: nowrap;
+  background: var(--solid-bg); border: 1px solid var(--solid-line); box-shadow: var(--solid-shadow);
+  border-radius: var(--radius-s); padding: 4px 8px; font-size: 12px; color: var(--ink);
+}
+.stw__legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-3); }
+.stw__legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.stw__ramp i { display: inline-block; width: 64px; height: 8px; border-radius: 4px; }
+.stw__nodata, .stw__mine { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.stw__nodata { background: repeating-linear-gradient(45deg, #eef0eb 0 2px, #c9cec5 2px 4px); }
+.stw__mine { border: 2.5px solid var(--night); }
+.stw__note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink-3); }
+@media (max-width: 760px) { .stw { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .stw__county { transition: none; } }

@@ -21,7 +21,7 @@
 .fr-conf-reason{color:var(--ink-2);font-weight:500;white-space:normal}
 
 /* ------------------------------------------------------------------ página */
-.ns{--pad:96px;--dark:#0f2a1d;--dark-2:rgba(15,42,29,.74);--dark-3:rgba(15,42,29,.52);--dark-line:rgba(15,42,29,.16);
+.ns{--pad:96px;--dark:#0f2a1d;--dark-2:rgba(15,42,29,.74);--dark-3:rgba(15,42,29,.7);--dark-line:rgba(15,42,29,.16);
   color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.5;padding-bottom:0}
 .ns :where(h1,h2,h3,p,ul){margin:0;padding:0}
 .ns :where(ul){list-style:none}
@@ -66,7 +66,7 @@
 .ns-card-sub{color:var(--ink-2)}
 .ns-paper .ns-card-sub{color:var(--dark-2)}
 .ns-card-delta{font-weight:700;margin-top:6px!important;color:var(--wheat-gold)}
-.ns-card-delta.neg{color:#ff8a80}
+.ns-card-delta.neg{color:#b3261e}
 .ns-paper .ns-card-delta{color:#7a570c}.ns-paper .ns-card-delta.neg{color:#b3261e}
 .ns-gauge{position:relative;margin:28px 0 24px 44px}
 .ns-gauge-line{position:absolute;left:-44px;right:0;height:1px;background:var(--line)}
