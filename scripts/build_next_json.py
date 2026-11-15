@@ -7,6 +7,7 @@ Arma los JSON de la pantalla 3 ("Next season") con datos reales:
   backend/Datos/front/explicaciones.json         → razones, riesgos, confianza y años (punto 3)
   backend/Datos/front/gemelos.json               → condados gemelos por opción y cultivos nuevos (punto 5)
   backend/Datos/precios_costos.csv               → precio NASS y costo operativo ERS por estado (scripts/build_precios_costos.py)
+  backend/Datos/decision_opciones.csv            → puntajes por prioridad y métricas en $/acre (punto 7)
   web/public/data/county/<fips>.json             → mezcla de rotaciones del CDL (si el condado tiene historia)
   backend/Datos/tabla_modelado.csv               → % del maíz sobre maíz y % de la soja sobre soja por año (CDL): la "mix"
   backend/Datos/gemelos_vecinos.csv              → los 5 condados más parecidos por suelo y clima, para el rango de la "mix"
@@ -85,6 +86,19 @@ def income(rng, pc):
     if not rng or not pc:
         return None
     return {k: round(rng[k] * pc["price"] - pc["cost"]) for k in ("p10", "median", "p90")}
+
+
+def load_decision():
+    """Punto 7 (backend/Datos/decision_opciones.csv): puntajes 0..1 por prioridad y métricas en $/acre de cada opción,
+    calculados sobre los 15 escenarios de clima. Si no está el archivo, el script puntúa como antes."""
+    out = {}
+    p = ML / "decision_opciones.csv"
+    if not p.exists():
+        return out
+    with open(p, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            out[(r["fips"].zfill(5), CROP[r["cultivo"]], r["rotacion"])] = r
+    return out
 
 
 def load_ranges():
@@ -323,7 +337,37 @@ def cdl_context(fips, explic):
     return {"items": [], "text": texts, "source": "USDA CDL + NASS", "prototype": False}
 
 
-def build_crop(fips, crop, ranges, explic_crop, twins_county, pc):
+def score_from_decision(opts, fips, crop, decision):
+    """Llena scores (risk, income, soil) con el punto 7 y agrega la razón de riesgo en plata (CVaR de los peores años).
+    Devuelve False si falta el punto 7 para alguna opción con rango (entonces se puntúa como antes)."""
+    rows = {o["rotation"]: decision.get((fips, crop, o["rotation"])) for o in opts if o["yield_bu_ac"]}
+    if not rows or any(r is None for r in rows.values()):
+        return False
+    for o in opts:
+        r = rows.get(o["rotation"])
+        if r:
+            for p in ("risk", "income", "soil"):
+                v = r.get(f"score_{p}")
+                o["scores"][p] = round(float(v), 2) if v not in (None, "") else None
+    if len(rows) >= 2:
+        best = max((o for o in opts if o["rotation"] in rows), key=lambda o: float(rows[o["rotation"]]["cvar10_usd_ac"]))
+        rb = rows[best["rotation"]]
+        years = [int(a) for a in rb["anios_peores"].split(";") if a]
+        others = [o for o in opts if o["rotation"] in rows and o is not best]
+        ref = next((o for o in others if o["is_current"]), others[0])
+        name = "your usual mix" if best["is_current"] else best["label"].lower()
+        ref_name = "your usual mix" if ref["is_current"] else ref["label"].lower()
+        best["reasons"].insert(0, {
+            "priority": "risk",
+            "text": f"In the {len(years)} worst climate years ({', '.join(map(str, years))}), {name} leaves about "
+                    f"${float(rb['cvar10_usd_ac']):,.0f}/acre over operating costs, against "
+                    f"${float(rows[ref['rotation']]['cvar10_usd_ac']):,.0f} with {ref_name}.",
+            "source": INCOME_SRC, "kind": "model", "years": years, "pro": True,
+        })
+    return True
+
+
+def build_crop(fips, crop, ranges, explic_crop, twins_county, pc, decision=None):
     opts = []
     for rot in ("actual", "rotado", "continuo"):
         rng = ranges.get((fips, crop, rot))
@@ -340,6 +384,12 @@ def build_crop(fips, crop, ranges, explic_crop, twins_county, pc):
                     reasons.append(reason(r, "yield", v > 0))
             elif r["type"] == "climate_bad_years":
                 reasons.append(reason(r, "risk", False))
+            elif r["type"] in ("county_level", "soil"):
+                # Nivel propio del condado (suelo y manejo) o grupo de suelo del modelo: habla del rinde
+                reasons.append(reason(r, "yield", (r.get("value_bu_ac") or 0) > 0))
+            elif r["type"] == "soil_rule":
+                # Regla de SSURGO: cuánta agua retiene el suelo; pesa en los años secos
+                reasons.append(reason(r, "risk", r.get("sign", 0) > 0))
         if (crop, rot) in SOIL_RULE:
             text, pro = SOIL_RULE[(crop, rot)]
             reasons.append({"priority": "soil", "text": text, "source": "Agronomic rule", "kind": "rule", "years": [], "pro": pro})
@@ -368,9 +418,12 @@ def build_crop(fips, crop, ranges, explic_crop, twins_county, pc):
             "prototype": False,
         })
 
-    # Riesgo: el piso en un año malo (p10), comparado entre las tres opciones
+    # Punto 7: si están sus puntajes, mandan (riesgo con el CVaR de los peores años, ingreso medio y regla de suelo)
+    del_punto7 = bool(decision) and score_from_decision(opts, fips, crop, decision)
+
+    # Riesgo: el piso en un año malo (p10), comparado entre las tres opciones (sin el punto 7)
     p10s = [o["yield_bu_ac"]["p10"] for o in opts if o["yield_bu_ac"]]
-    if len(p10s) >= 2:
+    if len(p10s) >= 2 and not del_punto7:
         lo, hi = min(p10s), max(p10s)
         for o in opts:
             if o["yield_bu_ac"]:
@@ -391,14 +444,22 @@ def build_crop(fips, crop, ranges, explic_crop, twins_county, pc):
     if len(meds) >= 2:
         lo, hi = min(meds), max(meds)
         for o in opts:
-            if o["income_usd_ac"]:
+            if o["income_usd_ac"] and not del_punto7:
                 o["scores"]["income"] = round(0.5 if hi == lo else (o["income_usd_ac"]["median"] - lo) / (hi - lo), 2)
         best = max((o for o in opts if o["income_usd_ac"]), key=lambda o: o["income_usd_ac"]["median"])
         inc = best["income_usd_ac"]
+        nombre = best['label'].lower() if not best['is_current'] else 'your usual mix'
+        fila7 = decision.get((fips, crop, best["rotation"])) if del_punto7 else None
+        if fila7:
+            # Con el punto 7: el promedio de los 15 años de clima; el "año malo" lo cuenta la razón de riesgo (CVaR)
+            cuanto = (f"On average over {fila7['n_escenarios']} climate years, {nombre} would leave about "
+                      f"${float(fila7['ingreso_medio_usd_ac']):,.0f}/acre over operating costs, the most of the three. ")
+        else:
+            cuanto = (f"In a typical year, {nombre} would leave about "
+                      f"${inc['median']:,}/acre over operating costs (${inc['p10']:,} in a bad year), the most of the three. ")
         best["reasons"].insert(0, {
             "priority": "income",
-            "text": f"In a typical year, {best['label'].lower() if not best['is_current'] else 'your usual mix'} would leave about "
-                    f"${inc['median']:,}/acre over operating costs (${inc['p10']:,} in a bad year), the most of the three. "
+            "text": cuanto +
                     f"Uses the {pc['years']} median {STATE_NAME[fips[:2]]} price (${pc['price']:.2f}/bu) and the same "
                     f"${pc['cost']:.0f}/acre operating cost for every option.",
             "source": INCOME_SRC, "kind": "model", "years": [], "pro": True,
@@ -411,13 +472,23 @@ def build_crop(fips, crop, ranges, explic_crop, twins_county, pc):
     return {"crop": crop, "label": CROP_LABEL[crop], "options": opts}
 
 
-def income_missing(fips, prices):
+def income_missing(fips, prices, crops=None):
     st = STATE_NAME[fips[:2]]
     if not all((fips[:2], es) in prices for es in CROP):
         return [{"what": "Income ($/acre)", "why": f"No USDA NASS price or ERS cost for {st}."}]
-    return [{"what": "Cost by rotation",
-             "why": "USDA ERS gives one operating cost per crop, so every option uses the same cost. "
-                    "Corn after corn usually needs more nitrogen, so its income here is likely too high."}]
+    out = [{"what": "Cost by rotation",
+            "why": "USDA ERS gives one operating cost per crop, so every option uses the same cost. "
+                   "Corn after corn usually needs more nitrogen, so its income here is likely too high."},
+           {"what": "Cost for this county",
+            "why": f"Operating costs are the USDA ERS average for {st}'s farm region, not this county's. "
+                   "Your own costs may be higher or lower."}]
+    negativas = sorted({o["label"] for c in (crops or {}).values() for o in c["options"]
+                        if o["income_usd_ac"] and o["income_usd_ac"]["median"] < 0})
+    if negativas:
+        out.append({"what": "Income below zero",
+                    "why": "At the regional average cost, a typical year leaves less than the operating cost here "
+                           f"({', '.join(negativas)}). With lower local costs the result can be positive."})
+    return out
 
 
 def main():
@@ -427,6 +498,7 @@ def main():
     rates = load_rotation_rates()
     neighbors = load_neighbors()
     mix_season = max(y for r in rates.values() for y in r) + 1
+    decision = load_decision()
     explic = json.loads((ML / "front" / "explicaciones.json").read_text(encoding="utf-8"))
     twins = json.loads((ML / "front" / "gemelos.json").read_text(encoding="utf-8"))
     OUT.mkdir(parents=True, exist_ok=True)
@@ -435,7 +507,7 @@ def main():
         if fips[:2] not in STATES:
             continue
         tc = twins["counties"].get(fips)
-        crops = {crop: build_crop(fips, crop, ranges, ex.get(es, {}), tc, prices.get((fips[:2], es)))
+        crops = {crop: build_crop(fips, crop, ranges, ex.get(es, {}), tc, prices.get((fips[:2], es)), decision)
                  for es, crop in CROP.items()}
         explore = []
         for key in ("wheat", "oats"):
@@ -460,7 +532,7 @@ def main():
             "crops": crops,
             "twins": [{**t, "source": t.get("source", ""), "prototype": bool(t.get("prototype"))} for t in (tc or {}).get("twins", [])],
             "explore": explore,
-            "missing": income_missing(fips, prices) + [
+            "missing": income_missing(fips, prices, crops) + [
                 {"what": "Water use", "why": "No data separates these options for water."},
             ],
             "contract": {"explicaciones": explic.get("version_contrato"), "gemelos": twins.get("version_contrato")},

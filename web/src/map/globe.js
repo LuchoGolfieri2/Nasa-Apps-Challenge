@@ -2,7 +2,7 @@
 // Portada → globo → estado → condado (tarjeta al lado del condado). Maneja sus propias rutas (ver README.md).
 // El color de los condados y el número de la tarjeta son reales: rinde de maíz del USDA NASS, media
 // 2021–2025 ("stat" en globe-data.json, lo escribe scripts/build_front_data.py). Sin dato: "Missing data".
-import {POSTAL_BY_FIPS, FIPS_BY_POSTAL} from '../data/states';
+import {POSTAL_BY_FIPS, FIPS_BY_POSTAL, STATES as STATE_LIST} from '../data/states';
 import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
 import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
@@ -33,7 +33,10 @@ const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
 const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
 const NEXT_AVAILABLE = NEXT_LIST; // condados con datos del modelo para la pantalla Next season
 const POSTAL = POSTAL_BY_FIPS, FIPS_OF = FIPS_BY_POSTAL; // data/states.ts: un solo lugar para sumar estados
-// Estados sin salidas del modelo de rinde (hoy Kansas): se siguen mostrando, con el aviso escrito.
+// Rótulo de la portada: los estados que tienen polígono, en el orden de data/states.ts (se suma solo cuando llega uno nuevo)
+const HIGHLIGHT_NAMES = STATE_LIST.filter((s) => D.states.some((x) => x.id === s.fips)).map((s) => s.name.toUpperCase());
+const HIGHLIGHT_LABEL = HIGHLIGHT_NAMES.length <= 4 ? HIGHLIGHT_NAMES.join(' · ') : `${HIGHLIGHT_NAMES.length} STATES`; // con muchos estados el rótulo no entra
+// Estados sin salidas del modelo de rinde (hoy ninguno con polígono; Dakota del Norte cuando llegue): se muestran con el aviso escrito.
 const hasModel = (stateId) => NEXT_AVAILABLE.some((id) => id.startsWith(stateId));
 const NO_MODEL = 'Missing data: no yield model for this state yet';
 
@@ -615,7 +618,7 @@ function drawHud(u, r, a) {
     c.globalAlpha = Math.max(0, Math.min(1, 1.7 - R.k));
     c.beginPath(); c.moveTo(x, y); c.lineTo(x2 - 8, y2 + 8); c.strokeStyle = COL.glow; c.lineWidth = 1.5; c.stroke();
     c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-    c.font = '700 15px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '1.2px'; shadowText(c, 'IOWA · ILLINOIS · KANSAS', x2, y2 - 6, COL.glow);
+    c.font = '700 15px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '1.2px'; shadowText(c, HIGHLIGHT_LABEL, x2, y2 - 6, COL.glow);
     c.font = '500 13px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '0px'; shadowText(c, 'Click a state to explore', x2, y2 + 13, 'rgba(246,241,228,0.85)');
     c.globalAlpha = 1;
   }

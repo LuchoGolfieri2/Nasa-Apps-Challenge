@@ -4,7 +4,6 @@ import { MapLayer } from "../map/MapLayer";
 import { NextScreen } from "../next/NextScreen";
 import { SourcesScreen } from "../sources/SourcesScreen";
 import { FarmScreen } from "../farm/FarmScreen";
-import { NASA_USDA_COUNT } from "../sources/datasets";
 import { useLocation } from "./router";
 import "./app.css";
 
@@ -38,11 +37,11 @@ export function App() {
             <Logo />
             <nav className="topbar__nav" aria-label="Main">
               <a href="#/map">Map</a>
+              <a href="#/sources" className="topbar__sources">
+                Sources<span className="topbar__long"> &amp; limits</span>
+              </a>
               <a href="#/farm" className="topbar__farm" aria-current={route.name === "farm" ? "page" : undefined}>
                 My Farm
-              </a>
-              <a href="#/sources" className="topbar__sources">
-                Sources<span className="topbar__long"> &amp; limits</span> <span className="topbar__count">{NASA_USDA_COUNT} NASA &amp; USDA datasets</span>
               </a>
             </nav>
           </header>
