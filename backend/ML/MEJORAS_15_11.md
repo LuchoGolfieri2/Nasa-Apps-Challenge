@@ -69,3 +69,38 @@ MAE en bu/ac. "Tendencia" es la tendencia lineal de cada condado, el mejor basel
 - [ ] Maíz en la prueba: recalcular la rotación de 2024–2025 con el CDL llevado a 30 m (pedido al pipeline).
 - [ ] Dakota del Norte y el suelo de 9 condados de Dakota del Sur (pipeline).
 - [ ] Punto 6: confirmar el umbral del híbrido con una temporada nueva.
+
+## 6. Entrega final de 11 estados (`fieldshift_datos_final_20261115`)
+
+Suma **Dakota del Norte** (53 condados). En los otros 10 estados las columnas que usan los modelos son
+**idénticas** a la entrega de 10 estados (solo se llenaron GAEZ, PRISM y ECOSTRESS, que no usa ningún punto), y los
+10 lotes del punto 6 también. Los puntos 2 a 7 los corrió Seba (commit `27f65a5`) y se volvieron a correr por separado
+para verificarlos: mismos resultados (ver "Reproducibilidad" abajo).
+
+| Punto | Resultado con 11 estados |
+|---|---|
+| 2, maíz | MAE 15,3 bu/ac contra 18,6 de la tendencia del condado; gana en los 11 estados (Dakota del Norte: 15,7 contra 17,2) y en 14 de 15 años. Continuo −18,9 %; chequeo OK. Banda: 80 % en cada estado |
+| 2, soja | MAE 4,3 contra 5,1; gana en los 11 estados (Dakota del Norte: 4,7 contra 4,8). Continuo −12,1 %; chequeo OK |
+| 2, escenarios | En los 10 estados de antes, la mediana del rango se mueve 0,4 bu/ac (mediana; máximo 3,7). Dakota del Norte: 53 condados con "actual" y solo 10 en la zona maíz-soja con "rotado" y "continuo" |
+| 3 | 948 condados, 6 chequeos OK |
+| 4 | 20 % de años marcados; 2012: 67 % de los condados de maíz, 91 % de ellos por calor o falta de agua |
+| 5 | 948 condados. Los gemelos le ganan al mapa en las 6 opciones (maíz rotado: 15,7 contra 20,5 bu/ac del mapa); con todos los condados, 9,4 contra 8,7. Trigo: 561 condados (12 de ND); avena: 272 (19 de ND) |
+| 6 | Igual que antes (mismos lotes): híbrido 99 % al 15 de julio |
+| 7 | Las prioridades cambian la opción primera en el 10 % de los 1.244 condado × cultivo |
+| Front | `precios_costos.csv` con los 11 estados; 948 `next/<fips>.json`, mismo contrato |
+
+**Dakota del Norte, a tener en cuenta:** el 39 % de sus filas de maíz no trae el % de maíz sobre maíz, y su trigo
+es casi todo de primavera (no está entre los cultivos del proyecto), así que tiene pocos condados con trigo de
+invierno.
+
+**Nuevo en la entrega:** la aptitud de FAO GAEZ (clima 1981–2010 y 2041–2070) ahora está en los 11 estados. Con eso
+ya se puede armar el escenario de clima futuro en toda la zona (estaba pendiente porque solo había para IA, IL e IN).
+
+**Reproducibilidad.** Las dos corridas dan los mismos archivos en `tabla_modelado`, `gemelos*`, `explicaciones` y
+`precios_costos`, y diferencias de redondeo (0,1 bu/ac en una fila) en los escenarios y el punto 7. Pero las
+predicciones fuera de muestra del punto 2 (`predicciones_oof.csv`) cambian algo en algunos folds: maíz 2013 y 2020,
+hasta 1,8 bu/ac (mediana 0,3). Eso mueve el "no explicado" del punto 4 y cambia si 9 de 23.046 condado-año quedan
+marcados. Lo más probable es que LightGBM no sea del todo determinista con varios hilos. Para que cada corrida dé
+exactamente lo mismo (regla 5 del `CLAUDE.md`): sumar `deterministic=True` y `force_row_wise=True` al
+`LGBMRegressor` del punto 2 (y de los puntos 3 y 4, que regeneran el modelo con la misma receta).
+
