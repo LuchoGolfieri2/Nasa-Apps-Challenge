@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Rewind</title>
+<meta name="description" content="Rewind your land before you decide. County history and crop rotation options built with NASA and USDA data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+  :root {
+    /* Primitives (brand board) */
+    --verde-noche: #0F2A1D;
+    --verde-campo: #2F7D4F;
+    --verde-brote: #8ED081;
+    --oro-trigo: #E9B949;
+    --papel: #F6F1E4;
+    /* Roles */
+    --color-bg: var(--verde-noche);
+    --color-text: var(--papel);
+    --color-text-muted: rgb(246 241 228 / 0.78);   /* 8.8:1 on bg */
+    --color-border-control: rgb(246 241 228 / 0.42); /* 3.6:1 on bg, WCAG 1.4.11 */
+    --color-action: var(--verde-campo);
+    --color-action-hover: #378E5B;
+    --color-focus: var(--oro-trigo);                 /* 8.4:1 on bg */
+    --color-glow: var(--verde-brote);
+    --globe-ocean: #081C12;
+    --globe-land: #245A3A;
+    --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+    --font-ui: "DM Sans", system-ui, sans-serif;
+    --gutter: clamp(1rem, 3.75vw, 4.5rem);
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--color-bg); }
+  body {
+    margin: 0; min-height: 100dvh;
+    display: grid; grid-template-rows: auto 1fr auto;
+    color: var(--color-text); font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* Background layers: fixed behind the page, never intercept pointer or focus */
+  .backdrop { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .sky { position: absolute; inset: 0;
+    background:
+      radial-gradient(1px 1px at 12% 18%, rgb(246 241 228 / .45) 50%, transparent 51%),
+      radial-gradient(1px 1px at 83% 12%, rgb(246 241 228 / .35) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 71% 64%, rgb(246 241 228 / .30) 50%, transparent 51%),
+      radial-gradient(1px 1px at 22% 72%, rgb(246 241 228 / .30) 50%, transparent 51%),
+      radial-gradient(1px 1px at 92% 44%, rgb(246 241 228 / .40) 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 6% 48%, rgb(246 241 228 / .25) 50%, transparent 51%),
+      radial-gradient(1px 1px at 40% 8%, rgb(246 241 228 / .30) 50%, transparent 51%),
+      radial-gradient(1px 1px at 58% 92%, rgb(246 241 228 / .25) 50%, transparent 51%);
+  }
+  .glow { position: absolute; border-radius: 50%; transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, rgb(142 208 129 / .30) 60%, rgb(142 208 129 / .10) 74%, transparent 100%); }
+  /* Changing map paint every frame stalls the globe renderer, so the pulse lives here in CSS */
+  @media (prefers-reduced-motion: no-preference) {
+    body.is-playing .glow { animation: breathe 2.8s ease-in-out infinite; }
+  }
+  @keyframes breathe { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+  #map { position: absolute; inset: 0; opacity: 0; transition-property: opacity; transition-duration: 600ms; transition-timing-function: ease-out; }
+  #map.is-ready { opacity: 1; }
+  .fade { position: absolute; left: 0; right: 0; bottom: 0; height: 48%;
+    background: linear-gradient(to bottom, rgb(15 42 29 / 0) 0%, rgb(15 42 29 / .9) 55%, var(--color-bg) 100%); }
+
+  header, main, footer { position: relative; z-index: 1; }
+
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 1rem 1.5rem; padding: 2.5rem var(--gutter) 0; }
+  .logo { display: inline-flex; align-items: center; gap: 0.875rem; color: var(--color-text); text-decoration: none;
+    font-family: var(--font-display); font-weight: 400; font-size: 2.5rem; letter-spacing: -0.015em; line-height: 1; }
+  .logo b { font-weight: 700; }
+  .logo svg { width: 3.25rem; height: 3.125rem; flex: none; }
+
+  .search { display: flex; align-items: center; gap: 0.75rem; width: min(26.5rem, 100%); min-height: 3.5rem; padding: 0 1.375rem;
+    border: 1.5px solid var(--color-border-control); border-radius: 999px; background: rgb(15 42 29 / .6);
+    transition-property: border-color; transition-duration: 150ms; transition-timing-function: var(--ease-out); }
+  .search:focus-within { border-color: var(--color-glow); }
+  .search svg { width: 1.375rem; height: 1.375rem; flex: none; color: var(--color-text); }
+  .search input { flex: 1; min-width: 0; min-height: 3.25rem; border: 0; background: transparent; color: var(--color-text);
+    font: 400 1.125rem/1.2 var(--font-ui); }
+  .search input:focus { outline: none; } /* ring is drawn on the whole field by :focus-within */
+  .search:has(input:focus-visible) { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+  .search input::placeholder { color: var(--color-text-muted); opacity: 1; }
+
+  main { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; text-align: center;
+    padding: 2rem var(--gutter) 0; }
+  h1 { margin: 0; max-width: 20ch; font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(2.5rem, 4vw, 4.75rem); line-height: 1.05; letter-spacing: -0.02em; text-wrap: balance; }
+  .cta { margin-top: 2.25rem; display: inline-flex; align-items: center; justify-content: center;
+    min-height: 4rem; padding: 0 3rem; border-radius: 999px; border: 1px solid transparent;
+    background: var(--color-action); color: var(--color-text); text-decoration: none;
+    font: 700 1.375rem/1.2 var(--font-ui); /* 700 at 22px = large text: 4.47:1 passes 3:1 */
+    box-shadow: 0 0 2rem rgb(142 208 129 / .25);
+    transition-property: background-color, scale; transition-duration: 150ms; transition-timing-function: ease-out; }
+  @media (hover: hover) { .cta:hover { background: var(--color-action-hover); } }
+  .cta:active { scale: 0.96; }
+  .coverage { margin: 1.375rem 0 0; font-size: 1.25rem; line-height: 1.4; color: var(--color-text-muted); }
+  .sources { margin: 0.5rem 0 0; font-size: 1rem; line-height: 1.4; color: var(--color-text-muted); }
+
+  footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 1.5rem var(--gutter) 1.75rem; }
+  .motion-toggle { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1rem;
+    border: 1.5px solid var(--color-border-control); border-radius: 999px; background: transparent; color: var(--color-text);
+    font: 500 0.875rem/1 var(--font-ui); white-space: nowrap; cursor: pointer; }
+  .motion-toggle svg { width: 1rem; height: 1rem; }
+  .note { margin: 0; font-size: 0.8125rem; line-height: 1.4; color: var(--color-text-muted); text-align: end; }
+
+  :focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+  .logo:focus-visible { border-radius: 0.5rem; }
+  .cta:focus-visible, .motion-toggle:focus-visible { border-radius: 999px; }
+
+  /* Capture mode: only the globe, for exporting the loop to Figma and video */
+  body.capture header, body.capture main, body.capture footer, body.capture .fade, body.capture .sky { visibility: hidden; }
+
+  @media (max-width: 45rem) {
+    header { padding-top: 1.25rem; }
+    .logo { font-size: 1.75rem; } .logo svg { width: 2.25rem; height: 2.2rem; }
+    .search { width: 100%; }
+    .cta { width: 100%; }
+    .coverage { font-size: 1.0625rem; } .sources { font-size: 0.875rem; }
+  }
+</style>
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true">
+    <div class="sky"></div>
+    <div class="glow" id="glow"></div>
+    <div id="map"></div>
+    <div class="fade"></div>
+  </div>
+
+  <header>
+    <a class="logo" href="./">
+      <svg viewBox="0 0 62 60" aria-hidden="true">
+        <g fill="#8ED081"><path d="M0 30 30 4v10Z"/><path d="M0 30 30 17v10Z"/><path d="M0 30 30 33v10Z"/><path d="M0 30 30 46v10Z"/></g>
+        <g fill="#E9B949"><path d="M30 30 60 4v10Z"/><path d="M30 30 60 17v10Z"/><path d="M30 30 60 33v10Z"/><path d="M30 30 60 46v10Z"/></g>
+      </svg>
+      <span>Field <b>Rewind</b></span>
+    </a>
+    <form class="search" role="search" action="#" onsubmit="return false">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <label for="q" class="visually-hidden">Search a county or place</label>
+      <input id="q" name="q" type="search" placeholder="Story County, IA" autocomplete="off" enterkeyhint="search">
+    </form>
+  </header>
+
+  <main>
+    <h1>Rewind your land before you decide.</h1>
+    <a class="cta" href="#/county/19169">Try Story County</a>
+    <p class="coverage">Works in Iowa, Illinois and Kansas</p>
+    <p class="sources">Built with NASA POWER, SMAP and MODIS, and USDA data</p>
+  </main>
+
+  <footer>
+    <button class="motion-toggle" id="motion" type="button" aria-pressed="false">
+      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" id="motion-icon"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
+      <span id="motion-label">Pause globe</span>
+    </button>
+    <p class="note">Prototype · Boundaries: Natural Earth, US Census</p>
+  </footer>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+const css = getComputedStyle(document.documentElement);
+const token = n => css.getPropertyValue(n).trim();
+const params = new URLSearchParams(location.search);
+const CAPTURE = params.has('capture');
+if (CAPTURE) document.body.classList.add('capture');
+
+const ACTIVE = ['19', '17', '20'];          // Iowa, Illinois, Kansas (state FIPS)
+const HOME = [-96, 36];
+const SECONDS_PER_TURN = 120;               // slow: one full turn every 2 minutes
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Size and place the globe like the v1 mockup: big, centered, its lower part under the hero text.
+function globeFrame() {
+  const w = innerWidth, h = innerHeight, narrow = w < 720;
+  // MapLibre's globe radius in px: 512·2^z / (2π·cos(lat)). Zoom stays ≥ 1: the single z0
+  // tile mis-fills polygons that cross the antimeridian and floods the sphere with land.
+  const k = 512 / (2 * Math.PI * Math.cos(HOME[1] * Math.PI / 180));
+  const want = narrow ? Math.min(w * 0.46, h * 0.3) : Math.min(h * 0.5, w * 0.3);
+  const zoom = Math.max(1, Math.log2(want / k)), r = k * 2 ** zoom;
+  const cy = narrow ? h * 0.3 : h * 0.56;
+  const shift = 2 * (cy - h / 2); // MapLibre centers the globe inside the padded area
+  return { r, cx: w / 2, cy, zoom, pad: { top: Math.max(0, shift), bottom: Math.max(0, -shift), left: 0, right: 0 } };
+}
+function placeGlow(f) {
+  const g = document.getElementById('glow'), d = f.r * 2.9;
+  Object.assign(g.style, { width: d + 'px', height: d + 'px', left: f.cx + 'px', top: f.cy + 'px' });
+}
+
+let f = globeFrame();
+placeGlow(f);
+const map = new maplibregl.Map({
+  container: 'map', center: HOME, zoom: f.zoom,
+  interactive: false,                        // decorative background: no focus trap, no drag
+  attributionControl: false,
+  ...(CAPTURE ? { canvasContextAttributes: { preserveDrawingBuffer: true } } : {}),
+  style: {
+    version: 8,
+    projection: { type: 'globe' },
+    sky: { 'atmosphere-blend': ['interpolate', ['linear'], ['zoom'], 0, 1, 5, 1, 7, 0] },
+    sources: {},
+    layers: [{ id: 'ocean', type: 'background', paint: { 'background-color': token('--globe-ocean') } }]
+  }
+});
+map.setPadding(f.pad);
+map.getCanvas().setAttribute('tabindex', '-1');
+
+addEventListener('resize', () => {
+  f = globeFrame(); placeGlow(f);
+  map.setPadding(f.pad); map.setZoom(f.zoom);
+});
+
+map.on('load', async () => {
+  const [world, us] = await Promise.all([
+    fetch('data/countries-110m.json').then(r => r.json()),
+    fetch('data/states-10m.json').then(r => r.json())
+  ]);
+  const states = topojson.feature(us, us.objects.states);
+  states.features.forEach(s => s.properties.active = ACTIVE.includes(String(s.id).padStart(2, '0')));
+  // Low maxzoom: a handful of tiles cover the whole globe, so the spin never waits on new ones
+  const countries = topojson.feature(world, world.objects.countries);
+  // Rings that cross the antimeridian (Russia, Fiji, Antarctica) jump from -180 to 180 and
+  // get drawn as bands around the whole planet. Shifting their west half by +360 keeps each
+  // ring continuous. Antarctica is dropped: the camera never sees it and its ring wraps the pole.
+  countries.features = countries.features.filter(c => c.properties.name !== 'Antarctica');
+  const unwrap = ring => ring.some((pt, i) => i && Math.abs(pt[0] - ring[i - 1][0]) > 180)
+    ? ring.map(([x, y]) => [x < 0 ? x + 360 : x, y]) : ring;
+  for (const c of countries.features) {
+    const g = c.geometry;
+    if (g.type === 'Polygon') g.coordinates = g.coordinates.map(unwrap);
+    if (g.type === 'MultiPolygon') g.coordinates = g.coordinates.map(poly => poly.map(unwrap));
+  }
+  map.addSource('countries', { type: 'geojson', maxzoom: 3, data: countries });
+  map.addSource('states', { type: 'geojson', maxzoom: 5, data: states });
+  const brote = token('--verde-brote'), papel = token('--papel');
+  const isActive = ['==', ['get', 'active'], true];
+  map.addLayer({ id: 'land', type: 'fill', source: 'countries', paint: { 'fill-color': token('--globe-land'), 'fill-antialias': false } });
+  map.addLayer({ id: 'country-lines', type: 'line', source: 'countries', paint: { 'line-color': brote, 'line-opacity': 0.25, 'line-width': 0.6 } });
+  map.addLayer({ id: 'state-lines', type: 'line', source: 'states', paint: { 'line-color': papel, 'line-opacity': 0.28, 'line-width': 0.6 } });
+  map.addLayer({ id: 'active-glow', type: 'line', source: 'states', filter: isActive, paint: { 'line-color': brote, 'line-width': 16, 'line-blur': 14, 'line-opacity': 0.7 } });
+  map.addLayer({ id: 'active-fill', type: 'fill', source: 'states', filter: isActive, paint: { 'fill-color': brote, 'fill-opacity': 0.9 } });
+  map.addLayer({ id: 'active-line', type: 'line', source: 'states', filter: isActive, paint: { 'line-color': '#DFF5D8', 'line-width': 1.2 } });
+  if (CAPTURE) { document.getElementById('map').classList.add('is-ready'); map.once('idle', () => window.__ready = true); return; }
+  // Start spinning only after the first full render, so tiles load before the camera moves
+  map.once('idle', () => { document.getElementById('map').classList.add('is-ready'); setPlaying(!reduceMotion); });
+});
+
+// Motion: slow constant spin + soft pulse. Pausable (WCAG 2.2.2), off by default under reduced motion.
+let playing = false, last = 0, raf = 0;
+const btn = document.getElementById('motion'), label = document.getElementById('motion-label'), icon = document.getElementById('motion-icon');
+const PAUSE_ICON = '<rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/>';
+const PLAY_ICON = '<path d="M4 2.5v11a.8.8 0 0 0 1.2.7l9-5.5a.8.8 0 0 0 0-1.4l-9-5.5A.8.8 0 0 0 4 2.5Z"/>';
+function setPlaying(on) {
+  playing = on;
+  document.body.classList.toggle('is-playing', on);
+  btn.setAttribute('aria-pressed', String(!on));
+  label.textContent = on ? 'Pause globe' : 'Play globe';
+  icon.innerHTML = on ? PAUSE_ICON : PLAY_ICON;
+  cancelAnimationFrame(raf);
+  if (on) { last = performance.now(); raf = requestAnimationFrame(tick); }
+}
+btn.addEventListener('click', () => setPlaying(!playing));
+function tick(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  if (!document.hidden) {
+    const c = map.getCenter();
+    map.setCenter([c.lng - (360 / SECONDS_PER_TURN) * dt, c.lat]);
+  }
+  raf = requestAnimationFrame(tick);
+}
+
+// Deterministic frame for exporting a seamless loop: t in [0, 1)
+window.setFrame = t => new Promise(res => {
+  map.setCenter([HOME[0] - 360 * t, HOME[1]]);
+  map.once('idle', () => res(true));
+  map.triggerRepaint();
+});
+</script>
+</body>
+</html>
