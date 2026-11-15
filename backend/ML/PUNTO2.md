@@ -291,9 +291,10 @@ repetir el resultado sin la entrega completa:
 
 3. **Mismas salidas:** el modelo guardado tiene las mismas features y la misma banda (maíz −25,3 a +23,4; soja −7,5
    a +6,3). `escenarios_rotacion.csv` y `escenarios_rotacion_resumen.csv`, que son lo que lee el sitio, dan igual
-   (ninguna predicción cambia más de 0,05 bu/ac). En `predicciones_oof.csv` (las usa el punto 4) cambian 1.655 de
-   23.046 filas, en promedio 0,03 bu/ac: LightGBM con varios hilos no da siempre el mismo número. No cambia ningún
-   MAE.
+   en `pred` y en el resumen (cero diferencias). En `predicciones_oof.csv` (las usa el punto 4) cambian 1.655 de
+   23.046 filas, en promedio 0,03 bu/ac: LightGBM con varios hilos no da siempre el mismo número. Como la banda por
+   estado sale de esos residuos, el `p10`/`p90` de cada escenario se mueve hasta 0,5 bu/ac; el sitio no los usa
+   (usa el resumen). No cambia ningún MAE.
 4. **Sitio:** `scripts/build_next_json.py` vuelve a armar los 948 `next/<fips>.json` sin una sola diferencia contra
    el repo, `scripts/check_coverage.py` da "Sin errores" y el front compila (`tsc --noEmit` y `npm run build`).
 
