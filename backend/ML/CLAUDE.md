@@ -318,9 +318,11 @@ docs/ml/                     # model_card.md, pedidos_datos.md
 | 3 | `punto3_explicaciones.ipynb` | El "por qué" de los números | SHAP del modelo del punto 2 (clima y suelo) + `efecto_rotacion.csv` (rotación), con frases de plantillas fijas. Arranque: `PUNTO2.md`, sección "Para el punto 3" |
 | 4 | [`punto4_anomalias.ipynb`](punto4_anomalias.ipynb) | Años que rindieron distinto de lo esperado | Real contra un año normal según el modelo del punto 2; causa por grupos de clima (SHAP) |
 | 5 | `punto5_vecinos.ipynb` | Condados o lotes parecidos que sí hicieron esa rotación | kNN por suelo, clima e historial |
+| 6 | [`punto6_cultivo_temporada.ipynb`](punto6_cultivo_temporada.ipynb) | Qué está sembrado este año, antes de que el USDA publique el CDL | Clasificador LightGBM sobre Landsat + Sentinel-2 (HLS) por píxel, validado hacia adelante por año contra la regla de rotación; híbrido regla + satélite |
 
 Prioridad (comentario de Lucho en el issue #6): #1 imprescindible; #2 y #3 muy recomendables; #4 y
-#5 si sobra tiempo. Qué ve el front de cada uno: `INFO.md` en la raíz.
+#5 si sobra tiempo; #6 quedaba para el pitch como "próximos pasos" (dificultad alta), y ya tiene una
+primera versión con los 10 lotes de demo. Qué ve el front de cada uno: `INFO.md` en la raíz.
 
 ---
 
