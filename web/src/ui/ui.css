@@ -56,3 +56,11 @@
 .logo__field {
   font-weight: 500;
 }
+
+/* Ícono de cultivo (CropIcon): en línea con el texto */
+.crop-ico {
+  display: inline-block;
+  flex: none;
+  vertical-align: -4px;
+  line-height: 0;
+}
