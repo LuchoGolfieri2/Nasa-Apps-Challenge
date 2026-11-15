@@ -4,6 +4,7 @@ import { MapLayer } from "../map/MapLayer";
 import { NextScreen } from "../next/NextScreen";
 import { SourcesScreen } from "../sources/SourcesScreen";
 import { FarmScreen } from "../farm/FarmScreen";
+import { DeptScreen } from "../argentina/DeptScreen";
 import { useLocation } from "./router";
 import "./app.css";
 
@@ -52,6 +53,8 @@ export function App() {
             <NextScreen key={route.fips} fips={route.fips} />
           ) : route.name === "sources" ? (
             <SourcesScreen />
+          ) : route.name === "depto" ? (
+            <DeptScreen key={route.id} id={route.id} />
           ) : route.name === "farm" ? (
             <FarmScreen edit={route.edit} />
           ) : (

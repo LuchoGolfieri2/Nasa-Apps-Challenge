@@ -205,7 +205,7 @@ export function HistoryScreen({
         <div className="guide__panel">
           <ul>
             <li>
-              <b>Each square is 30 meters of land</b>, colored by the crop the
+              <b>Each square is {county.raster?.pixel_m ?? 30} meters of land</b>, colored by the crop the
               USDA satellite map found there that year.
             </li>
             <li>

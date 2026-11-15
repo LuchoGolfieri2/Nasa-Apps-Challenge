@@ -7,6 +7,7 @@ import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
 import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
 import D from './globe-data.json';
+import AR from './globe-argentina.json'; // Argentina como EE. UU.: provincias = estados, departamentos = condados (scripts/build_globe_argentina.py)
 import NEXT_LIST from './next-available.json'; // lo genera scripts/build_next_json.py
 import {prefetchCounty} from '../data/load';
 import DENSITY from './crop-density.json'; // lo genera scripts/build_crop_density.py (USDA CDL)
@@ -32,7 +33,13 @@ const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream), NIGHT 
 const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
 const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
 const NEXT_AVAILABLE = NEXT_LIST; // condados con datos del modelo para la pantalla Next season
-const POSTAL = POSTAL_BY_FIPS, FIPS_OF = FIPS_BY_POSTAL; // data/states.ts: un solo lugar para sumar estados
+// data/states.ts: un solo lugar para sumar estados. Las provincias argentinas suman su código (BA, CB, ER, LP, SF);
+// sus ids INDEC (06, 14, 30, 42, 82) no chocan con los FIPS de los 11 estados.
+const POSTAL = {...POSTAL_BY_FIPS, ...Object.fromEntries(AR.provinces.map((p) => [p.id, p.postal]))};
+const FIPS_OF = {...FIPS_BY_POSTAL, ...Object.fromEntries(AR.provinces.map((p) => [p.postal, p.id]))};
+const AR_IDS = new Set(AR.provinces.map((p) => p.id));
+const isAR = (f) => !!f && AR_IDS.has(f.id.length === 2 ? f.id : f.properties.state); // provincia o departamento
+const AR_ZONE = {dentro: 'Weather within the Corn Belt range', cerca: 'Weather close to the Corn Belt range', fuera: 'Weather outside the Corn Belt range'};
 // Rótulo de la portada: los estados que tienen polígono, en el orden de data/states.ts (se suma solo cuando llega uno nuevo)
 const HIGHLIGHT_NAMES = STATE_LIST.filter((s) => D.states.some((x) => x.id === s.fips)).map((s) => s.name.toUpperCase());
 const HIGHLIGHT_LABEL = HIGHLIGHT_NAMES.length <= 4 ? HIGHLIGHT_NAMES.join(' · ') : `${HIGHLIGHT_NAMES.length} STATES`; // con muchos estados el rótulo no entra
@@ -63,8 +70,10 @@ const cleanState = (g) => ({type: 'MultiPolygon',
   coordinates: (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).map((p) => [p[0]]).filter((p) => ringArea(p[0]) >= MIN_PART)});
 // nombre en inglés desde data/states.ts (el JSON puede traerlo en castellano, p. ej. "Dakota del Norte")
 const nameOf = (o) => (STATE_LIST.find((s) => s.fips === o.id) || o).name;
-const STATES = D.states.map((o) => toFeature({...o, name: nameOf(o), geometry: densify(cleanState(o.geometry))}));
-const COUNTIES = D.counties.map(toFeature);
+// provincias argentinas = estados (globe-argentina.json): mismo limpiado y mismo halo
+const STATE_SRC = [...D.states, ...AR.provinces];
+const STATES = STATE_SRC.map((o) => toFeature({...o, name: nameOf(o), geometry: densify(cleanState(o.geometry))}));
+const COUNTIES = [...D.counties, ...AR.departments].map(toFeature);
 // El halo de 9 px es semitransparente: en los bordes de río (Red River, Mississippi) los zigzags se pisan y se
 // suman en una mancha brillante. El halo usa un contorno simplificado (Douglas-Peucker, GLOW_TOL°); el borde fino
 // de 1,5 px sigue con el contorno real.
@@ -83,7 +92,7 @@ function simplifyRing(r) {
   }
   return r.filter((_, k) => keep[k]);
 }
-const STATES_GLOW = D.states.map((o) => {
+const STATES_GLOW = STATE_SRC.map((o) => {
   const g = cleanState(o.geometry);
   return {type: 'Feature', id: o.id, properties: {}, geometry: densify({...g, coordinates: g.coordinates.map((p) => p.map(simplifyRing))})};
 });
@@ -91,9 +100,12 @@ const stateById = Object.fromEntries(STATES.map((f) => [f.id, f]));
 const countyById = Object.fromEntries(COUNTIES.map((f) => [f.id, f]));
 // Rampa del rinde de maíz: viridis (apta para daltonismo), de 150 a 230+ bu/acre
 const CORN_MIN = 150, CORN_MAX = 230;
+// Argentina rinde la mitad (53–140 bu/acre): con la escala de EE. UU. todo saldría del mismo color. Tiene su propia
+// escala (la leyenda la dice); la comparación con EE. UU. está en "See more", contra sus condados análogos.
+const AR_MIN = 60, AR_MAX = 140;
 const RAMP = [[0, [68, 1, 84]], [0.25, [59, 82, 139]], [0.5, [33, 145, 140]], [0.75, [94, 201, 98]], [1, [253, 231, 37]]];
-function rampColor(v) {
-  const t = clamp01((v - CORN_MIN) / (CORN_MAX - CORN_MIN));
+function rampColor(v, ar = false) {
+  const t = ar ? clamp01((v - AR_MIN) / (AR_MAX - AR_MIN)) : clamp01((v - CORN_MIN) / (CORN_MAX - CORN_MIN));
   for (let i = 1; i < RAMP.length; i++) if (t <= RAMP[i][0]) {
     const [a, ca] = RAMP[i - 1], [b, cb] = RAMP[i], u = (t - a) / (b - a);
     return ca.map((x, j) => Math.round(x + (cb[j] - x) * u));
@@ -117,7 +129,7 @@ const MODES = [
   {id: 'alfalfa', label: 'Alfalfa', icon: ICON_ALFALFA, color: '#9ED36A'},
   {id: 'hay', label: 'Other hay', icon: ICON_HAY, color: '#D9A066'},
 ];
-const DENS = DENSITY.counties || {};
+const DENS = {...(DENSITY.counties || {}), ...(AR.density || {})};
 const densityOf = (c, crop) => { const v = DENS[c.id] && DENS[c.id][crop]; return typeof v === 'number' ? v : null; };
 // tope de la rampa: percentil 95 del cultivo, redondeado hacia arriba (si no, la avena o el heno se ven todos oscuros)
 const niceCeil = (v) => { const s = v <= 5 ? 1 : v <= 20 ? 5 : 10; return Math.max(1, Math.ceil(v / s) * s); };
@@ -137,7 +149,7 @@ const valueOf = (c) => (mode === 'yield' ? (hasCorn(c) ? c.stat.corn_bu_ac : nul
 function recolor() {
   for (const c of COUNTIES) {
     const v = valueOf(c);
-    c.rgb = v === null ? [70, 70, 70] : mode === 'yield' ? rampColor(v) : densityColor(v, mode);
+    c.rgb = v === null ? [70, 70, 70] : mode === 'yield' ? rampColor(v, isAR(c)) : densityColor(v, mode);
   }
   MISSING = COUNTIES.filter((c) => valueOf(c) === null);
 }
@@ -174,7 +186,6 @@ for (const s of STATES) {
   s.labelP = [(span[0] + span[1]) / 2, cy]; s.roomX = (span[1] - span[0]) / 2;
 }
 const DEMO = D.demo, START = D.start, HOME = D.home;
-const ARGENTINA = [{type: 'Feature', properties: {}, geometry: D.argentina}];
 const COUNTY_K = 3.2;
 const FAR = {lat: 8, k: 0.55}; // portada: el globo chico y lejos, girando detrás del velo
 
@@ -493,8 +504,6 @@ function buildLayers(a) {
       new GeoJsonLayer({id: 'county-selected', parameters: SURFACE, data: one('sel', selCounty), filled: false, stroked: true,
         lineWidthUnits: 'pixels', getLineColor: WHITE, getLineWidth: 3.5}));
   }
-  if (take === 'c') layers.push(new GeoJsonLayer({id: 'argentina', parameters: SURFACE, data: ARGENTINA, filled: false, stroked: true,
-    lineWidthUnits: 'pixels', getLineWidth: 1.6, getLineColor: GLOW}));
 
   // los rótulos se dibujan en el canvas de arriba (sombra suave), ver drawLabels()
   LABELS = [];
@@ -697,11 +706,13 @@ function drawHud(u, r, a) {
     c.font = '500 13px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '0px'; shadowText(c, 'Click a state to explore', x2, y2 + 13, 'rgba(246,241,228,0.85)');
     c.globalAlpha = 1;
   }
-  if (take === 'c' && angDist([-64, -36], [R.lon, R.lat]) < 1.45) {
-    const [x, y] = viewport.project([-64, -35]);
-    c.globalAlpha = Math.max(0, Math.min(1, takeProgress() * 3 - 1.9));
-    label(c, 'Next: Argentina', x + base * 0.02, y - 14, 30, COL.cream, 800, 'Bricolage Grotesque');
-    label(c, 'as data is added', x + base * 0.02, y + 18, 18, COL.glow, 500);
+  if (R.k <= 1.7 && !take && !isLanding() && angDist([-61, -35], [R.lon, R.lat]) < 1.0) { // Argentina, el mismo rótulo
+    const [x, y] = viewport.project([-58.6, -34.8]), x2 = x + base * 0.3, y2 = y + base * 0.22;
+    c.globalAlpha = Math.max(0, Math.min(1, 1.7 - R.k));
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x2 - 8, y2 - 8); c.strokeStyle = COL.glow; c.lineWidth = 1.5; c.stroke();
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.font = '700 15px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '1.2px'; shadowText(c, `ARGENTINA · ${AR.provinces.length} PROVINCES`, x2, y2 + 6, COL.glow);
+    c.font = '500 13px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '0px'; shadowText(c, 'Click a province to explore', x2, y2 + 25, 'rgba(246,241,228,0.85)');
     c.globalAlpha = 1;
   }
 }
@@ -805,11 +816,15 @@ function tryBirth() {
 }
 function birthCard(origin, instant = false) {
   const c = cardCounty, hist = historyOf(c), corn = hasCorn(c);
-  $('c-name').textContent = `${c.properties.name} County`;
-  $('c-state').textContent = `${stateById[c.properties.state].properties.name} · FIPS ${c.id}`;
-  $('c-status').textContent = hist === 'full' ? `Full history · 2015–2025 · crop map${corn ? ', yield and weather' : ' (USDA CDL)'}`
+  const ar = isAR(c);
+  $('c-name').textContent = ar ? c.properties.name : `${c.properties.name} County`;
+  $('c-state').textContent = ar ? `${stateById[c.properties.state].properties.name}, Argentina · INDEC ${c.id}`
+    : `${stateById[c.properties.state].properties.name} · FIPS ${c.id}`;
+  $('c-status').textContent = ar ? `${AR_ZONE[c.stat.zone] || 'Weather match: Missing data'} · yields 2001–2025 (MAGyP)`
+    : hist === 'full' ? `Full history · 2015–2025 · crop map${corn ? ', yield and weather' : ' (USDA CDL)'}`
     : hist ? 'Yield and weather history · crop map: Missing data' : 'Missing data: history not loaded for this county yet';
-  $('c-status').className = hist === 'full' ? 'ok' : hist ? 'part' : 'missing';
+  $('c-status').className = ar ? (c.stat.zone === 'fuera' ? 'part' : 'ok') : hist === 'full' ? 'ok' : hist ? 'part' : 'missing';
+  $('c-corn-l').textContent = ar ? 'Corn yield, 2021–2025 average · MAGyP' : 'Corn yield, 2021–2025 average · USDA NASS';
   $('c-corn-v').textContent = corn ? `${c.stat.corn_bu_ac} bu/acre` : 'Missing data';
   $('c-corn').className = corn ? '' : 'missing';
   $('c-open').disabled = !hist;
@@ -817,8 +832,9 @@ function birthCard(origin, instant = false) {
   const hasNext = NEXT_AVAILABLE.includes(c.id);
   $('c-next').hidden = !hasNext;
   $('c-nonext').hidden = hasNext;
-  $('c-nonext').textContent = hasModel(c.properties.state) ? 'Missing data: no next-season options for this county yet' : NO_MODEL;
-  $('c-close').setAttribute('aria-label', `Close ${c.properties.name} County`);
+  $('c-nonext').textContent = ar ? 'No yield estimate in Argentina yet: See more compares it with its U.S. weather analogs'
+    : hasModel(c.properties.state) ? 'Missing data: no next-season options for this county yet' : NO_MODEL;
+  $('c-close').setAttribute('aria-label', `Close ${ar ? c.properties.name : `${c.properties.name} County`}`);
   card.hidden = false; card.className = `ui ${instant ? 'now' : 'pre'}`;
   measureCard();
   cardDx = 0; cardPhase = 'open'; cardOpenedAt = instant ? 0 : performance.now();
@@ -877,25 +893,27 @@ const GROW_MS = 260; // igual que la transición de #card-grow en map.css
 function endGrow() { clearTimeout(growTimer); growing = false; grow.hidden = true; grow.className = ''; grow.style.clipPath = ''; }
 function openHistory() {
   if (!selCounty || growing) return;
-  const fips = selCounty.id, q = cardBox.getBoundingClientRect();
+  const fips = selCounty.id, q = cardBox.getBoundingClientRect(), ar = isAR(selCounty);
   emit('open', {fips});
-  prefetchCounty(fips); // los datos bajan mientras la tarjeta crece
+  if (!ar) prefetchCounty(fips); // los datos bajan mientras la tarjeta crece
   growing = true; grow.hidden = false;
   grow.style.clipPath = `inset(${q.top}px ${W - q.right}px ${H - q.bottom}px ${q.left}px round 12px)`;
   void grow.offsetWidth;
   grow.classList.add('on');
   grow.style.clipPath = 'inset(0px 0px 0px 0px round 0px)';
-  growTimer = setTimeout(() => { location.hash = `#/county/${fips}?play=1`; }, reduceMotion.matches ? 120 : GROW_MS); // la historia arranca reproduciéndose
+  growTimer = setTimeout(() => { location.hash = ar ? `#/depto/${fips}` : `#/county/${fips}?play=1`; }, reduceMotion.matches ? 120 : GROW_MS); // la historia arranca reproduciéndose
 }
 // al volver al mapa: se saca el velo y, si la tarjeta sigue abierta, el foco vuelve a ella
 onActive = (on) => { if (!on) return; endGrow(); if (cardPhase === 'open') focusCard(); };
 
 // ---- estado de la interfaz según el nivel
+let legendAR = false;
 function updateUI() {
   document.body.dataset.level = level;
   writeHash();
   showTip(null);
   $('legend').hidden = level === 'globe' && mode === 'yield';
+  if (legendAR !== isAR(selState)) { legendAR = isAR(selState); renderLegend(); } // fuente del color: USDA en EE. UU., MAGyP en Argentina
   if (!selCounty) hideCard();
 }
 
@@ -928,15 +946,18 @@ function openLayers(open) {
   if (open) (layersMenu.querySelector('[aria-checked="true"]') || layersMenu.querySelector('[role=radio]')).focus();
 }
 function renderLegend() {
-  const m = modeOf(mode), lg = $('legend');
+  const m = modeOf(mode), lg = $('legend'), ar = isAR(selState);
   if (mode === 'yield') {
-    lg.innerHTML = `<div class="t">Corn yield, 2021–2025 avg <span class="src">USDA NASS</span></div>
-      <div class="bar"></div><div class="n"><span>150</span><span>190 bu/acre</span><span>230+</span></div>
+    lg.innerHTML = `<div class="t">Corn yield, 2021–2025 avg <span class="src">${ar ? 'MAGyP' : 'USDA NASS'}</span></div>
+      <div class="bar"></div><div class="n">${ar ? `<span>≤${AR_MIN}</span><span>${(AR_MIN + AR_MAX) / 2} bu/acre</span><span>${AR_MAX}+</span>`
+        : `<span>${CORN_MIN}</span><span>${(CORN_MIN + CORN_MAX) / 2} bu/acre</span><span>${CORN_MAX}+</span>`}</div>
       <div class="m"><i></i>Missing data</div>`;
   } else {
     const max = DENS_MAX[mode], css = (v) => `rgb(${densityColor(v, mode).join(',')})`;
     const stops = [0, 0.35, 0.7, 0.85, 1].map((t) => `${css(t * max)} ${t * 100}%`).join(',');
-    lg.innerHTML = `<div class="t wrap">${m.label}, % of county area <span class="src">USDA CDL ${DENSITY.year}</span></div>
+    lg.innerHTML = ar ? `<div class="t wrap">${mode === 'wheat' ? 'Wheat' : m.label}, % of department area <span class="src">MAGyP 2021–2025</span></div>`
+      : `<div class="t wrap">${m.label}, % of county area <span class="src">USDA CDL ${DENSITY.year}</span></div>`;
+    lg.innerHTML += `
       <div class="bar" style="background:linear-gradient(90deg,${stops})"></div>
       <div class="n"><span>0%</span><span>${max / 2}%</span><span>${max}%+</span></div>
       <div class="m"><i></i>Missing data</div>`;
@@ -987,8 +1008,10 @@ function showTip(c, x, y) {
   const tip = $('tip');
   if (!c || take) { tip.hidden = true; return; }
   const v = valueOf(c), m = MODES.find((x) => x.id === mode);
-  const val = v === null ? 'Missing data' : mode === 'yield' ? `Corn ${v} bu/acre` : `${m.label} ${v}% of county area`;
-  tip.innerHTML = `<b>${c.properties.name} County, ${POSTAL[c.properties.state]}</b> · ${val}`;
+  const ar = isAR(c), unit = ar ? 'department' : 'county';
+  const val = v === null ? 'Missing data' : mode === 'yield' ? `Corn ${v} bu/acre` : `${ar && mode === 'wheat' ? 'Wheat' : m.label} ${v}% of ${unit} area`;
+  tip.innerHTML = ar ? `<b>${c.properties.name}, ${stateById[c.properties.state].properties.name}</b> · ${val}`
+    : `<b>${c.properties.name} County, ${POSTAL[c.properties.state]}</b> · ${val}`;
   tip.hidden = false;
   const w = tip.offsetWidth, h = tip.offsetHeight;
   tip.style.left = `${Math.min(x + 14, W - w - 8)}px`;
@@ -998,8 +1021,8 @@ function showTip(c, x, y) {
 // ---- buscador de estados y condados (combobox accesible)
 const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\bcounty\b/g, '').replace(/\s+/g, ' ').trim();
 const INDEX = [
-  ...STATES.map((s) => ({kind: 'state', id: s.id, label: s.properties.name, sub: hasModel(s.id) ? 'State' : 'State · no yield model yet', key: norm(s.properties.name), alt: POSTAL[s.id].toLowerCase()})),
-  ...COUNTIES.map((c) => ({kind: 'county', id: c.id, label: `${c.properties.name} County`, sub: stateById[c.properties.state].properties.name, key: norm(c.properties.name), alt: c.id})),
+  ...STATES.map((s) => ({kind: 'state', id: s.id, label: s.properties.name, sub: isAR(s) ? 'Province · Argentina' : hasModel(s.id) ? 'State' : 'State · no yield model yet', key: norm(s.properties.name), alt: isAR(s) ? '' : POSTAL[s.id].toLowerCase()})),
+  ...COUNTIES.map((c) => ({kind: 'county', id: c.id, label: isAR(c) ? c.properties.name : `${c.properties.name} County`, sub: isAR(c) ? `${stateById[c.properties.state].properties.name}, Argentina` : stateById[c.properties.state].properties.name, key: norm(c.properties.name), alt: c.id})),
 ];
 let results = [], activeIdx = -1;
 function findPlaces(text) {

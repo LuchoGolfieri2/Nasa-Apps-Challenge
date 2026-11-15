@@ -450,7 +450,7 @@ export function CdlMap({
               width={info.width}
               height={info.height}
               role="img"
-              aria-label={`Map of ${countyName} County in ${year}, colored by the crop planted on each 30 meter square. The list next to it gives the same areas as text.`}
+              aria-label={`Map of ${countyName} County in ${year}, colored by the crop planted on each ${info.pixel_m} meter square. The list next to it gives the same areas as text.`}
             />
             {showChanges ? (
               <canvas ref={changes} width={info.width} height={info.height} className="cdl__changes" aria-hidden="true" />
@@ -481,7 +481,7 @@ export function CdlMap({
             ? changedPct === null
               ? `Bright squares have a different crop than in ${prevYear}.`
               : `${changedPct}% of cropland has a different crop than in ${prevYear}. Those squares stay bright.`
-            : `What was planted in ${year}, square by square (30 m).`}
+            : `What was planted in ${year}, square by square (${info.pixel_m} m${info.pixel_m > 30 ? ", lower detail" : ""}).`}
         </span>
         <button
           type="button"

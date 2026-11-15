@@ -2,7 +2,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Icon, PRIORITY_ICON } from "../next/icons";
 import { PRIORITY_LABEL, type PlanCrop, type Priority } from "../next/types";
-import { CropArt } from "./CropArt";
+import { CropPhoto } from "./CropPhoto";
 import { MODEL_STATES_TEXT, STATE_NAME } from "../data/states";
 import {
   COUNTY_BY_FIPS,
@@ -221,7 +221,7 @@ export function FarmForm({
               <fieldset key={y} className="fm-season">
                 <legend>{y}</legend>
                 <div className="fm-season-art">
-                  {sel ? <CropArt crop={sel} /> : <span>Not set</span>}
+                  {sel ? <CropPhoto crop={sel} /> : <span>Not set</span>}
                 </div>
                 <div className="fm-chips">
                   {FARM_CROPS.map((c) => (
@@ -262,7 +262,7 @@ export function FarmForm({
               className={`fm-plan-card${plan === c ? " on" : ""}`}
               onClick={() => setPlan(c)}
             >
-              <CropArt crop={c} />
+              <CropPhoto crop={c} />
               <span>{FARM_CROP_LABEL[c]}</span>
             </button>
           ))}

@@ -84,7 +84,7 @@ para verificarlos: mismos resultados (ver "Reproducibilidad" abajo).
 | 2, escenarios | En los 10 estados de antes, la mediana del rango se mueve 0,4 bu/ac (mediana; máximo 3,7). Dakota del Norte: 53 condados con "actual" y solo 10 en la zona maíz-soja con "rotado" y "continuo" |
 | 3 | 948 condados, 6 chequeos OK |
 | 4 | 20 % de años marcados; 2012: 67 % de los condados de maíz, 91 % de ellos por calor o falta de agua |
-| 5 | 948 condados. Los gemelos le ganan al mapa en las 6 opciones (maíz rotado: 15,7 contra 20,5 bu/ac del mapa); con todos los condados, 9,4 contra 8,7. Trigo: 561 condados (12 de ND); avena: 272 (19 de ND) |
+| 5 | 948 condados. Los gemelos le ganan al mapa en las 6 opciones (maíz rotado: 15,7 contra 20,5 bu/ac del mapa); con todos los condados gana el mapa: 9,4 bu/ac de los gemelos contra 8,7 de los vecinos del mapa. Trigo: 561 condados (12 de ND); avena: 272 (19 de ND) |
 | 6 | Igual que antes (mismos lotes): híbrido 99 % al 15 de julio |
 | 7 | Las prioridades cambian la opción primera en el 10 % de los 1.244 condado × cultivo |
 | Front | `precios_costos.csv` con los 11 estados; 948 `next/<fips>.json`, mismo contrato |
@@ -103,4 +103,23 @@ hasta 1,8 bu/ac (mediana 0,3). Eso mueve el "no explicado" del punto 4 y cambia 
 marcados. Lo más probable es que LightGBM no sea del todo determinista con varios hilos. Para que cada corrida dé
 exactamente lo mismo (regla 5 del `CLAUDE.md`): sumar `deterministic=True` y `force_row_wise=True` al
 `LGBMRegressor` del punto 2 (y de los puntos 3 y 4, que regeneran el modelo con la misma receta).
+
+## 7. Prueba final con 11 estados
+
+Se corrió **el 15/11 a las 19:00**, con la notebook del punto 2 tal como está en `main` y el modelo congelado. No se
+cambió nada del modelo después. Datos: `fieldshift_datos_final_20261115`, `unido_11_estados/` (948 condados). MAE en
+bu/acre contra la tendencia lineal de cada condado (el mejor baseline).
+
+| | Maíz | Soja |
+|---|---|---|
+| Desarrollo (un año afuera, 2009–2023) | 15,3 contra 18,6; gana en 11 de 11 estados y en 14 de 15 años | 4,3 contra 5,1; gana en 11 de 11 estados y en 13 de 15 años |
+| **Prueba final (2024–2025)** | **15,2 contra 14,9**: gana en 5 de 11 (MN, MO, NE, ND, SD) y pierde en IL, IN, IA, KS, OH y WI | **4,5 contra 5,6**: gana en 11 de 11 |
+| Banda del error p10–p90 en la prueba (objetivo 80 %) | 83 % (Illinois 73 %) | 79 % (Ohio 61 %) |
+| Rango "bad year – good year" que ve el productor | El 23 % de los años reales cae debajo del "bad year" (debería ser el 10 %) | |
+
+- Sin 2012, el maíz también gana en desarrollo (14,6 contra 16,6).
+- La prueba ya se abrió una vez: no se vuelve a tocar el modelo con esos años.
+- El rango que ve el productor sale solo del clima sobre el rinde medio del modelo, sin el error del modelo; por eso
+  queda angosto. La app y el formulario lo aclaran. El arreglo de fondo queda para después del cierre.
+- Ficha del modelo: `docs/ml/model_card.md`.
 

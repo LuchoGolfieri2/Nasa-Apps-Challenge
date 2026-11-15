@@ -2,7 +2,7 @@
 
 Lista única de tareas de la app. Sale de `docs/specs/front-back-connection-spec.md` (manda) y `docs/front-end-plan.md`. Si una tarea choca con la spec, manda la spec.
 
-> **F34 resuelta el 15/11** con el mapa del estado por rinde (opción 6). Lo urgente ahora: activar GitHub Pages (F27) y la prueba a mano con WebGL (F37).
+> **F34 resuelta el 15/11** con el mapa del estado por rinde (opción 6). Sitio publicado: https://field-rewind.vercel.app (F27). Lo urgente ahora: la prueba a mano con WebGL (F37).
 
 ## Cómo trabajamos
 
@@ -70,12 +70,13 @@ Ejemplo:
   - Hecho (15/11): polígonos y selector de MN, MO, NE, OH, SD y WI (521 condados, del Census local `cb_2024_us_county_500k.zip`; `scripts/build_globe_geo.py`); Sebastian sumó Dakota del Norte, el color por cultivo de los estados nuevos (`crop-density.json` tiene los 11 estados) y regeneró las fichas con la entrega final. `web/src/data/states.ts` es la lista única. `python3 scripts/check_coverage.py` da 972 polígonos y 943 fichas de historia.
   - Queda: si llega `condados_eeuu.geojson` del equipo, compararlo con el Census; los condados fuera de la tabla del modelo (ej. St. Louis, Cuyahoga) se ven como "Missing data".
   - Pasos y cuidados (17 columnas solo para IA, IL e IN; Argentina fuera de alcance): `docs/datos-de-prueba.md`, sección E.
-- [ ] **F36** (ML, punto 5) Que `area_por_cultivo` de `punto5_vecinos.ipynb` emita `oats` en `grew_crop_pct` en vez de `other`, y volver a correr el paso 20 (guardar `gemelos.json`) y `scripts/build_next_json.py` · Libre
+- [x] ~~**F36** (ML, punto 5) Que `area_por_cultivo` de `punto5_vecinos.ipynb` emita `oats` en `grew_crop_pct` en vez de `other`, y volver a correr el paso 20 (guardar `gemelos.json`) y `scripts/build_next_json.py`~~ · ✅ Loubet (15/11: solo cambia ese nombre; `check_coverage.py` sin errores)
   - Por qué: la avena no es una clase del CDL (cae en `other`), pero en Próxima campaña ya es un cultivo propio con ícono y color (`web/src/ui/crops.ts`, `CropIcon`). Hoy las barras "What they plant" de los gemelos la muestran como "Other crops". Con la entrega final del 15/11 `gemelos.json` sigue emitiendo solo `corn`, `soy`, `wheat` y `other`.
   - No hay que reentrenar nada: el punto 5 es una búsqueda de vecinos y el cambio es solo de nombres al guardar. Verificar antes que el área sembrada de avena por condado esté en la entrega.
-- [ ] **F38** Verificar que se subieron los datos de todos los condados y lugares que se marcan en el globo (EE. UU. y Argentina) · Libre
+- [x] ~~**F38** Verificar que se subieron los datos de todos los condados y lugares que se marcan en el globo (EE. UU. y Argentina)~~ · ✅ Lucho/Claude
   - Hecho EE. UU. (15/11): `python3 scripts/check_coverage.py` cruza globo, historia, Próxima campaña y modelo. Resultado: 919 polígonos (los 10 estados completos), 890 fichas, 895 de Próxima campaña, 0 gemelos rotos y 0 valores en 0. Los 29 condados sin historia los marca el globo con "Missing data": 24 no están en la tabla del modelo (ciudades y zonas de bosque, como St. Louis city o Vilas) y 5 tienen datos de modelo solo antes de 2015. Dakota del Norte sigue sin polígonos ni modelo.
-  - Falta Argentina: `departamentos_argentina.geojson` y `.csv` todavía no están en el repo. · Bloquea: entrega "para_front" de datos
+  - Hecho Argentina, datos (15/11): `python3 scripts/build_argentina.py` arma `web/public/data/argentina/` con la entrega final: 219 departamentos (15 `dentro`, 102 `cerca`, 102 `fuera`), polígonos, condados análogos, rindes del MAGyP contra EE. UU. y clima de Buenos Aires. Sin predicción del modelo. Contrato: `docs/argentina-front.md`.
+  - Hecho Argentina, interfaz y control (15/11): pantalla `#/argentina` (F39) y `scripts/check_coverage.py` controla que los 219 departamentos tengan ficha y zona, y que ninguno tenga predicción.
   - EE. UU., cantidad de condados con polígono contra los de la entrega (según "Zonas de Field Shift", a confirmar con los archivos): IA 99, IL 102, IN 92, KS 105, MN 87, MO 115, NE 93, OH 88, SD 66, WI 72 y ND 53 (hoy ND no está). Total 972.
   - Para cada condado marcado: tiene ficha de historia (`web/public/data/county/`), archivo de Próxima campaña (`next/`, si su estado tiene modelo) y color del globo (`stat` en `globe-data.json`). Lo que no tenga dato se ve como "Missing data", nunca con 0 ni sin marcar.
   - Cruces a buscar: condados marcados sin datos, datos de condados que no están en el globo, y condados con gemelos que apuntan a un condado sin polígono.
@@ -85,6 +86,8 @@ Ejemplo:
 
 ## Pantalla 1 · Mapa
 
+- [x] ~~**F39** Argentina en la interfaz: pantalla `#/argentina` con el mapa de los 219 departamentos por zona, la ficha de cada uno (rinde del MAGyP contra sus análogos de EE. UU., clima de Buenos Aires, suelo) y enlaces a los condados análogos. Sin predicción, según `docs/argentina-front.md`~~ · ✅ Lucho/Claude
+  - Hecho (15/11), rehecho a pedido de Lucho: **Argentina entra al globo igual que EE. UU.**, sin botón ni pantalla aparte. Las 5 provincias se encienden como los estados; al tocar una baja la cámara y aparecen sus departamentos pintados por rinde de maíz (MAGyP, escala propia) o por superficie sembrada; cada departamento abre su tarjeta y "See more" (`#/depto/<id>`). Datos del globo: `scripts/build_globe_argentina.py`. Detalle en `docs/argentina-front.md`.
 - [x] ~~**F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar~~ · ✅ Naim
   - Archivos: `web/src/map/globe.js` (deck.gl + Blue Marble de GIBS)
   - Sin latido: el resaltado es fijo, porque un latido parece un dato en vivo y no lo es. Gira solo a 3°/s tras 3 s sin tocarlo.
@@ -147,7 +150,8 @@ Ejemplo:
 
 - [ ] **F26** Modo grabación `?take=a|b|c` (A 960×1080, B y C 1920×1080; C con rótulo "Next: Argentina, as data is added") · Libre
 - [x] ~~**F27** Deploy en Vercel y pasar la URL pública a Lucho~~ · ✅ Lucho/Claude
-  - Publicación con GitHub Pages: `.github/workflows/pages.yml` arma `web/` y la publica en cada push a `main`. Hay que activarlo una vez en Settings → Pages → Source: "GitHub Actions". URL: https://luchogolfieri2.github.io/Nasa-Apps-Challenge/ (Vercel sigue siendo opción: `web/vercel.json`).
+  - ✅ **Listo (15/11): https://field-rewind.vercel.app** · proyecto `field-rewind` en Vercel (cuenta de Lucho), raíz `web/`, se republica solo en cada push a `main`. Probado en vivo: historia, mapa del estado y Próxima campaña cargan sus datos.
+  - Respaldo: `.github/workflows/pages.yml` publica en GitHub Pages si se activa en Settings → Pages → Source: "GitHub Actions".
 - [x] ~~**F28** Revisión final: 1920×1080, celular, teclado, contraste AA, `prefers-reduced-motion`~~ · ✅ Lucho/Claude
   - Revisado el 15/11 a 1920×1080 y 390×844 con `prefers-reduced-motion`, en las 7 pantallas: sin scroll horizontal, sin errores de JavaScript y axe (WCAG 2 A y AA) sin fallas. Se arregló el contraste del texto secundario (`--ink-3`, `--dark-3` de Próxima campaña y el rojo de "−22 bu/ac" sobre fondo claro). El globo y WebGL quedan para F37.
 - [ ] **F37** Verificar a mano, en Chrome y en Firefox con WebGL (lo que no se pudo ver en el navegador de Claude: sin WebGL y con el panel oculto) · Libre

@@ -21,7 +21,7 @@ Una notebook por cada uso de ML del issue #6. Cada una se corre de arriba hacia 
 | 4 | [`punto4_anomalias.ipynb`](punto4_anomalias.ipynb) | [`PUNTO4.md`](PUNTO4.md) | Años que rindieron distinto de lo esperado, con su causa más probable | Corrida con la v1.2 (maíz y soja). Reconoce 2012 y 2019. Salida para el front en `backend/Datos/front/anomalias.json` |
 | 5 | [`punto5_vecinos.ipynb`](punto5_vecinos.ipynb) | [`PUNTO5.md`](PUNTO5.md) | Condados gemelos por suelo y clima que sí hicieron cada opción (kNN), con su rango de rinde | Corrida con la entrega `final_20261115` (11 estados, 948 condados) y lluvia IMERG. Lee suelo y clima directo de la entrega. Le gana a los vecinos del mapa en las 6 opciones cuando el condado busca lo que no hace; con todos los condados pierde (10,6 contra 8,8 bu/ac). Salida en `backend/Datos/gemelos*.csv` y `backend/Datos/front/gemelos.json` |
 | 6 | [`punto6_cultivo_temporada.ipynb`](punto6_cultivo_temporada.ipynb) | [`PUNTO6.md`](PUNTO6.md) | Qué está sembrado este año (maíz o soja) antes del mapa del USDA, con Landsat y Sentinel-2 por píxel | Corrida con la entrega `todo_10estados_20261115` (`ia_il_in_v3/lotes/`, los mismos 10 lotes que la v1.3: resultados iguales). Desde el 15 de julio le gana a la regla de rotación (99 % contra 95 % por lote) y detecta los 5 años sin rotar. Salida en `backend/Datos/cultivo_temporada*.csv` y `backend/Datos/front/cultivo_temporada.json`. Falta acordar dónde lo muestra el front |
-| 7 | [`punto7_decision.ipynb`](punto7_decision.ipynb) | [`PUNTO7.md`](PUNTO7.md) | Ordena las rotaciones según las prioridades del productor (capa de decisión sobre los escenarios del punto 2: ingreso medio, CVaR 10 % y probabilidad de pérdida) | Corrida con los 15 escenarios por condado. Las prioridades cambian la opción primera en el 10 % de los condado × cultivo (antes 0). Salida en `backend/Datos/decision_opciones.csv`, que lee `scripts/build_next_json.py` |
+| 7 | [`punto7_decision.ipynb`](punto7_decision.ipynb) | [`PUNTO7.md`](PUNTO7.md) | Ordena las rotaciones según las prioridades del productor (capa de decisión sobre los escenarios del punto 2: ingreso medio, CVaR 10 % y probabilidad de pérdida) | Corrida con los 15 escenarios por condado. Las prioridades cambian la opción primera en el 10 % de los 1.244 condado × cultivo (119). Todo ese cambio viene del `FACTOR_CONFIANZA` (0,75 para confianza baja, 61 casos de Missouri): con el factor en 1, rotar del todo queda primera en los 1.244 con cualquier prioridad. El factor queda como está (cierre del 15/11, ver `PUNTO7.md`). Salida en `backend/Datos/decision_opciones.csv`, que lee `scripts/build_next_json.py` |
 
 ## Entradas
 
@@ -69,6 +69,6 @@ Revisión de los puntos 2, 3 y 4 contra lo que el front ya tiene (`scripts/build
 
 ### Pendiente del lado de ML (no bloquea al front)
 
-- Sumar 2024 y 2025 solo cuando se abra la prueba final del punto 2 (`MIRAR_PRUEBA`). Hasta entonces, "Missing data".
+- La prueba final 2024–2025 del punto 2 ya se abrió (15/11) y el modelo está cerrado: ver "Cierre del modelo" en `PUNTO2.md`. Las comparaciones de rinde de 2024 y 2025 siguen sin mostrarse en la app ("Missing data").
 - Kansas: no está en la entrega. Sumarlo implica pedirlo al pipeline y reentrenar los puntos 2 a 4.
 - Predicciones fuera del fold para el punto 4 (ver `PUNTO4.md`).

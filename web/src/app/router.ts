@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
     #/sources                  fuentes y límites
     #/farm                     My Farm (tablero, o el formulario si no hay campo guardado)
     #/farm/edit                My Farm, editar
+    #/depto/06007              departamento de Argentina (id_depto INDEC): la "historia" de los departamentos
 */
 export type Route =
   | { name: "home" }
@@ -20,6 +21,7 @@ export type Route =
   | { name: "next"; fips: string }
   | { name: "sources" }
   | { name: "farm"; edit: boolean }
+  | { name: "depto"; id: string }
   | { name: "notfound" };
 
 export interface Location {
@@ -43,6 +45,7 @@ export function parseHash(hash: string): Location {
   } else if (parts[0] === "sources" && parts.length === 1) route = { name: "sources" };
   else if (parts[0] === "farm" && parts.length === 1) route = { name: "farm", edit: false };
   else if (parts[0] === "farm" && parts[1] === "edit" && parts.length === 2) route = { name: "farm", edit: true };
+  else if (parts[0] === "depto" && /^\d{5}$/.test(parts[1] ?? "") && parts.length === 2) route = { name: "depto", id: parts[1] };
   return { route, query };
 }
 

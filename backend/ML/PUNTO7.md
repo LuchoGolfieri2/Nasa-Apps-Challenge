@@ -85,8 +85,11 @@ Los dos peores años son 2012 (sequía) y 2020 (derecho de agosto).
 
 - **Las prioridades cambian la opción primera en 118 casos (10 %).** Con la forma vieja del front (riesgo según el
   p10 del rinde e ingreso según la mediana) eran 0.
-- Casi todo ese cambio viene del suelo contra el ingreso (116 casos): en los condados donde rotar del todo rinde
-  menos que la mezcla de siempre, el ingreso pide seguir igual y el suelo pide rotar.
+- Todo ese cambio viene del **factor de confianza** (revisado el 15/11). `rotado` nunca rinde menos que la mezcla de
+  siempre (0 de 18.178 escenarios), pero en esos 118 casos tiene confianza baja (61 son de Missouri, donde el efecto
+  de rotar sale al revés). El factor 0,75 le achica el puntaje de ingreso, así que "solo ingreso" pide seguir igual
+  aunque rotar deje más plata, y el suelo pide rotar. Con el factor en 1, rotar del todo queda primera en los 1.244
+  casos con cualquier prioridad: el factor es lo único que hace que las prioridades cambien la sugerencia.
 - **Riesgo e ingreso eligen distinto solo en 9 casos (1 %).** No es un error de esta capa: en el punto 2 rotar
   corre el rinde la misma cantidad en todos los climas, así que la opción que deja más en un año promedio también
   deja más en los años malos. Ver "Qué falta".
