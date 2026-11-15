@@ -12,8 +12,10 @@ import { CdlMap } from "./CdlMap";
 import { CountyGlobe, type CdlView } from "./CountyGlobe";
 import { Timeline } from "./Timeline";
 import { usePlayback } from "./usePlayback";
+import { useScrollFade } from "./useScrollFade";
 import { useRasters } from "./useRasters";
 import { YieldHistory } from "./YieldHistory";
+import { SeasonCard, hasSeason } from "./SeasonCard";
 import { YearTiles } from "./YearTiles";
 import "./history.css";
 import "./globe-stage.css";
@@ -38,6 +40,7 @@ export function HistoryScreen({
   const [guideOpen, setGuideOpen] = useState(false);
   /** Sobre el globo: dónde va el condado (lo ubica el CSS) y el zoom del mapa del CDL, que mueve la cámara */
   const slot = useRef<HTMLDivElement>(null);
+  const storyRef = useScrollFade();
   const [cdlView, setCdlView] = useState<CdlView>({ k: 1, x: 0, y: 0 });
   const autoplay = useRef(query.get("play") === "1");
   const stepMs = useMemo(() => {
@@ -288,7 +291,7 @@ export function HistoryScreen({
           <YieldHistory county={county} year={year} onYear={pickYear} />
         )}
 
-        <div className="history__story">
+        <div className="history__story" ref={storyRef}>
           {/* aria-live apagado durante el play para no leer once titulares seguidos */}
           <div className="headline" aria-live={playing ? "off" : "polite"}>
             <h1>
@@ -307,6 +310,7 @@ export function HistoryScreen({
             </ul>
           </div>
           <YearTiles county={county} y={current} />
+          {hasSeason(county.fips, current.year) ? <SeasonCard fips={county.fips} compact /> : null}
           {county.raster ? (
             <div className="story-card">
               <BarRace

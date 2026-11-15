@@ -47,7 +47,6 @@
   max-height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-width: thin;
   /* margen para el fondo de las filas de cultivo al pasar el cursor, que sobresale 8 px */
   padding-inline: 10px;
   margin-inline: -10px;
@@ -1082,6 +1081,13 @@
   height: auto;
   min-height: max(420px, calc(100dvh - var(--chrome)));
 }
+/* Sin mapa, la columna de la derecha no puede estirar la pantalla (empujaría la línea de tiempo hacia abajo):
+   se limita a la altura de la ventana y, si el contenido no entra, se desplaza adentro. */
+@media (min-width: 1101px) {
+  .history__stage--nomap .history__story {
+    max-height: max(420px, calc(100dvh - var(--chrome) - 24px));
+  }
+}
 .yh {
   display: flex;
   flex-direction: column;
@@ -1219,4 +1225,72 @@
 .mix__legend .crop-ico {
   margin-right: 4px;
   vertical-align: -3px;
+}
+
+/* Barra de desplazamiento de la columna del año. La nativa queda oculta y useScrollFade dibuja una propia (riel + píldora),
+   igual en Chrome y en Firefox. Los colores salen del escenario: verde sobre fondo claro, blanco sobre el vidrio. */
+.history__stage {
+  --rail: rgba(15, 42, 29, 0.07);
+  --thumb: rgba(47, 125, 79, 0.55);
+  --thumb-hover: #2f7d4f;
+}
+.history__stage--globe {
+  --rail: rgba(255, 255, 255, 0.14);
+  --thumb: rgba(255, 255, 255, 0.55);
+  --thumb-hover: rgba(255, 255, 255, 0.92);
+}
+.history__stage--nomap {
+  position: relative; /* la barra propia se ubica respecto del escenario */
+}
+.history__story {
+  scrollbar-width: none;
+}
+.history__story::-webkit-scrollbar {
+  display: none;
+}
+.sbar {
+  position: absolute;
+  z-index: 4;
+  width: 8px;
+  border-radius: 99px;
+  background: var(--rail);
+  cursor: default;
+  transition: width 0.15s, background 0.15s;
+}
+.sbar:hover,
+.sbar--drag {
+  width: 10px;
+  margin-left: -2px;
+}
+.sbar__thumb {
+  width: 100%;
+  border-radius: 99px;
+  background: var(--thumb);
+  cursor: grab;
+  touch-action: none;
+  transition: background 0.15s;
+}
+.sbar:hover .sbar__thumb,
+.sbar--drag .sbar__thumb {
+  background: var(--thumb-hover);
+}
+.sbar--drag .sbar__thumb {
+  cursor: grabbing;
+}
+@media (max-width: 1100px) {
+  .sbar {
+    display: none !important;
+  }
+}
+.history__story[data-fade="bottom"] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 44px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 44px), transparent);
+}
+.history__story[data-fade="top"] {
+  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 44px), transparent);
+  mask-image: linear-gradient(to top, #000 calc(100% - 44px), transparent);
+}
+.history__story[data-fade="both"] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 36px, #000 calc(100% - 44px), transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 36px, #000 calc(100% - 44px), transparent);
 }
