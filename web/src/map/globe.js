@@ -1,7 +1,7 @@
 // Pantalla 1 · Mapa: globo 3D en deck.gl (GlobeView) con la imagen Blue Marble de la NASA (GIBS).
 // Portada → globo → estado → condado (tarjeta al lado del condado). Maneja sus propias rutas (ver README.md).
-// Los valores marcados "Prototype data" (color de los condados y % de maíz de la tarjeta) son
-// inventados y vienen de globe-data.json; reemplazar por F08/F09 cuando estén.
+// El color de los condados y el número de la tarjeta son reales: rinde de maíz del USDA NASS, media
+// 2021–2025 ("stat" en globe-data.json, lo escribe scripts/build_front_data.py). Sin dato: "Missing data".
 import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
 import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
@@ -30,7 +30,7 @@ const NO_MODEL = 'Missing data: no yield model for this state yet';
 
 const rad = Math.PI / 180, clamp01 = (x) => Math.max(0, Math.min(1, x));
 const toFeature = (o) => ({type: 'Feature', id: o.id, properties: {name: o.name, state: o.state},
-  geometry: o.geometry, centroid: o.centroid, bounds: o.bounds, mock: o.mock});
+  geometry: o.geometry, centroid: o.centroid, bounds: o.bounds, stat: o.stat || {}});
 // En el globo un tramo recto entre dos vértices es una cuerda: si es largo, corta camino y se despega del
 // paralelo (el borde sur de Kansas mide casi 3°). Se le agregan vértices cada STEP° para que el borde del
 // estado coincida con los bordes de sus condados.
@@ -45,10 +45,11 @@ const densify = (g) => ({...g, coordinates: g.type === 'Polygon' ? g.coordinates
 const STATES = D.states.map((o) => toFeature({...o, geometry: densify(o.geometry)})), COUNTIES = D.counties.map(toFeature);
 const stateById = Object.fromEntries(STATES.map((f) => [f.id, f]));
 const countyById = Object.fromEntries(COUNTIES.map((f) => [f.id, f]));
-// Rampa del % de maíz: viridis (apta para daltonismo), de 0 % a 70 %+
+// Rampa del rinde de maíz: viridis (apta para daltonismo), de 150 a 230+ bu/acre
+const CORN_MIN = 150, CORN_MAX = 230;
 const RAMP = [[0, [68, 1, 84]], [0.25, [59, 82, 139]], [0.5, [33, 145, 140]], [0.75, [94, 201, 98]], [1, [253, 231, 37]]];
 function rampColor(v) {
-  const t = clamp01(v / 0.7);
+  const t = clamp01((v - CORN_MIN) / (CORN_MAX - CORN_MIN));
   for (let i = 1; i < RAMP.length; i++) if (t <= RAMP[i][0]) {
     const [a, ca] = RAMP[i - 1], [b, cb] = RAMP[i], u = (t - a) / (b - a);
     return ca.map((x, j) => Math.round(x + (cb[j] - x) * u));
@@ -56,8 +57,10 @@ function rampColor(v) {
   return RAMP[RAMP.length - 1][1];
 }
 // sin dato = celda vacía (nunca 0): gris con rayado "Missing data"
-const hasCorn = (c) => c.mock.corn !== null && c.mock.corn !== undefined && c.mock.corn !== '';
-for (const c of COUNTIES) c.rgb = hasCorn(c) ? rampColor(c.mock.corn) : [70, 70, 70];
+const hasCorn = (c) => typeof c.stat.corn_bu_ac === 'number';
+for (const c of COUNTIES) c.rgb = hasCorn(c) ? rampColor(c.stat.corn_bu_ac) : [70, 70, 70];
+// Historia: completa (con el mapa del CDL) o solo rinde y clima; sin ficha, no se abre
+const historyOf = (c) => c.stat.history || null;
 const MISSING = COUNTIES.filter((c) => !hasCorn(c));
 // lugar libre alrededor del centroide, en grados: hasta el borde por izquierda/derecha (a su latitud)
 // y por abajo/arriba (a su longitud). Sirve para saber si el nombre entra adentro del condado.
@@ -173,7 +176,7 @@ function flyToCounty(id, {dur = 1500, at = null, instant = false, fromSearch = f
   const k = Math.min(fitK(c, 0.3), 60);
   const to = {lon: c.centroid[0] + cardShift(k, c.centroid[1], side), lat: c.centroid[1] - sheetLift(k), k};
   if (instant) { V = null; Object.assign(R, to); } else flyTo(to, reduceMotion.matches ? 600 : dur);
-  emit('county', {fips: id, name: c.properties.name, state: selState.properties.name, hasHistory: !!DEMO[id]});
+  emit('county', {fips: id, name: c.properties.name, state: selState.properties.name, hasHistory: !!historyOf(c)});
 }
 function reset() { selState = null; selCounty = null; level = 'globe'; flyTo(HOME, 1400); updateUI(); }
 /** Vuelve a la portada (logo + Start) */
@@ -612,14 +615,15 @@ function tryBirth() {
   birthCard([x, y]);
 }
 function birthCard(origin, instant = false) {
-  const c = cardCounty, full = !!DEMO[c.id], corn = hasCorn(c);
+  const c = cardCounty, hist = historyOf(c), corn = hasCorn(c);
   $('c-name').textContent = `${c.properties.name} County`;
   $('c-state').textContent = `${stateById[c.properties.state].properties.name} · FIPS ${c.id}`;
-  $('c-status').textContent = full ? 'Full history · 2015–2025' : 'Missing data: history not loaded for this county yet';
-  $('c-status').className = full ? 'ok' : 'missing';
-  $('c-corn-v').textContent = corn ? `${Math.round(c.mock.corn * 100)}%` : 'Missing data';
+  $('c-status').textContent = hist === 'full' ? `Full history · 2015–2025 · crop map${corn ? ', yield and weather' : ' (USDA CDL)'}`
+    : hist ? 'Yield and weather history · crop map: Missing data' : 'Missing data: history not loaded for this county yet';
+  $('c-status').className = hist === 'full' ? 'ok' : hist ? 'part' : 'missing';
+  $('c-corn-v').textContent = corn ? `${c.stat.corn_bu_ac} bu/acre` : 'Missing data';
   $('c-corn').className = corn ? '' : 'missing';
-  $('c-open').disabled = !full;
+  $('c-open').disabled = !hist;
   // Next season: botón solo si el modelo cubre el condado; si no, el faltante se escribe
   const hasNext = NEXT_AVAILABLE.includes(c.id);
   $('c-next').hidden = !hasNext;
@@ -735,7 +739,7 @@ window.addEventListener('keydown', (e) => {
 function showTip(c, x, y) {
   const tip = $('tip');
   if (!c || take) { tip.hidden = true; return; }
-  tip.innerHTML = `<b>${c.properties.name} County, ${POSTAL[c.properties.state]}</b> · ${hasCorn(c) ? `Corn ${Math.round(c.mock.corn * 100)}%` : 'Missing data'}`;
+  tip.innerHTML = `<b>${c.properties.name} County, ${POSTAL[c.properties.state]}</b> · ${hasCorn(c) ? `Corn ${c.stat.corn_bu_ac} bu/acre` : 'Missing data'}`;
   tip.hidden = false;
   const w = tip.offsetWidth, h = tip.offsetHeight;
   tip.style.left = `${Math.min(x + 14, W - w - 8)}px`;

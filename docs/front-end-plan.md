@@ -2,9 +2,9 @@
 
 *14/11/2026 · Responsable: front-end y edición de video · Equipo Pepers*
 
-Une en un solo plan lo que dicen `CLAUDE.md`, `docs/design.md`, `docs/front-end-definido.md`, `CONTEXTO_FRONT_VIDEO.md`, `ML_NOTAS_CDL.md` y las skills `field-shift-*`. Cuando dos documentos chocan, manda esta jerarquía:
+Une en un solo plan lo que dicen `CLAUDE.md`, `docs/design.md`, `docs/front-end-definido.md`, `docs/video/CONTEXTO_FRONT_VIDEO.md`, `ML_NOTAS_CDL.md` y las skills `field-shift-*`. Cuando dos documentos chocan, manda esta jerarquía:
 
-1. `CONTEXTO_FRONT_VIDEO.md` (lo más nuevo): nombre, estados de demo, tomas y plazos.
+1. `docs/video/CONTEXTO_FRONT_VIDEO.md` (lo más nuevo): nombre, estados de demo, tomas y plazos.
 2. `docs/front-end-definido.md`: flujo y reglas por pantalla.
 3. `docs/design.md`: decisiones de diseño y componentes.
 4. `.claude/skills/field-shift-frontend`: principios generales. Sus "4 pantallas" (Mi campo / Diagnóstico / Comparar / Fuentes) **están desactualizadas**: valen las del flujo nuevo.
@@ -30,8 +30,8 @@ Consecuencia: la app se construye **para la demo de 3 condados**, no para los ~2
 
 | Dato | Estado | Detalle |
 |---|---|---|
-| CDL (qué se sembró) | **Listo** | `cdl_fieldshift.zip`: superficie por cultivo y año (2015–2025) y transiciones por píxel (2016–2025) para Story IA `19169`, McLean IL `17113`, Sumner KS `20191`. Rasters de grupos 30 m. |
-| Puntos CDL para ML | Listo | `cdl_puntos.csv`, 81.000 filas, 2017–2025 |
+| CDL (qué se sembró) | **Listo** | `data/cdl/cdl_fieldshift.zip`: superficie por cultivo y año (2015–2025) y transiciones por píxel (2016–2025) para Story IA `19169`, McLean IL `17113`, Sumner KS `20191`. Rasters de grupos 30 m. |
+| Puntos CDL para ML | Listo | `data/cdl/cdl_puntos.csv`, 81.000 filas, 2017–2025 |
 | NASS rendimiento | Falta | Necesita `NASS_API_KEY`. |
 | NASA POWER (clima) | Falta | API sin login: se baja en minutos para 3 centroides. |
 | MODIS NDVI | Falta | Lo trae "Datos B" por AppEEARS (cola). |

@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-- `cdl_puntos.csv` está listo: **81.000 filas** (3 condados × 3.000 puntos × 9 años, 2017–2025), sin celdas vacías.
+- `data/cdl/cdl_puntos.csv` está listo: **81.000 filas** (3 condados × 3.000 puntos × 9 años, 2017–2025), sin celdas vacías.
 - El **target de vigor (`ndvi_peak`) todavía no está**: lo trae Datos B (MODIS vía AppEEARS). Hasta entonces, entrenen sobre esquema/sintético o usen la tarea auxiliar de la sección 5.
 - **Tres riesgos grandes:** desbalance de clases fuerte, autocorrelación espacial/temporal (no hagan split aleatorio de filas) y ruido en las etiquetas de cultivos menores.
 - El modelo tiene que **reproducir efectos agronómicos conocidos** (sección 6). Si no los reproduce, algo está mal en los datos o en el split.
@@ -28,7 +28,7 @@
 
 **Muestreo:** solo puntos que fueron cultivo los 11 años (2015–2025). Quedan afuera pasturas, campos que entran o salen de producción y zonas no agrícolas. **El modelo no aplica a lotes que alternan con pastura.**
 
-Archivos complementarios (en `cdl_fieldshift.zip`):
+Archivos complementarios (en `data/cdl/cdl_fieldshift.zip`):
 
 - `cdl_transiciones.csv`: cantidad de píxeles por par cultivo_año_anterior → cultivo, por año y región, sobre **todos** los píxeles agrícolas, no solo la muestra. Sirve como prior y para chequear sesgo de muestreo.
 - `cdl_superficie.csv`: hectáreas por cultivo, año y región.

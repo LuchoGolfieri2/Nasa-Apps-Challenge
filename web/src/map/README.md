@@ -2,7 +2,7 @@
 
 - `MapLayer.tsx`: monta el mapa una sola vez y lo oculta cuando se ve otra pantalla.
 - `globe.js`: el globo en deck.gl (`_GlobeView`) con la imagen Blue Marble de la NASA (GIBS, teselas WMTS). `markup.ts`: su HTML. `map.css`: estilos, todos dentro de `.maplayer`.
-- `globe-data.json`: límites de estados y condados (US Census) y los valores de prueba.
+- `globe-data.json`: límites de estados y condados (US Census) y `stat` de cada condado (rinde de maíz y si tiene historia), que escribe `scripts/build_front_data.py`.
 - Cuando nadie toca el mapa, el globo gira solo a 3°/s después de 3 s (en la portada, enseguida). Con `prefers-reduced-motion` no gira.
 
 ## Rutas
@@ -41,9 +41,11 @@ El clic en un estado solo vuela: ya no hay panel de estado.
 La portada es un velo sobre el globo, que gira chico y lejos. Al tocar Start el velo se desvanece y la cámara vuela a EE. UU. en 1,9 s.
 Con `prefers-reduced-motion` se acorta a casi nada.
 
-## Datos de prueba
-El color de los condados (% de maíz) y el % de maíz de la tarjeta son **inventados** y llevan el sello
-"Prototype data". Están en `globe-data.json`; reemplazar por F08/F09 cuando estén.
+## Datos del mapa
+El color de los condados y el número de la tarjeta son **reales**: rinde de maíz del condado (USDA NASS), media 2021–2025,
+en bu/acre. Sin dato (Kansas, y dos condados sin rinde publicado): gris rayado y "Missing data".
+"See more" se habilita en los 294 condados con ficha: los 3 con mapa del CDL ("Full history") y el resto de IA, IL e IN
+con rinde y clima. Lo genera `scripts/build_front_data.py` (`stat` en `globe-data.json`).
 
 ## Imagen satelital
 Las teselas de Blue Marble se piden en vivo a GIBS (`gibs.earthdata.nasa.gov`). Sin conexión se ve el océano liso con los estados encima.

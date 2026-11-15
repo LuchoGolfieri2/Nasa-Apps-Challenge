@@ -1,9 +1,10 @@
 {
   "app": "Field Rewind",
-  "generated": "2026-11-14",
+  "generated": "2026-11-15",
   "states": [
     "IA",
     "IL",
+    "IN",
     "KS"
   ],
   "demo_counties": [
@@ -59,6 +60,13 @@
       "id": "nass",
       "name": "USDA NASS Quick Stats",
       "gives": "County yield",
+      "resolution": "county",
+      "period": "see each county"
+    },
+    {
+      "id": "anomalies",
+      "name": "Field Rewind yield model (ML team)",
+      "gives": "Years above or below a usual year, and why",
       "resolution": "county",
       "period": "see each county"
     },
