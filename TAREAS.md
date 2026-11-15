@@ -66,7 +66,7 @@ Ejemplo:
   - Hecho (15/11): polígonos y selector de MN, MO, NE, OH, SD y WI (521 condados, del Census local `cb_2024_us_county_500k.zip`; `scripts/build_globe_geo.py`), 596 fichas de historia (rinde y clima de ML, también Kansas) y el color del globo por rinde. `web/src/data/states.ts` es la lista única.
   - Falta: Dakota del Norte (sin modelo ni polígono); "Color by" por cultivo en los estados nuevos (`build_crop_density.py` baja ~520 tablas del CDL, hace falta OK); si llega `condados_eeuu.geojson` del equipo, comparar con el Census; regenerar las fichas de IA, IL, IN y Sumner cuando ML cierre sus datos (hoy sus textos de "años raros" son los de la versión anterior).
   - Pasos y cuidados (17 columnas solo para IA, IL e IN; Argentina fuera de alcance): `docs/datos-de-prueba.md`, sección E.
-- [ ] **F38** Verificar que se subieron los datos de todos los condados y lugares que se marcan en el globo (EE. UU. y Argentina) · Libre · Bloquea: entrega "para_front" de datos
+- [ ] **F38** Verificar que se subieron los datos de todos los condados y lugares que se marcan en el globo (EE. UU. y Argentina) · 🔨 Lucho/Claude (15/11 18:25) · Bloquea: entrega "para_front" de datos
   - EE. UU., cantidad de condados con polígono contra los de la entrega (según "Zonas de Field Shift", a confirmar con los archivos): IA 99, IL 102, IN 92, KS 105, MN 87, MO 115, NE 93, OH 88, SD 66, WI 72 y ND 53 (hoy ND no está). Total 972.
   - Para cada condado marcado: tiene ficha de historia (`web/public/data/county/`), archivo de Próxima campaña (`next/`, si su estado tiene modelo) y color del globo (`stat` en `globe-data.json`). Lo que no tenga dato se ve como "Missing data", nunca con 0 ni sin marcar.
   - Cruces a buscar: condados marcados sin datos, datos de condados que no están en el globo, y condados con gemelos que apuntan a un condado sin polígono.
@@ -100,7 +100,7 @@ Ejemplo:
   - Alcance: solo los 5 condados con lote de demo (Champaign IL, Tippecanoe IN, Crawford IA, Hamilton IA, Shelby IA) y solo con el año 2025; es la temporada 2025 repetida, no un pronóstico (ver fila C7 de `docs/datos-de-prueba.md`).
   - Hecho después: NASA HLS en la pantalla de Fuentes (el contador de la cabecera pasó a 8) y su límite ("Satellite guess").
   - Falta: más lotes (lo decide ML); decidir si el punto 6 también va en el pitch.
-- [ ] **F34** ⭐ **TAREA PRINCIPAL** Definir cómo se ve "See more" en los condados sin PNG del mapa (hoy 291 de los 294 con historia más los 596 de los estados nuevos; ejemplo: Champaign, IL) · Libre · A definir en el grupo (marcada como principal el 15/11; no se resuelve todavía)
+- [ ] **F34** ⭐ **TAREA PRINCIPAL** Definir cómo se ve "See more" en los condados sin PNG del mapa (hoy 291 de los 294 con historia más los 596 de los estados nuevos; ejemplo: Champaign, IL) · 🔨 Lucho/Claude (15/11 18:25) · A definir en el grupo (marcada como principal el 15/11; no se resuelve todavía)
   - Hoy: sin mapa del CDL, "See more" abre la pantalla de rinde año a año con un aviso "Missing data" donde iría el mapa. El globo con el condado pegado solo existe en Story, McLean y Sumner.
   - Datos que sí hay para esos condados: polígono (919), rinde de NASS y clima de POWER por año. Faltan los % por cultivo y el mapa por año (solo hay 2025 en algunos estados).
   - Opciones (15/11), de menor a mayor trabajo:
@@ -133,8 +133,8 @@ Ejemplo:
 ## Video y entrega
 
 - [ ] **F26** Modo grabación `?take=a|b|c` (A 960×1080, B y C 1920×1080; C con rótulo "Next: Argentina, as data is added") · Libre
-- [ ] **F27** Deploy en Vercel y pasar la URL pública a Lucho · Libre · Bloquea: F01
-- [ ] **F28** Revisión final: 1920×1080, celular, teclado, contraste AA, `prefers-reduced-motion` · Libre
+- [ ] **F27** Deploy en Vercel y pasar la URL pública a Lucho · 🔨 Lucho/Claude (15/11 18:25) · Bloquea: F01
+- [ ] **F28** Revisión final: 1920×1080, celular, teclado, contraste AA, `prefers-reduced-motion` · 🔨 Lucho/Claude (15/11 18:25)
 - [ ] **F37** Verificar a mano, en Chrome y en Firefox con WebGL (lo que no se pudo ver en el navegador de Claude: sin WebGL y con el panel oculto) · Libre
   - Barra de desplazamiento de la columna del año: arrastrar la píldora, clic en el riel, hover y difuminado de borde.
   - Tarjeta "This season, before USDA's map" (Champaign, Tippecanoe, Crawford, Hamilton, Shelby): chips de fecha y de lote, botón "See how the satellite decided", que la curva y las etiquetas no se pisen.
