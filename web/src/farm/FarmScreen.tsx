@@ -61,7 +61,10 @@ function useFarm(): Farm | null {
 
 export function FarmScreen({ edit }: { edit: boolean }) {
   const farm = useFarm();
-  useEffect(() => window.scrollTo(0, 0), [edit]);
+  // con llaves: en Chrome nuevo scrollTo devuelve una Promise, y React la tomaría como función de limpieza
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [edit]);
   if (edit || !farm) {
     return (
       <main className="fm">
