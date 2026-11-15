@@ -405,7 +405,7 @@ function drawLabels(c) {
         if (w > rx * 0.85 || h > ry * 0.85) continue;
       }
       const r = [x - w / 2 - 2, y - h / 2, x + w / 2 + 2, y + h / 2];
-      if (r[0] < 0 || r[2] > W || cover.some((s) => overlaps(r, s))) continue;
+      if (r[0] < 0 || r[1] < 0 || r[2] > W || r[3] > H || cover.some((s) => overlaps(r, s))) continue;
       if (placed.some((s) => overlaps(r, s))) continue; // choca con uno de más prioridad: se oculta
       if (selBox && f !== selCounty && overlaps(r, selBox)) continue; // no tapa el contorno del seleccionado
       placed.push(r);
@@ -493,18 +493,13 @@ function step(now) {
   drawSky(t, u, r); drawHud(u, r, a);
 }
 
-// ---- panel, migas y botones
+// ---- panel y botones
 let rainUnit = 'in';
 try { if (localStorage.getItem('fieldrewind:rain-unit') === 'mm') rainUnit = 'mm'; } catch (e) { /* sin almacenamiento */ }
 const rainText = (mm) => (rainUnit === 'mm' ? `${Math.round(mm)} mm` : `${(mm / 25.4).toFixed(1)} in`);
 function updateUI() {
   document.body.dataset.level = level;
   writeHash();
-  $('back').textContent = twinMode ? '← Back to county' : level === 'county' ? `← Back to ${selState.properties.name}` : level === 'state' ? '← Back to globe' : '← Back';
-  const crumbs = ['<button type="button" data-go="globe">Globe</button>'];
-  if (selState) crumbs.push(`<button type="button" data-go="state">${selState.properties.name}</button>`);
-  if (selCounty) crumbs.push(`<span>${selCounty.properties.name} County</span>`);
-  $('crumbs').innerHTML = crumbs.join('<i>›</i>');
   const panel = $('panel'), pct = (n) => `${Math.round(n * 100)}%`;
   showTip(null);
   $('legend').hidden = level === 'globe';
@@ -536,11 +531,6 @@ function updateUI() {
     panel.hidden = false;
   } else panel.hidden = true;
 }
-$('crumbs').addEventListener('click', (e) => {
-  const go = e.target.dataset && e.target.dataset.go;
-  if (go === 'globe') reset();
-  if (go === 'state' && selState) flyToState(selState.id);
-});
 $('p-stats').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-unit]'); if (!b || b.dataset.unit === rainUnit) return;
   rainUnit = b.dataset.unit;
@@ -548,7 +538,7 @@ $('p-stats').addEventListener('click', (e) => {
   updateUI();
   const again = $('p-stats').querySelector(`button[data-unit="${rainUnit}"]`); if (again) again.focus();
 });
-$('back').addEventListener('click', goBack);
+$('p-close').addEventListener('click', goBack); // la X sube un nivel: condado → estado → globo
 $('home').addEventListener('click', goHome);
 $('p-twins').addEventListener('click', () => showTwins(!twinMode));
 $('p-twinlist').addEventListener('click', (e) => { const b = e.target.closest('button[data-fips]'); if (b) flyToCounty(b.dataset.fips); });

@@ -24,18 +24,12 @@
 .maplayer #home svg{height:26px;width:auto}
 .maplayer #home b{font:800 21px/1 var(--display);letter-spacing:-.01em}
 .maplayer #home b span{font-weight:500}
-.maplayer #nav{display:flex;align-items:center;font-size:14px}
-body[data-level="globe"] .maplayer #nav{display:none}
-.maplayer #back,.maplayer #crumbs button{min-height:44px;padding:0 8px;background:none;border:0;color:var(--ink-2)}
-.maplayer #back{font-weight:700;color:var(--paper);margin-right:8px;padding-left:0}
-.maplayer #crumbs{display:flex;align-items:center}
-.maplayer #crumbs i{font-style:normal;color:var(--ink-3)}
-.maplayer #crumbs span{padding:0 8px;font-weight:700}
 
 /* Panel lateral: una sola superficie opaca, pegada al borde, sin vidrio ni tarjetas anidadas. */
 .maplayer #panel{right:0;top:0;bottom:0;width:372px;overflow:auto;overscroll-behavior:contain;background:var(--night);border-left:1px solid var(--rule);padding:28px 28px 32px}
 .maplayer #panel[hidden],.maplayer #p-stats[hidden],.maplayer #p-twins[hidden],.maplayer #p-next[hidden],.maplayer #p-twinlist[hidden],.maplayer #legend[hidden]{display:none}
-.maplayer #p-name{margin:0;font:800 32px/1.05 var(--display);letter-spacing:-.015em;text-wrap:balance}
+.maplayer #p-close{position:absolute;top:18px;right:18px;display:grid;place-items:center;width:44px;height:44px;padding:0;background:none;border:0;border-radius:var(--radius);color:var(--ink-2);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.maplayer #p-name{margin:0;padding-right:40px;font:800 32px/1.05 var(--display);letter-spacing:-.015em;text-wrap:balance}
 .maplayer #p-state{margin:6px 0 0;color:var(--ink-2);font-size:14px;font-variant-numeric:tabular-nums}
 .maplayer #p-status{margin:16px 0 0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
 .maplayer #p-status.ok{color:var(--sprout)}
@@ -106,7 +100,7 @@ body.landing .maplayer #landing{opacity:1;visibility:visible;pointer-events:auto
 body.landing .maplayer .ui:not(#landing){opacity:0;pointer-events:none;transition:none}
 
 @media (hover:hover){
-  .maplayer #home:hover b,.maplayer #back:hover,.maplayer #crumbs button:hover{color:var(--sprout)}
+  .maplayer #home:hover b,.maplayer #p-close:hover{color:var(--sprout)}
   .maplayer .btn:not(:disabled):hover{border-color:rgba(246,241,228,.4)}
   .maplayer .btn.primary:not(:disabled):hover{background:#A6DE9B}
   .maplayer .twins button:hover b{color:var(--sprout)}
@@ -114,14 +108,12 @@ body.landing .maplayer .ui:not(#landing){opacity:0;pointer-events:none;transitio
 @media (prefers-reduced-motion:reduce){
   .maplayer #start,.maplayer .btn,.maplayer #landing,.maplayer .ui{transition:none!important}
 }
-body.recording .maplayer .ui:not(#top),body.recording .maplayer #nav{display:none!important}
+body.recording .maplayer .ui:not(#top){display:none!important}
 body.recording .maplayer #home{pointer-events:none}
 @media (max-width:760px){
   .maplayer #top{padding:10px 16px 28px;gap:8px 12px;flex-wrap:wrap}
   .maplayer #search{order:3;width:100%}
   .maplayer #home b{font-size:18px;white-space:nowrap}
-  .maplayer #crumbs{display:none}
-  .maplayer #back{white-space:nowrap}
   .maplayer #legend{display:none}
   .maplayer #panel{top:auto;left:0;width:auto;max-height:62vh;border-left:0;border-top:1px solid var(--rule);border-radius:16px 16px 0 0;padding:20px 20px 24px}
   .maplayer #p-name{font-size:26px}
