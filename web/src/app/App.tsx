@@ -26,7 +26,7 @@ function Pending({ title, task, children }: { title: string; task: string; child
 export function App() {
   const { route, query } = useLocation();
   // Pantalla 1 (portada, globo, estado y condado en el mapa) la dibuja MapLayer, que queda siempre montada.
-  const onMap = route.name === "home" || route.name === "map" || route.name === "state";
+  const onMap = route.name === "home" || route.name === "map" || route.name === "state" || route.name === "ar";
 
   return (
     <>

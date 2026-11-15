@@ -4,11 +4,11 @@
 // 2021–2025 ("stat" en globe-data.json, lo escribe scripts/build_front_data.py). Sin dato: "Missing data".
 import {POSTAL_BY_FIPS, FIPS_BY_POSTAL, STATES as STATE_LIST} from '../data/states';
 import {Deck, _GlobeView as GlobeView, COORDINATE_SYSTEM} from '@deck.gl/core';
-import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer} from '@deck.gl/layers';
+import {BitmapLayer, SolidPolygonLayer, GeoJsonLayer, ArcLayer} from '@deck.gl/layers';
 import {TileLayer} from '@deck.gl/geo-layers';
 import D from './globe-data.json';
 import NEXT_LIST from './next-available.json'; // lo genera scripts/build_next_json.py
-import {prefetchCounty} from '../data/load';
+import {prefetchCounty, dataUrl} from '../data/load';
 import DENSITY from './crop-density.json'; // lo genera scripts/build_crop_density.py (USDA CDL)
 import ICON_YIELD from '../ui/icons/crops/yield.svg?raw';
 import ICON_CORN from '../ui/icons/crops/corn.svg?raw';
@@ -129,6 +129,22 @@ for (const c of COUNTIES) {
 }
 const DEMO = D.demo, START = D.start, HOME = D.home;
 const ARGENTINA = [{type: 'Feature', properties: {}, geometry: D.argentina}];
+
+// ---- Argentina (F38): 219 departamentos de la región pampeana, pintados por qué tan parecido es su clima al del
+// Corn Belt (zona dentro / cerca / fuera). Datos: public/data/argentina/ (scripts/build_argentina.py). No hay
+// estimación del modelo: la ficha compara el rinde real del MAGyP con el de los condados de EE. UU. de clima parecido.
+const AR_COLOR = {dentro: [142, 208, 129], cerca: [233, 185, 73], fuera: [168, 118, 84]};
+const AR_ZONE = {dentro: 'Within the Corn Belt weather range', cerca: 'Close to the Corn Belt weather range', fuera: 'Outside the Corn Belt weather range'};
+const rgbCss = (c) => `rgb(${c.join(',')})`;
+let layersElRef = null;
+let AR = [], arById = {}, arBounds = null, selDepto = null, hoverDepto = null, arDetail = null, arLegend = null;
+const arFiles = new Map();
+function geomBounds(g) {
+  let x0 = 180, y0 = 90, x1 = -180, y1 = -90;
+  const walk = (a) => { if (typeof a[0] === 'number') { x0 = Math.min(x0, a[0]); x1 = Math.max(x1, a[0]); y0 = Math.min(y0, a[1]); y1 = Math.max(y1, a[1]); } else a.forEach(walk); };
+  walk(g.coordinates);
+  return [[x0, y0], [x1, y1]];
+}
 const COUNTY_K = 3.2;
 const FAR = {lat: 8, k: 0.55}; // portada: el globo chico y lejos, girando detrás del velo
 
@@ -262,11 +278,38 @@ function flyToCounty(id, {dur = 1500, at = null, instant = false, fromSearch = f
   if (instant) { V = null; Object.assign(R, to); } else flyTo(to, reduceMotion.matches ? 600 : dur);
   emit('county', {fips: id, name: c.properties.name, state: selState.properties.name, hasHistory: !!historyOf(c)});
 }
+function flyToAr() {
+  if (!AR.length) return;
+  selState = null; selCounty = null; selDepto = null; arDetail = null; level = 'ar';
+  updateUI();
+  const [[x0, y0], [x1, y1]] = arBounds;
+  flyTo({lon: (x0 + x1) / 2, lat: (y0 + y1) / 2, k: fitK({bounds: arBounds}, 0.8)}, reduceMotion.matches ? 600 : 1500);
+  emit('ar', {});
+}
+function loadDepto(f) {
+  const id = f.id;
+  if (!arFiles.has(id)) arFiles.set(id, fetch(dataUrl(`data/argentina/depto/${id}.json`)).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }));
+  arFiles.get(id).then((d) => { if (selDepto === f) { arDetail = d; renderArCard(); } })
+    .catch(() => { arFiles.delete(id); if (selDepto === f) { arDetail = {failed: true}; renderArCard(); } });
+}
+function flyToDepto(id, {dur = 1500, instant = false} = {}) {
+  const f = arById[id]; if (!f) return;
+  selState = null; selCounty = null; selDepto = f; arDetail = null; level = 'depto';
+  updateUI();
+  loadDepto(f);
+  const k = Math.min(fitK(f, 0.34), 30);
+  const to = {lon: f.centroid[0] + cardShift(k, f.centroid[1], 1), lat: f.centroid[1] - sheetLift(k), k};
+  if (instant) { V = null; Object.assign(R, to); } else flyTo(to, reduceMotion.matches ? 600 : dur);
+  emit('depto', {id, name: f.properties.name});
+}
+function closeDepto() { if (selDepto) flyToAr(); }
 function reset() { selState = null; selCounty = null; level = 'globe'; flyTo(HOME, 1400); updateUI(); }
 /** Vuelve a la portada (logo + Start) */
 const goHome = () => { location.hash = '#/'; };
 function goBack() {
-  if (level === 'county') flyToState(selState.id);
+  if (level === 'depto') flyToAr();
+  else if (level === 'ar') reset();
+  else if (level === 'county') flyToState(selState.id);
   else if (level === 'state') reset();
   else goHome();
 }
@@ -280,11 +323,13 @@ function routeOf(hash) {
   if (h === '/map') return {kind: 'globe'};
   if ((m = h.match(/^\/map\/(\d{5})$/))) return {kind: 'county', fips: m[1]};
   if ((m = h.match(/^\/state\/([A-Za-z]{2})$/))) return {kind: 'state', fips: FIPS_OF[m[1].toUpperCase()]};
+  if (h === '/ar') return {kind: 'ar'};
+  if ((m = h.match(/^\/ar\/(\d{5})$/))) return {kind: 'depto', id: m[1]};
   return {kind: 'other'};
 }
 function writeHash() {
   if (take || applyingHash || !active || isLanding()) return;
-  const target = level === 'globe' ? '#/map' : level === 'state' ? `#/state/${POSTAL[selState.id]}` : `#/map/${selCounty.id}`;
+  const target = level === 'globe' ? '#/map' : level === 'ar' ? '#/ar' : level === 'depto' ? `#/ar/${selDepto.id}` : level === 'state' ? `#/state/${POSTAL[selState.id]}` : `#/map/${selCounty.id}`;
   if (location.hash !== target) location.hash = target;
 }
 /** Portada → globo: el velo se desvanece y la cámara vuela a EE. UU. */
@@ -313,6 +358,10 @@ function applyHash() {
       if (level !== 'globe') reset();
     } else if (r.kind === 'state' && stateById[r.fips]) {
       if (!(level === 'state' && selState.id === r.fips)) flyToState(r.fips);
+    } else if (r.kind === 'ar') {
+      if (AR.length && level !== 'ar') flyToAr();
+    } else if (r.kind === 'depto') {
+      if (AR.length && arById[r.id] && !(level === 'depto' && selDepto.id === r.id)) flyToDepto(r.id, {instant: prev === 'other'});
     } else if (r.kind === 'county' && countyById[r.fips]) {
       if (!(level === 'county' && selCounty.id === r.fips)) {
         // al volver de otra pantalla la tarjeta ya está abierta: sin vuelo ni animación
@@ -359,12 +408,17 @@ const deckgl = new Deck({
   },
   getCursor: ({isDragging, isHovering}) => (isDragging ? 'grabbing' : isHovering ? 'pointer' : 'grab'),
   onHover: (info) => {
+    if (info.layer && info.layer.id === 'ar-fill' && info.object && !take) {
+      hover = null; hoverDepto = info.object; showArTip(info.object, info.x, info.y); return;
+    }
+    hoverDepto = null;
     hover = info.object && !take ? {type: info.layer.id === 'counties' ? 'county' : 'state', f: info.object} : null;
     showTip(hover && hover.type === 'county' ? hover.f : null, info.x, info.y);
   },
   onClick: (info) => {
     if (take || growing) return;
-    if (!info.object) { if (selCounty) closeCard(); return; } // clic en mapa vacío: cierra la tarjeta
+    if (!info.object) { if (selCounty) closeCard(); else if (selDepto) closeDepto(); return; } // clic en mapa vacío: cierra la tarjeta
+    if (info.layer.id === 'ar-fill') { flyToDepto(info.object.id); return; }
     if (info.layer.id === 'counties') flyToCounty(info.object.id, {at: [info.x, info.y]});
     else flyToState(info.object.id);
   },
@@ -425,6 +479,20 @@ function buildLayers(a) {
       updateTriggers: {getFillColor: [selState && selState.id, hoverState && hoverState.id, stateFade],
         getLineColor: [selState && selState.id], getLineWidth: [selState && selState.id, hoverState && hoverState.id]}}),
   ];
+  if (AR.length) {
+    const selId = selDepto && selDepto.id, hovId = hoverDepto && hoverDepto.id;
+    layers.push(
+      new GeoJsonLayer({id: 'ar-fill', parameters: SURFACE, data: AR, filled: true, stroked: true, pickable: true, lineWidthUnits: 'pixels',
+        getFillColor: (f) => [...AR_COLOR[f.properties.zone], f === hoverDepto ? 235 : selDepto && f !== selDepto ? 105 : 170],
+        getLineColor: (f) => (f === selDepto ? [...WHITE, 255] : [...NIGHT, 190]),
+        getLineWidth: (f) => (f === selDepto ? 3 : f === hoverDepto ? 1.6 : 0.8),
+        updateTriggers: {getFillColor: [selId, hovId], getLineColor: [selId], getLineWidth: [selId, hovId]}}),
+      new GeoJsonLayer({id: 'ar-edge', parameters: SURFACE, data: ARGENTINA, filled: false, stroked: true, lineWidthUnits: 'pixels',
+        getLineWidth: 1.4, getLineColor: [...CREAM, 150]}));
+    if (selDepto && arDetail && arDetail.analogs) layers.push(new ArcLayer({id: 'ar-arcs', parameters: SURFACE, data: arDetail.analogs,
+      getSourcePosition: () => selDepto.centroid, getTargetPosition: (d) => d.centroid, greatCircle: true, getHeight: 0.08,
+      getSourceColor: [...GLOW, 230], getTargetColor: [233, 185, 73, 230], getWidth: 3, widthUnits: 'pixels'}));
+  }
   // con un cultivo elegido los condados se ven también de lejos (el rinde los muestra solo al acercarse)
   const fillA = mode === 'yield' ? a : Math.max(a, 0.95);
   if (fillA > 0.01) {
@@ -620,6 +688,15 @@ function drawHud(u, r, a) {
     c.textAlign = 'left'; c.textBaseline = 'alphabetic';
     c.font = '700 15px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '1.2px'; shadowText(c, HIGHLIGHT_LABEL, x2, y2 - 6, COL.glow);
     c.font = '500 13px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '0px'; shadowText(c, 'Click a state to explore', x2, y2 + 13, 'rgba(246,241,228,0.85)');
+    c.globalAlpha = 1;
+  }
+  if (AR.length && R.k <= 1.7 && !take && !isLanding() && angDist([-64, -36], [R.lon, R.lat]) < 1.45) { // rótulo de Argentina
+    const [x, y] = viewport.project([-62.5, -33.5]), x2 = x + base * 0.3, y2 = y - base * 0.18;
+    c.globalAlpha = Math.max(0, Math.min(1, 1.7 - R.k));
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x2 - 8, y2 + 8); c.strokeStyle = COL.glow; c.lineWidth = 1.5; c.stroke();
+    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+    c.font = '700 15px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '1.2px'; shadowText(c, 'ARGENTINA', x2, y2 - 6, COL.glow);
+    c.font = '500 13px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '0px'; shadowText(c, 'Click a department to explore', x2, y2 + 13, 'rgba(246,241,228,0.85)');
     c.globalAlpha = 1;
   }
   if (take === 'c' && angDist([-64, -36], [R.lon, R.lat]) < 1.45) {
@@ -820,8 +897,17 @@ function updateUI() {
   document.body.dataset.level = level;
   writeHash();
   showTip(null);
-  $('legend').hidden = level === 'globe' && mode === 'yield';
+  if (level !== 'depto') { selDepto = null; arDetail = null; }
+  syncLegends();
+  renderArCard();
   if (!selCounty) hideCard();
+}
+// en Argentina no hay rinde de condados ni "Color by": se muestra la leyenda de zonas
+const inAr = () => level === 'ar' || level === 'depto';
+function syncLegends() {
+  $('legend').hidden = inAr() || (level === 'globe' && mode === 'yield');
+  if (layersElRef) layersElRef.hidden = inAr();
+  if (arLegend) arLegend.hidden = !inAr();
 }
 
 // ---- selector "Color by": un botón con el ícono del cultivo; abre la lista de capas (radio)
@@ -845,6 +931,7 @@ dockEl.id = 'dock';
 dockEl.className = 'ui';
 $('legend').before(dockEl);
 dockEl.append(layersEl, $('legend'));
+layersElRef = layersEl;
 const layersBtn = $('layers-btn'), layersMenu = $('layers-menu');
 const modeOf = (id) => MODES.find((m) => m.id === id);
 function openLayers(open) {
@@ -875,7 +962,7 @@ function setMode(id) {
   layersBtn.style.setProperty('--crop', m.color || COL.glow);
   layersMenu.querySelectorAll('[role=radio]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.mode === id)));
   recolor(); renderLegend(); showTip(null);
-  $('legend').hidden = level === 'globe' && mode === 'yield';
+  syncLegends();
 }
 layersBtn.addEventListener('click', () => openLayers(layersMenu.hidden));
 layersMenu.addEventListener('click', (e) => {
@@ -890,6 +977,89 @@ layersMenu.addEventListener('keydown', (e) => {
 });
 document.addEventListener('pointerdown', (e) => { if (!layersMenu.hidden && !layersEl.contains(e.target)) openLayers(false); });
 setMode('yield');
+
+// ---- Argentina: leyenda de zonas (abajo a la izquierda) y ficha del departamento (a la derecha)
+arLegend = document.createElement('div');
+arLegend.id = 'ar-legend'; arLegend.className = 'ui'; arLegend.hidden = true;
+dockEl.append(arLegend);
+function renderArLegend() {
+  const n = (z) => AR.filter((f) => f.properties.zone === z).length;
+  arLegend.innerHTML = `<div class="t">Weather match with the Corn Belt <span class="src">NASA POWER</span></div>
+    ${['dentro', 'cerca', 'fuera'].map((z) => `<div class="r"><i style="background:${rgbCss(AR_COLOR[z])}"></i><span>${AR_ZONE[z].replace(' Corn Belt weather range', '')}</span><b>${n(z)}</b></div>`).join('')}
+    <p>Of 16 weather measures, how many fall outside the U.S. range. No yield estimate here: the model was trained on U.S. counties.</p>`;
+}
+const arCardEl = document.createElement('aside');
+arCardEl.id = 'ar-card'; arCardEl.className = 'ui'; arCardEl.hidden = true;
+arCardEl.setAttribute('aria-labelledby', 'ar-name');
+$('card').after(arCardEl);
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+function arYieldRows(d) {
+  const rows = [['corn', 'Corn'], ['soy', 'Soybeans'], ['wheat', 'Wheat']].map(([k, label]) => {
+    const y = d.yield_compare && d.yield_compare[k]; if (!y || !y.us_analogs) return '';
+    const max = Math.max(y.us_analogs.p90, y.ar_median.bu_ac) * 1.05, pc = (v) => Math.round((v / max) * 1000) / 10;
+    return `<div class="y"><div class="yh"><b>${label}</b><span>${Math.round(y.ar_median.bu_ac)} bu/ac · ${Math.round(y.ratio_ar_us * 100)}% of U.S. analogs</span></div>
+      <div class="tr" title="This department, median ${y.n_years_ar} seasons"><i class="ar" style="width:${pc(y.ar_median.bu_ac)}%"></i></div>
+      <div class="tr" title="U.S. analog counties, p10 to p90"><i class="us" style="left:${pc(y.us_analogs.p10)}%;width:${pc(y.us_analogs.p90 - y.us_analogs.p10)}%"></i><em style="left:${pc(y.us_analogs.median)}%"></em></div></div>`;
+  }).join('');
+  return rows ? `<h3>Yield, bu/acre</h3>${rows}<p class="key"><i class="ar"></i>This department, median 2001–2024 <i class="us"></i>3 U.S. analogs, p10–p90</p>`
+    : '<p class="miss">Missing data: no MAGyP yield for this department.</p>';
+}
+function renderArCard() {
+  const f = selDepto;
+  if (!f) { arCardEl.hidden = true; arCardEl.classList.remove('open'); return; }
+  const p = f.properties, d = arDetail && !arDetail.failed ? arDetail : null;
+  let h = `<button class="x" type="button" aria-label="Close" data-act="close"><svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></button>
+    <h2 id="ar-name" tabindex="-1">${esc(p.name)}</h2><p class="sub">${esc(p.province)}, Argentina</p>
+    <p class="zone"><i style="background:${rgbCss(AR_COLOR[p.zone])}"></i>${AR_ZONE[p.zone]}</p>`;
+  if (arDetail && arDetail.failed) h += '<p class="miss">Missing data: this department\'s file did not load.</p>';
+  else if (!d) h += '<p class="note">Loading…</p>';
+  else {
+    h += `<p class="txt">${esc(d.zone_text)}</p>${arYieldRows(d)}<p class="note">${esc(d.prediction_note)}</p>`;
+    if (d.climate && d.climate.length) {
+      const last = d.climate.slice(-10), avg = (k) => Math.round(last.reduce((t, r) => t + (r[k] ?? 0), 0) / last.length);
+      h += `<h3>Weather, ${last[0].campaign}–${last[last.length - 1].campaign}</h3>
+        <p class="txt">Corn flowers in <b>January</b> here (July in the U.S.). Average January rain ${avg('january_rain_mm')} mm, season rain ${avg('season_rain_mm')} mm.</p>`;
+    } else h += `<p class="miss">Missing data: ${esc(d.climate_note || 'no weather series for this department')}</p>`;
+    if (d.analogs && d.analogs.length) h += `<h3>Closest weather in the U.S.</h3><div class="an">${d.analogs.map((a) =>
+      `<button type="button" data-fips="${a.fips}">${esc(a.name)}, ${a.state}</button>`).join('')}</div>`;
+    h += `<p class="src">${esc((d.sources || []).join(' · '))}</p>`;
+  }
+  arCardEl.innerHTML = h;
+  arCardEl.hidden = false;
+  requestAnimationFrame(() => arCardEl.classList.add('open'));
+}
+arCardEl.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.act === 'close') closeDepto();
+  else if (b.dataset.fips && countyById[b.dataset.fips]) flyToCounty(b.dataset.fips);
+});
+function showArTip(f, x, y) {
+  const tip = $('tip');
+  tip.innerHTML = `<b>${esc(f.properties.name)}, ${esc(f.properties.province)}</b> · ${AR_ZONE[f.properties.zone]}`;
+  tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = `${Math.min(x + 14, W - w - 8)}px`;
+  tip.style.top = `${y + 14 + h > H - 8 ? y - h - 10 : y + 14}px`;
+}
+const ctaAr = document.createElement('button');
+ctaAr.id = 'cta-ar'; ctaAr.type = 'button'; ctaAr.className = 'btn'; ctaAr.textContent = 'Explore Argentina →';
+$('cta').after(ctaAr);
+ctaAr.addEventListener('click', () => { if (AR.length) flyToAr(); });
+function loadAr() {
+  return fetch(dataUrl('data/argentina/departamentos.geojson')).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((g) => {
+    AR = g.features.map((f) => {
+      const geometry = densify(f.geometry), b = geomBounds(geometry);
+      return {type: 'Feature', id: f.properties.id_depto, properties: f.properties, geometry, bounds: b, centroid: [(b[0][0] + b[1][0]) / 2, (b[0][1] + b[1][1]) / 2]};
+    });
+    arById = Object.fromEntries(AR.map((f) => [f.id, f]));
+    const xs = AR.map((f) => f.bounds);
+    arBounds = [[Math.min(...xs.map((b) => b[0][0])), Math.min(...xs.map((b) => b[0][1]))], [Math.max(...xs.map((b) => b[1][0])), Math.max(...xs.map((b) => b[1][1]))]];
+    INDEX.push({kind: 'country', id: 'AR', label: 'Argentina', sub: 'Pampas region · 219 departments', key: 'argentina', alt: 'ar'});
+    for (const f of AR) INDEX.push({kind: 'depto', id: f.id, label: f.properties.name, sub: `${f.properties.province} · Argentina`, key: norm(f.properties.name), alt: f.id});
+    renderArLegend();
+    if (/^#\/ar/.test(location.hash)) applyHash();
+  }).catch((e) => console.error('argentina', e));
+}
 $('home').addEventListener('click', goHome);
 $('enter').addEventListener('click', () => { location.hash = '#/map'; });
 // Botón de entrada: vuela directo al condado de demo y abre su tarjeta en el mapa
@@ -952,7 +1122,10 @@ function closeSearch(clear) {
 function choose(r) {
   if (!r) return;
   closeSearch(true); $('q').blur();
-  if (r.kind === 'state') flyToState(r.id); else flyToCounty(r.id, {fromSearch: true});
+  if (r.kind === 'state') flyToState(r.id);
+  else if (r.kind === 'country') flyToAr();
+  else if (r.kind === 'depto') flyToDepto(r.id);
+  else flyToCounty(r.id, {fromSearch: true});
 }
 $('q').addEventListener('input', () => { results = findPlaces($('q').value); activeIdx = results.length ? 0 : -1; renderResults(); });
 $('q').addEventListener('keydown', (e) => {
@@ -992,6 +1165,7 @@ function startTake(name) {
 
 // ---- inicio
 resize();
+loadAr();
 const takeParam = (new URLSearchParams(location.search).get('take') || (location.hash.match(/take-([ac])/) || [])[1] || '').toLowerCase();
 if (takeParam === 'a' || takeParam === 'c') {
   document.body.classList.remove('landing');
@@ -1003,5 +1177,5 @@ if (takeParam === 'a' || takeParam === 'c') {
   applyHash(); // entrar directo a una vista (#/map, #/state/KS, #/map/20191)
 }
 requestAnimationFrame(frame);
-window.FieldRewindGlobe = {flyToState, flyToCounty, reset, goHome, view: () => ({...R, level})};
+window.FieldRewindGlobe = {flyToState, flyToCounty, flyToAr, flyToDepto, reset, goHome, view: () => ({...R, level})};
 }

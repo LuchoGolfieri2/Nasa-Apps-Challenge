@@ -247,3 +247,48 @@ body.recording .maplayer #home{pointer-events:none}
 .maplayer #search{order:3;margin-left:0}
 body.recording .maplayer #farm-link,body.landing .maplayer #farm-link{display:none}
 body.recording .maplayer #search,body.landing .maplayer #search{margin-left:auto}
+
+/* Argentina (F38): leyenda de zonas y ficha del departamento. Cajas blancas, como la tarjeta del condado. */
+.maplayer #ar-legend,.maplayer #ar-card{
+  --paper:#12271B;--ink-2:rgba(18,39,27,.74);--ink-3:rgba(18,39,27,.64);--rule:rgba(15,42,29,.12);color:#12271B;
+  background:#fff;box-shadow:var(--shadow-card);border:1px solid var(--rule)}
+.maplayer #ar-legend[hidden],.maplayer #ar-card[hidden]{display:none}
+.maplayer #ar-legend{width:272px;border-radius:16px;padding:12px 14px 10px}
+.maplayer #ar-legend .t{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:700;margin-bottom:8px}
+.maplayer #ar-legend .src{font-weight:500;color:var(--ink-2)}
+.maplayer #ar-legend .r{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-top:5px}
+.maplayer #ar-legend .r i,.maplayer #ar-card .zone i{width:14px;height:14px;border-radius:3px;flex:none}
+.maplayer #ar-legend .r span{flex:1}
+.maplayer #ar-legend .r b{font-variant-numeric:tabular-nums}
+.maplayer #ar-legend p{margin:8px 0 0;font-size:11.5px;line-height:1.35;color:var(--ink-2)}
+.maplayer #ar-card{right:24px;top:84px;width:340px;max-height:calc(100vh - 120px);overflow:auto;overscroll-behavior:contain;
+  border-radius:16px;padding:16px;opacity:0;transform:translateX(16px);transition:opacity .3s ease-out,transform .35s cubic-bezier(.4,0,.2,1)}
+.maplayer #ar-card.open{opacity:1;transform:none}
+.maplayer #ar-card h2{margin:0;padding-right:32px;font:800 22px/1.1 var(--display);letter-spacing:-.01em}
+.maplayer #ar-card h3{margin:16px 0 6px;font-size:13px;font-weight:700}
+.maplayer #ar-card .sub{margin:4px 0 0;font-size:13px;color:var(--ink-2)}
+.maplayer #ar-card .zone{display:flex;align-items:center;gap:8px;margin:12px 0 0;font-size:13px;font-weight:700}
+.maplayer #ar-card .txt,.maplayer #ar-card .note{margin:8px 0 0;font-size:13px;line-height:1.4}
+.maplayer #ar-card .note{color:var(--ink-2)}
+.maplayer #ar-card .miss{margin:12px 0 0;padding:8px 10px;border:1px dashed var(--ink-3);border-radius:8px;font-size:13px;color:var(--ink-2);
+  background:repeating-linear-gradient(135deg,rgba(15,42,29,.05) 0 6px,transparent 6px 12px)}
+.maplayer #ar-card .x{position:absolute;top:4px;right:4px;display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-radius:8px;background:none;color:var(--ink-2)}
+.maplayer #ar-card .y{margin-top:10px}
+.maplayer #ar-card .yh{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}
+.maplayer #ar-card .yh span{color:var(--ink-2);font-variant-numeric:tabular-nums}
+.maplayer #ar-card .tr{position:relative;height:8px;margin-top:4px;border-radius:2px;background:rgba(15,42,29,.07)}
+.maplayer #ar-card .tr i{position:absolute;top:0;bottom:0;left:0;border-radius:2px}
+.maplayer #ar-card i.ar{background:#E9B949}
+.maplayer #ar-card i.us{background:#2F7D4F}
+.maplayer #ar-card .tr em{position:absolute;top:-2px;bottom:-2px;width:2px;background:#0F2A1D}
+.maplayer #ar-card .key{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin:10px 0 0;font-size:11.5px;color:var(--ink-2)}
+.maplayer #ar-card .key i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px;position:static}
+.maplayer #ar-card .an{display:flex;flex-wrap:wrap;gap:6px}
+.maplayer #ar-card .an button{min-height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--rule);background:transparent;font-size:13px;font-weight:700}
+.maplayer #ar-card .src{margin:14px 0 0;font-size:11px;line-height:1.35;color:var(--ink-3)}
+.maplayer #cta-ar{background:rgba(15,42,29,.72);border-color:rgba(246,241,228,.35);color:#F6F1E4;font-size:14px}
+@media(max-width:760px){
+  .maplayer #ar-card{right:0;left:0;top:auto;bottom:0;width:auto;max-height:55vh;border-width:1px 0 0;border-radius:16px 16px 0 0}
+  .maplayer #ar-legend{display:none}
+}
+@media(prefers-reduced-motion:reduce){.maplayer #ar-card{transform:none;transition:opacity .12s}}

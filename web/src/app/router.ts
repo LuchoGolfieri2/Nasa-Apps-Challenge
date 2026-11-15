@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
     #/                         portada (logo + Start)
     #/map                      globo
     #/state/KS                 mapa del estado
+    #/ar                       Argentina en el globo (región pampeana)
+    #/ar/06007                 un departamento argentino, con su ficha
     #/map/20191                condado elegido en el mapa (panel)
     #/county/20191?year=2021   historia del condado
     #/county/20191/next        próxima campaña
@@ -16,6 +18,7 @@ export type Route =
   | { name: "home" }
   | { name: "map"; fips: string | null }
   | { name: "state"; state: string }
+  | { name: "ar"; id: string | null }
   | { name: "county"; fips: string }
   | { name: "next"; fips: string }
   | { name: "sources" }
@@ -36,6 +39,8 @@ export function parseHash(hash: string): Location {
   if (parts.length === 0) route = { name: "home" };
   else if (parts[0] === "map" && parts.length === 1) route = { name: "map", fips: null };
   else if (parts[0] === "map" && /^\d{5}$/.test(parts[1] ?? "") && parts.length === 2) route = { name: "map", fips: parts[1] };
+  else if (parts[0] === "ar" && parts.length === 1) route = { name: "ar", id: null };
+  else if (parts[0] === "ar" && /^\d{5}$/.test(parts[1] ?? "") && parts.length === 2) route = { name: "ar", id: parts[1] };
   else if (parts[0] === "state" && parts[1] && parts.length === 2) route = { name: "state", state: parts[1].toUpperCase() };
   else if (parts[0] === "county" && /^\d{5}$/.test(parts[1] ?? "")) {
     if (parts.length === 2) route = { name: "county", fips: parts[1] };

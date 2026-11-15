@@ -1,6 +1,6 @@
 # Argentina en el front: datos listos (F38, parte Argentina)
 
-Datos de la región pampeana para que el front pueda mostrarla. **Solo datos**: la interfaz todavía no la usa.
+Datos de la región pampeana para el front. **Ya se usan en el globo** (15/11): capa por zona, ficha del departamento y arcos a los análogos; ver `web/src/map/globe.js`, bloque "Argentina".
 Cómo mostrarla lo decide el equipo (`CLAUDE.md`, "Argentina en el front").
 
 - **Script:** `python3 scripts/build_argentina.py` (lee la entrega `fieldshift_datos_final_20261115`, que no va a
@@ -79,6 +79,6 @@ Conversión a bu/ac con los factores de `CLAUDE.md` (maíz 62,77 kg/ha por bu/ac
 
 ## Lo que falta (front)
 
-- Decidir con el equipo dónde aparece (capa del globo, pantalla propia o solo la toma C del video).
-- Dibujarlo: el mapa por zona, la ficha y los arcos a los condados análogos.
+- Probar a mano con WebGL (el navegador del agente no tiene): capa, ficha, arcos, búsqueda y rutas `#/ar` y `#/ar/<id>`.
 - Sumar Argentina a `scripts/check_coverage.py` (F38).
+- Usar lo que todavía no se muestra: `soil` contra `soil_analog`, `yields` año a año, `radiation_diff_mj_m2_day` y `out_of_range` como lista.

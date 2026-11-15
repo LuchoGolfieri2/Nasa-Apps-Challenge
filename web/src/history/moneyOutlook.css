@@ -1,0 +1,31 @@
+.money__row { margin: 0 0 14px; }
+.money__crop { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-weight: 700; font-size: 14px; }
+.money__crop i { width: 10px; height: 10px; border-radius: 2px; }
+.money__crop span { font-weight: 400; color: var(--ink-3); }
+.money__bars { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.money__bar { display: grid; grid-template-rows: 18px 80px 18px; align-items: end; width: 100%; padding: 0; border: 0; background: none; font: inherit; color: var(--ink-2); cursor: pointer; }
+.money__bar:focus-visible { outline: 2px solid var(--field); outline-offset: 2px; border-radius: 4px; }
+.money__v { font-size: 11px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.money__fill { display: block; width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; opacity: 0.55; transition: opacity 0.15s ease-out; }
+.money__fill.is-missing { height: 100%; background: repeating-linear-gradient(135deg, rgba(15,42,29,.07) 0 4px, transparent 4px 8px); opacity: 1; }
+.money__fill.is-neg { background: #b4413f; height: 4px; }
+.money__bar:hover .money__fill, .money__bar.is-on .money__fill { opacity: 1; }
+.money__bar.is-on .money__v, .money__bar.is-on .money__y { color: var(--ink); font-weight: 700; }
+.money__y { font-size: 11px; text-align: center; }
+.money__now { margin: 4px 0 0; font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.money__now b { color: var(--ink); }
+
+.outlook__rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.outlook__rows li { display: grid; grid-template-columns: 72px minmax(0, 1fr) 34px; grid-template-areas: "n t d" ". s s"; gap: 2px 10px; align-items: center; font-size: 14px; }
+.outlook__name { grid-area: n; font-weight: 700; }
+.outlook__tracks { grid-area: t; display: grid; gap: 3px; }
+.outlook__track { display: block; height: 8px; border-radius: 2px; background: rgba(15,42,29,.08); overflow: hidden; }
+.outlook__track i { display: block; height: 100%; border-radius: 2px; }
+.outlook__track i.is-now { background: rgba(15,42,29,.38); }
+.outlook__rows b { grid-area: d; text-align: right; font-variant-numeric: tabular-nums; }
+.outlook__rows b.is-down { color: #b4413f; }
+.outlook__rows b.is-up { color: var(--field); }
+.outlook__rows small { grid-area: s; font-size: 12px; color: var(--ink-3); }
+.outlook__key { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 14px 0 0; font-size: 12px; color: var(--ink-2); }
+.outlook__key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; background: var(--field); }
+.outlook__key i.is-now { background: rgba(15,42,29,.38); }
