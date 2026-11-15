@@ -8,7 +8,7 @@ Lista única de tareas de la app. Sale de `docs/specs/front-back-connection-spec
 2. **Si alguien ya la tomó, no la toques.** Si necesitás algo de esa tarea, hablalo con quien la tiene.
 3. **Una rama por tarea:** `front/<id>-<nombre-corto>`, por ejemplo `front/F07-power`. Tocá solo los archivos de tu tarea; si necesitás cambiar algo compartido (`web/src/ui/`, `web/src/data/types.ts`, tokens), avisá en el grupo antes.
 4. **Al terminar, tachá la tarea en el mismo PR:** cambiá `- [ ]` por `- [x]`, envolvé el título en `~~ ~~` y cambiá tu marca por `✅ TuNombre`. Al mergear el PR a `main`, la tarea queda tachada para todos.
-5. **Antes de mergear:** `git pull origin main`, resolvé conflictos (en este archivo, conservá las marcas de los demás) y probá que la app levanta.
+5. **Antes de mergear:** `git pull origin main`, resolvé conflictos (en este archivo, conservá las marcas de los demás) y probá que la app levanta. Si el pull trajo cambios en `web/package.json` (por ejemplo deck.gl, que usa el globo), corré `npm install` en `web/` primero. Eso es solo para el equipo: los jueces abren el sitio publicado y no instalan nada.
 6. **Si largás una tarea sin terminar**, volvé a poner `Libre` y escribí en una línea debajo qué quedó hecho.
 7. **Tareas nuevas** van al final de su sección con el próximo número libre.
 
@@ -48,11 +48,15 @@ Ejemplo:
 
 ## Pantalla 1 · Mapa
 
-- [ ] **F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar · 🔨 Naim (14/11 15:58)
-  - Archivos: `web/prototype/globo/` → `web/src/map/Globe*`
-- [ ] **F12** Portada = globo con botón "Rewind Sumner County, KS" (vuelo → Sumner → play) y "Pick your county" · 🔨 Naim (14/11 15:58) · Bloquea: F11
-- [ ] **F13** Vuelo al estado, condados pintados por la variable, rayado "Missing data", tooltip y botón "See its history" · 🔨 Naim (14/11 15:58) · Bloquea: F08, F11
-- [ ] **F14** Buscador de condado, lista accesible de estados, aviso fuera de cobertura y mapa plano si no hay WebGL · 🔨 Naim (14/11 15:58)
+- [x] ~~**F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar~~ · ✅ Naim
+  - Archivos: `web/src/map/globe.js` (deck.gl + Blue Marble de GIBS)
+  - Sin latido: el resaltado es fijo, porque un latido parece un dato en vivo y no lo es. Gira solo a 3°/s tras 3 s sin tocarlo.
+- [x] ~~**F12** Portada = globo con botón "Rewind Sumner County, KS" (vuelo → Sumner → play) y "Pick your county"~~ · ✅ Naim · Bloquea: F11
+- [x] ~~**F13** Vuelo al estado, condados pintados por la variable, rayado "Missing data", tooltip y botón "See its history"~~ · ✅ Naim · Bloquea: F08, F11
+  - El rayado sale en los condados con el valor vacío: hoy ninguno (los valores son de prueba); aparece cuando F08 traiga huecos. Tooltip: "Butler County, KS · Corn 34%" o "Missing data".
+- [x] ~~**F14** Buscador de condado, lista accesible de estados, aviso fuera de cobertura y mapa plano si no hay WebGL~~ · ✅ Naim
+  - Buscador en la barra de arriba (estados y condados; fuera de cobertura dice "Not covered yet"). Lista de estados oculta para lectores de pantalla.
+  - Sin mapa plano: el globo necesita WebGL (decisión del 14/11).
 
 ## Pantalla 2 · Historia del condado
 

@@ -16,7 +16,7 @@ export function setMapActive(on) {
 export function initGlobe() {
 const COL = {night: '#0F2A1D', leaf: '#2F7D4F', glow: '#8ED081', cream: '#F6F1E4'}; // identidad
 const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream);
+const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream), NIGHT = hex(COL.night);
 const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
 const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
 const NEXT_AVAILABLE = ['20191']; // condados con pantalla Next season
@@ -39,8 +39,28 @@ function rampColor(v) {
   }
   return RAMP[RAMP.length - 1][1];
 }
-for (const c of COUNTIES) c.rgb = rampColor(c.mock.corn);
+// sin dato = celda vacía (nunca 0): gris con rayado "Missing data"
+const hasCorn = (c) => c.mock.corn !== null && c.mock.corn !== undefined && c.mock.corn !== '';
+for (const c of COUNTIES) c.rgb = hasCorn(c) ? rampColor(c.mock.corn) : [70, 70, 70];
+const MISSING = COUNTIES.filter((c) => !hasCorn(c));
 for (const c of COUNTIES) c.twins = c._twins.map((t) => ({f: countyById[t.id], similar: t.similar}));
+// lugar libre alrededor del centroide, en grados: hasta el borde por izquierda/derecha (a su latitud)
+// y por abajo/arriba (a su longitud). Sirve para saber si el nombre entra adentro del condado.
+function room(rings, [cx, cy], axis) {
+  const hits = [], u = axis, v = 1 - axis, c0 = [cx, cy][v];
+  for (const ring of rings) for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[j], b = ring[i];
+    if ((a[v] > c0) !== (b[v] > c0)) hits.push(a[u] + ((c0 - a[v]) / (b[v] - a[v])) * (b[u] - a[u]));
+  }
+  hits.sort((x, y) => x - y);
+  const m = [cx, cy][u];
+  for (let i = 0; i + 1 < hits.length; i += 2) if (m >= hits[i] && m <= hits[i + 1]) return Math.min(m - hits[i], hits[i + 1] - m);
+  return 0; // el centroide cae afuera (forma muy irregular): no hay lugar
+}
+for (const c of COUNTIES) {
+  const g = c.geometry, rings = g.type === 'Polygon' ? g.coordinates : g.coordinates.flat();
+  c.roomX = room(rings, c.centroid, 0); c.roomY = room(rings, c.centroid, 1);
+}
 const DEMO = D.demo, START = D.start, HOME = D.home;
 const ARGENTINA = [{type: 'Feature', properties: {}, geometry: D.argentina}];
 const COUNTY_K = 3.2;
@@ -97,7 +117,7 @@ const PANEL_HALF = 186; // medio panel lateral: el destino queda centrado en la 
 const panelOffset = (k, lat) => (W > 900 ? PANEL_HALF / (base * k) / rad / Math.cos(lat * rad) : 0);
 // en el celular la hoja tapa la parte de abajo: subir el destino al centro de lo que queda visible
 // (se mide la hoja ya llena, por eso updateUI() va antes del vuelo)
-const sheetLift = (k) => (W <= 760 ? Math.max(0, $('panel').offsetHeight - 56) / 2 / (base * k) / rad : 0);
+const sheetLift = (k) => (W <= 760 ? Math.max(0, $('panel').offsetHeight - ($('top').offsetHeight - 28)) / 2 / (base * k) / rad : 0);
 function fitK(f, t) {
   const [[x0, y0], [x1, y1]] = f.bounds, lat = (y0 + y1) / 2;
   const u = Math.abs(x1 - x0) * Math.cos(lat * rad) * rad, v = Math.abs(y1 - y0) * rad;
@@ -209,7 +229,10 @@ const deckgl = new Deck({
     R.lon = vs.longitude; R.lat = Math.max(-80, Math.min(80, vs.latitude)); R.k = kOfZoom(vs.zoom);
   },
   getCursor: ({isDragging, isHovering}) => (isDragging ? 'grabbing' : isHovering ? 'pointer' : 'grab'),
-  onHover: (info) => { hover = info.object && !take ? {type: info.layer.id === 'counties' ? 'county' : 'state', f: info.object} : null; },
+  onHover: (info) => {
+    hover = info.object && !take ? {type: info.layer.id === 'counties' ? 'county' : 'state', f: info.object} : null;
+    showTip(hover && hover.type === 'county' ? hover.f : null, info.x, info.y);
+  },
   onClick: (info) => {
     if (take || !info.object) return;
     if (info.layer.id === 'counties') flyToCounty(info.object.id);
@@ -256,11 +279,20 @@ function buildLayers(a) {
         getLineColor: [selState && selState.id], getLineWidth: [selState && selState.id, hoverState && hoverState.id]}}),
   ];
   if (a > 0.01) {
+    // con el mapa lejos (gemelos) los condados miden pocos px: el borde se afina para no tapar el color
+    const countyPx = base * R.k * rad * 0.45, edge = Math.max(1.5, Math.min(3, countyPx / 12));
     layers.push(
       new GeoJsonLayer({id: 'counties', data: COUNTIES, opacity: a, filled: true, stroked: true,
-        pickable: R.k > COUNTY_K + 0.6, lineWidthUnits: 'pixels', getLineWidth: 1, getLineColor: [...CREAM, 150],
-        getFillColor: (f) => [...f.rgb, twinSet && f !== selCounty && !twinSet.has(f) ? 70 : 255],
-        updateTriggers: {getFillColor: [twinMode, selCounty && selCounty.id]}}),
+        pickable: R.k > COUNTY_K + 0.6, lineWidthUnits: 'pixels', getLineWidth: edge, getLineColor: NIGHT,
+        updateTriggers: {getFillColor: [twinMode, selCounty && selCounty.id], getLineWidth: edge},
+        getFillColor: (f) => [...f.rgb, twinSet && f !== selCounty && !twinSet.has(f) ? 70 : 255]}),
+      // borde doble: Papel fino sobre Verde noche, así siempre contrasta uno de los dos con la rampa
+      new GeoJsonLayer({id: 'county-lines', data: COUNTIES, opacity: a, filled: false, stroked: true,
+        lineWidthUnits: 'pixels', getLineWidth: edge / 3, getLineColor: CREAM, updateTriggers: {getLineWidth: edge}}),
+      new GeoJsonLayer({id: 'state-edge-dark', data: STATES, opacity: a, filled: false, stroked: true,
+        lineWidthUnits: 'pixels', getLineWidth: 5, getLineColor: NIGHT}),
+      new GeoJsonLayer({id: 'state-edge', data: STATES, opacity: a, filled: false, stroked: true,
+        lineWidthUnits: 'pixels', getLineWidth: 3, getLineColor: CREAM}),
       new GeoJsonLayer({id: 'county-hover', data: one('hover', hoverCounty), filled: true, stroked: true,
         lineWidthUnits: 'pixels', getFillColor: [255, 255, 255, 64], getLineColor: CREAM, getLineWidth: 1.5}),
       new GeoJsonLayer({id: 'county-selected', data: one('sel', selCounty), filled: false, stroked: true,
@@ -286,22 +318,23 @@ function buildLayers(a) {
     for (const s of STATES) if (front(s.centroid))
       LABELS.push({p: s.centroid, text: s.properties.name.toUpperCase(), size, alpha: al, caps: true});
   }
-  if (a > 0.3) for (const id of Object.keys(DEMO)) {
-    const c = countyById[id]; if (!front(c.centroid)) continue;
-    LABELS.push({p: c.centroid, text: c.properties.name, size: R.k > 20 ? 20 : 15, alpha: clamp01((a - 0.3) / 0.3), county: c});
+  // nombres de condado centrados en su centroide. Prioridad: seleccionado, gemelos, demo, el resto.
+  // Seleccionado, gemelos y demo se muestran siempre; el resto solo si entra adentro de su condado.
+  // Con gemelos solo se nombran el seleccionado y sus gemelos, debajo del punto donde llega el arco.
+  if (a > 0.3) {
+    const size = R.k > 20 ? 20 : 15, alpha = clamp01((a - 0.3) / 0.3);
+    const add = (c, prio) => { if (front(c.centroid)) LABELS.push({p: c.centroid, text: c.properties.name, size, alpha, county: c, prio, dy: twinMode ? 14 : 0}); };
+    if (twinMode && selCounty) { add(selCounty, 0); for (const x of selCounty.twins) add(x.f, 1); }
+    else {
+      if (selCounty) add(selCounty, 0);
+      for (const id of Object.keys(DEMO)) if (countyById[id] !== selCounty) add(countyById[id], 2);
+      for (const c of COUNTIES) if (c !== selCounty && !DEMO[c.id]) add(c, 3);
+    }
+    LABELS.sort((x, y) => (x.prio ?? -1) - (y.prio ?? -1));
   }
-  if (twinMode && selCounty) for (const x of [{f: selCounty}, ...selCounty.twins])
-    if (!DEMO[x.f.id]) LABELS.push({p: x.f.centroid, text: x.f.properties.name, size: 15, alpha: 1, dy: -18});
-  if (hoverCounty && !DEMO[hoverCounty.id] && front(hoverCounty.centroid))
-    LABELS.push({p: hoverCounty.centroid, text: hoverCounty.properties.name, size: 13, alpha: 1});
   return layers;
 }
 
-function halfHeightPx(c) {
-  if (!viewport) return 10;
-  const [[x0, y0], [x1, y1]] = c.bounds;
-  return Math.abs(viewport.project([x0, y0])[1] - viewport.project([x1, y1])[1]) / 2;
-}
 function globeRadiusPx() {
   if (!viewport || R.k > 8) return base * R.k;
   let best = 0;
@@ -343,19 +376,68 @@ function label(c, text, x, y, size, fill, weight = 700, family = 'DM Sans') {
   c.textAlign = 'center'; c.textBaseline = 'middle'; c.letterSpacing = '0px';
   shadowText(c, text, x, y, fill);
 }
+const textW = new Map();
+function measure(c, text, size) {
+  const key = size + '|' + text;
+  if (!textW.has(key)) textW.set(key, c.measureText(text).width);
+  return textW.get(key);
+}
+function screenRect(f) { // caja del condado en pantalla
+  const [[x0, y0], [x1, y1]] = f.bounds, [ax, ay] = viewport.project([x0, y0]), [bx, by] = viewport.project([x1, y1]);
+  return [Math.min(ax, bx), Math.min(ay, by), Math.max(ax, bx), Math.max(ay, by)];
+}
+const overlaps = (r, s) => r[0] < s[2] && r[2] > s[0] && r[1] < s[3] && r[3] > s[1];
 function drawLabels(c) {
+  const placed = [], selBox = selCounty && R.k > COUNTY_K ? screenRect(selCounty) : null;
+  // los nombres que quedarían debajo de la barra de arriba o del panel no se dibujan
+  const cover = ['top', 'panel', 'legend'].map((id) => $(id)).filter((el) => el && !el.hidden && el.offsetWidth)
+    .map((el) => { const q = el.getBoundingClientRect(); return [q.left, q.top, q.right, q.bottom]; });
   for (const l of LABELS) {
-    const [x, y] = viewport.project(l.p);
-    const dy = l.county ? -(halfHeightPx(l.county) + 16) : l.dy || 0;
-    c.globalAlpha = l.alpha;
+    const [x, y0] = viewport.project(l.p), y = y0 + (l.dy || 0);
     c.font = `700 ${l.size}px "DM Sans", system-ui, sans-serif`;
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.letterSpacing = l.caps ? `${(l.size * 0.08).toFixed(1)}px` : '0px';
-    shadowText(c, l.text, x, y + dy, COL.cream);
+    if (l.county) {
+      const w = measure(c, l.text, l.size), h = l.size * 1.1, f = l.county, [cx, cy] = f.centroid;
+      if (l.prio === 3) { // el resto: solo si entra en el condado, con 15 % de aire
+        const rx = Math.abs(viewport.project([cx + f.roomX, cy])[0] - viewport.project([cx - f.roomX, cy])[0]);
+        const ry = Math.abs(viewport.project([cx, cy + f.roomY])[1] - viewport.project([cx, cy - f.roomY])[1]);
+        if (w > rx * 0.85 || h > ry * 0.85) continue;
+      }
+      const r = [x - w / 2 - 2, y - h / 2, x + w / 2 + 2, y + h / 2];
+      if (r[0] < 0 || r[2] > W || cover.some((s) => overlaps(r, s))) continue;
+      if (placed.some((s) => overlaps(r, s))) continue; // choca con uno de más prioridad: se oculta
+      if (selBox && f !== selCounty && overlaps(r, selBox)) continue; // no tapa el contorno del seleccionado
+      placed.push(r);
+    }
+    c.globalAlpha = l.alpha;
+    shadowText(c, l.text, x, y, COL.cream);
   }
   c.globalAlpha = 1; c.letterSpacing = '0px';
 }
-function drawHud(u, r) {
+// rayado "Missing data": rayas a 45° en pantalla, recortadas a cada condado sin dato
+function drawMissing(c, a) {
+  if (!MISSING.length || a <= 0.01) return;
+  const centre = [R.lon, R.lat];
+  c.save(); c.globalAlpha = a; c.beginPath();
+  let any = false;
+  for (const f of MISSING) {
+    if (angDist(f.centroid, centre) > 1.4) continue;
+    const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+    for (const poly of polys) for (const ring of poly) {
+      ring.forEach((p, i) => { const [x, y] = viewport.project(p); if (i) c.lineTo(x, y); else c.moveTo(x, y); });
+      c.closePath(); any = true;
+    }
+  }
+  if (any) {
+    c.clip('evenodd');
+    c.beginPath();
+    for (let x = -H; x < W; x += 7) { c.moveTo(x, H); c.lineTo(x + H, 0); }
+    c.strokeStyle = 'rgba(246,241,228,0.55)'; c.lineWidth = 1.5; c.stroke();
+  }
+  c.restore();
+}
+function drawHud(u, r, a) {
   const c = hctx, cx = W / 2, cy = H / 2;
   c.setTransform(DPR, 0, 0, DPR, 0, 0); c.clearRect(0, 0, W, H);
   if (u > 0.02) { // lado de noche: la luz viene de arriba a la izquierda
@@ -365,6 +447,7 @@ function drawHud(u, r) {
     c.fillStyle = s; c.beginPath(); c.arc(cx, cy, r, 0, 6.2832); c.fill();
   }
   if (!viewport) return;
+  drawMissing(c, a);
   drawLabels(c);
   if (R.k <= 1.7 && !take && !isLanding() && angDist([-93.5, 40], [R.lon, R.lat]) < 1.45) { // rótulo con línea
     const [x, y] = viewport.project([-93.4, 40.6]), x2 = x + base * 0.3, y2 = y - base * 0.3;
@@ -407,7 +490,7 @@ function step(now) {
   deckgl.setProps({viewState: viewState(), layers: buildLayers(a), controller: take || isLanding() ? false : CONTROLLER});
   if (deckgl.isInitialized) viewport = deckgl.getViewports()[0] || viewport;
   const r = globeRadiusPx();
-  drawSky(t, u, r); drawHud(u, r);
+  drawSky(t, u, r); drawHud(u, r, a);
 }
 
 // ---- panel, migas y botones
@@ -423,6 +506,7 @@ function updateUI() {
   if (selCounty) crumbs.push(`<span>${selCounty.properties.name} County</span>`);
   $('crumbs').innerHTML = crumbs.join('<i>›</i>');
   const panel = $('panel'), pct = (n) => `${Math.round(n * 100)}%`;
+  showTip(null);
   $('legend').hidden = level === 'globe';
   $('p-stats').hidden = !selCounty; $('p-twins').hidden = !selCounty; $('p-next').hidden = !selCounty;
   $('p-twinlist').hidden = !(selCounty && twinMode);
@@ -433,11 +517,11 @@ function updateUI() {
     $('p-status').textContent = full ? 'Full history · 2015–2025' : 'Missing data: history not loaded for this county yet';
     $('p-status').className = full ? 'ok' : 'missing';
     $('p-open').disabled = !full;
-    $('p-open').textContent = 'Open county history →';
+    $('p-open').textContent = full ? '▶ Rewind 2015–2025' : 'Open county history →';
     const hasNext = NEXT_AVAILABLE.includes(selCounty.id);
     $('p-next').disabled = !hasNext;
     $('p-next').textContent = hasNext ? 'Next season: what to plant →' : 'Next season: Missing data';
-    $('p-stats').innerHTML = `<div class="proto"><span class="tag">Prototype data</span>Invented placeholder values</div><div class="stats"><div><b>${pct(m.corn)}</b><small>Corn share of cropland</small></div><div><b>${m.top}</b><small>Most common crop</small></div><div><b>${rainText(m.rain)}</b><small>Rain per year</small><span class="seg" role="group" aria-label="Rain units"><button type="button" data-unit="in" aria-pressed="${rainUnit === 'in'}">in</button><button type="button" data-unit="mm" aria-pressed="${rainUnit === 'mm'}">mm</button></span></div></div>`;
+    $('p-stats').innerHTML = `<div class="proto"><span class="tag">Prototype data</span>Invented placeholder values</div><div class="stats"><div><b>${hasCorn(selCounty) ? pct(m.corn) : 'Missing data'}</b><small>Corn share of cropland</small></div><div><b>${m.top}</b><small>Most common crop</small></div><div><b>${rainText(m.rain)}</b><small>Rain per year</small><span class="seg" role="group" aria-label="Rain units"><button type="button" data-unit="in" aria-pressed="${rainUnit === 'in'}">in</button><button type="button" data-unit="mm" aria-pressed="${rainUnit === 'mm'}">mm</button></span></div></div>`;
     $('p-twins').textContent = twinMode ? '← Back to county' : 'Counties like yours';
     $('p-twinlist').innerHTML = '<div class="proto"><span class="tag">Prototype data</span>Similar soil and climate</div><div class="twins">' + selCounty.twins.map((x) =>
       `<button type="button" data-fips="${x.f.id}"><b>${x.f.properties.name}, ${stateById[x.f.properties.state].properties.name}</b><small>Similar on ${x.similar.join(' and ')} · ${x.f.mock.top} on ${pct(x.f.mock.corn > 0.42 ? x.f.mock.corn : 0.3 + x.f.mock.soil * 0.2)} of fields</small></button>`).join('') + '</div>';
@@ -469,15 +553,12 @@ $('home').addEventListener('click', goHome);
 $('p-twins').addEventListener('click', () => showTwins(!twinMode));
 $('p-twinlist').addEventListener('click', (e) => { const b = e.target.closest('button[data-fips]'); if (b) flyToCounty(b.dataset.fips); });
 $('enter').addEventListener('click', () => { location.hash = '#/map'; });
-// "Rewind Sumner County, KS": vuelo corto a Sumner y abre su historia con el play andando (F12)
-$('cta').addEventListener('click', () => {
-  flyToCounty(START, true, 900);
-  window.setTimeout(() => { location.hash = `#/county/${START}?play=1`; }, 1000);
-});
+// Botón de entrada: vuela directo al condado de demo y abre su panel en el mapa
+$('cta').addEventListener('click', () => flyToCounty(START));
 $('p-open').addEventListener('click', () => {
   if (selCounty) {
     emit('open', {fips: selCounty.id});
-    location.hash = `#/county/${selCounty.id}`;
+    location.hash = `#/county/${selCounty.id}?play=1`; // la historia arranca reproduciéndose
   } else if (selState) flyToCounty(Object.keys(DEMO).find((id) => id.startsWith(selState.id)));
 });
 $('p-next').addEventListener('click', () => {
@@ -485,7 +566,74 @@ $('p-next').addEventListener('click', () => {
   emit('next', {fips: selCounty.id, name: selCounty.properties.name, state: selState.properties.name});
   location.hash = `#/county/${selCounty.id}/next`;
 });
-window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && active && !isLanding()) goBack(); });
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && active && !isLanding() && e.target !== $('q')) goBack();
+});
+
+// ---- tooltip del condado: nombre, estado y valor (o "Missing data")
+function showTip(c, x, y) {
+  const tip = $('tip');
+  if (!c || take) { tip.hidden = true; return; }
+  tip.innerHTML = `<b>${c.properties.name} County, ${POSTAL[c.properties.state]}</b> · ${hasCorn(c) ? `Corn ${Math.round(c.mock.corn * 100)}%` : 'Missing data'}`;
+  tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = `${Math.min(x + 14, W - w - 8)}px`;
+  tip.style.top = `${y + 14 + h > H - 8 ? y - h - 10 : y + 14}px`;
+}
+
+// ---- buscador de estados y condados (combobox accesible)
+const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\bcounty\b/g, '').replace(/\s+/g, ' ').trim();
+const INDEX = [
+  ...STATES.map((s) => ({kind: 'state', id: s.id, label: s.properties.name, sub: 'State', key: norm(s.properties.name), alt: POSTAL[s.id].toLowerCase()})),
+  ...COUNTIES.map((c) => ({kind: 'county', id: c.id, label: `${c.properties.name} County`, sub: stateById[c.properties.state].properties.name, key: norm(c.properties.name), alt: c.id})),
+];
+let results = [], activeIdx = -1;
+function findPlaces(text) {
+  const q = norm(text); if (!q) return [];
+  const first = [], rest = [];
+  for (const it of INDEX) {
+    if (it.key.startsWith(q) || it.alt === q) first.push(it);
+    else if (q.length > 2 && it.key.includes(q)) rest.push(it);
+  }
+  return [...first, ...rest].slice(0, 8);
+}
+function renderResults() {
+  const q = $('q'), list = $('q-list'), text = q.value.trim();
+  if (!text) { list.hidden = true; q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant'); return; }
+  list.innerHTML = results.length
+    ? results.map((r, i) => `<li id="q-opt-${i}" role="option" aria-selected="${i === activeIdx}" data-i="${i}"><span>${r.label}</span><small>${r.sub}</small></li>`).join('')
+    : '<li class="none" role="option" aria-disabled="true" aria-selected="false">Not covered yet</li>';
+  list.hidden = false; q.setAttribute('aria-expanded', 'true');
+  if (activeIdx >= 0) q.setAttribute('aria-activedescendant', `q-opt-${activeIdx}`); else q.removeAttribute('aria-activedescendant');
+}
+function closeSearch(clear) {
+  if (clear) $('q').value = '';
+  results = []; activeIdx = -1; $('q-list').hidden = true; $('q').setAttribute('aria-expanded', 'false');
+}
+function choose(r) {
+  if (!r) return;
+  closeSearch(true); $('q').blur();
+  if (r.kind === 'state') flyToState(r.id); else flyToCounty(r.id);
+}
+$('q').addEventListener('input', () => { results = findPlaces($('q').value); activeIdx = results.length ? 0 : -1; renderResults(); });
+$('q').addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (!results.length) return;
+    e.preventDefault();
+    activeIdx = (activeIdx + (e.key === 'ArrowDown' ? 1 : -1) + results.length) % results.length;
+    renderResults();
+    const el = $(`q-opt-${activeIdx}`); if (el) el.scrollIntoView({block: 'nearest'});
+  } else if (e.key === 'Enter') {
+    e.preventDefault(); choose(results[activeIdx]);
+  } else if (e.key === 'Escape') {
+    e.preventDefault(); closeSearch(true);
+  }
+});
+$('q-list').addEventListener('mousedown', (e) => { // mousedown: antes de que el campo pierda el foco
+  const li = e.target.closest('li[data-i]'); if (!li) return;
+  e.preventDefault(); choose(results[+li.dataset.i]);
+});
+$('q').addEventListener('blur', () => closeSearch(false));
 
 // ---- tomas para el video (?take=a o ?take=c)
 let takeStart = 0, takeDur = 1;
