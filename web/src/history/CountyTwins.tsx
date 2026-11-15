@@ -1,3 +1,4 @@
+import { MODEL_STATES_TEXT } from "../data/states";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { dataUrl } from "../data/load";
 import { STATE_PATHS, projectTwinMap } from "../next/twinMapShapes";
@@ -136,7 +137,7 @@ export function CountyTwins({ fips, name }: { fips: string; name: string }) {
     return (
       <div className="card twins">
         <h3>Counties like yours</h3>
-        <Missing what="similar counties for this county (covered in Iowa, Illinois and Indiana so far)" />
+        <Missing what={`similar counties for this county (covered in ${MODEL_STATES_TEXT})`} />
       </div>
     );
   }

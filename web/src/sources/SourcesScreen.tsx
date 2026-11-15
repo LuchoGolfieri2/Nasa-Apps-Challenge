@@ -1,3 +1,4 @@
+import { MODEL_STATES_TEXT } from "../data/states";
 import { DATASETS, NASA_USDA_COUNT, NOT_YET } from "./datasets";
 import "./sources.css";
 
@@ -63,8 +64,8 @@ export function SourcesScreen() {
             success".
           </li>
           <li>
-            <b>Coverage.</b> The yield model and "Counties like yours" cover Iowa, Illinois and Indiana.
-            Kansas has the crop history only, so its next-season options show "Missing data".
+            <b>Coverage.</b> The yield model and "Counties like yours" cover {MODEL_STATES_TEXT}. Where corn and soybeans
+            are not the main crops (for example Sumner County, KS), only the usual mix has a range.
           </li>
           <li>
             <b>Crop map accuracy.</b> The USDA crop map is right about 9 times out of 10 for corn and soybeans, and less often
