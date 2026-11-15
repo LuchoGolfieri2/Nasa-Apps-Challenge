@@ -76,10 +76,20 @@ Conversión a bu/ac con los factores de `CLAUDE.md` (maíz 62,77 kg/ha por bu/ac
 - La "temporada" argentina es **octubre a marzo**: lo que en EE. UU. es julio, acá es enero.
 - Interfaz en inglés; los textos de los JSON ya están en inglés y sin "recommend".
 
-## En la interfaz (F39, 15/11)
+## En la interfaz (F39, 15/11): igual que EE. UU.
 
-- **Entradas:** "Argentina" en la barra de arriba de las pantallas y en la cabecera del globo. Rutas `#/argentina` y `#/argentina/<id_depto>`.
-- **Mapa:** SVG plano (sin WebGL) de los 219 departamentos. Se pinta por zona o por `ratio_<cultivo>` (rinde ÷ análogos, escala divergente: marrón rinde menos, verde rinde más; rayado = sin rinde del MAGyP).
-- **Ficha:** zona con `zone_text`, "No yield estimate" con `prediction_note`, rinde contra el p10–p90 de los análogos, serie del MAGyP, clima de Buenos Aires (últimas 6 campañas), suelo contra el primer análogo y enlaces a la historia de los 3 análogos.
-- **Control:** `scripts/check_coverage.py` revisa que los 219 tengan ficha y zona y que ninguno tenga predicción.
-- **Pendiente:** los arcos a los análogos sobre el globo y la toma C del video (F26).
+Argentina no tiene pantalla aparte: entra al **globo** como un país más.
+
+- **Provincias = estados, departamentos = condados.** `scripts/build_globe_argentina.py` arma
+  `web/src/map/globe-argentina.json` (las 5 provincias unidas con shapely y los 219 departamentos) y `globe.js` los suma a
+  los de EE. UU. Los ids INDEC (06, 14, 30, 42, 82 y sus `id_depto`) no chocan con los FIPS de los 11 estados.
+- **Rutas:** `#/state/BA` (también CB, ER, LP, SF), `#/map/<id_depto>` (tarjeta) y `#/depto/<id_depto>` ("See more").
+  El buscador encuentra provincias y departamentos.
+- **Color:** rinde de maíz 2021–2025 del MAGyP, con su propia escala (60–140 bu/acre, la leyenda dice "MAGyP"): con la
+  de EE. UU. (150–230) todo saldría del mismo color. "Color by" maíz, soja o trigo usa la superficie sembrada del
+  MAGyP sobre el área del departamento; avena, alfalfa y heno quedan "Missing data".
+- **Tarjeta:** zona de clima, rinde del MAGyP y "See more". Sin "Next season": no hay estimación del modelo en Argentina.
+- **See more (`#/depto/<id>`):** zona y aviso, rinde contra el p10–p90 de los 3 análogos, serie del MAGyP, clima de
+  Buenos Aires, suelo SoilGrids contra el primer análogo y enlaces a la historia de los análogos.
+- **Control:** `scripts/check_coverage.py` revisa que los 219 departamentos tengan ficha y zona y ninguno tenga predicción.
+- **Pendiente:** arcos sobre el globo hacia los condados análogos.
