@@ -962,6 +962,10 @@
   .history__bar {
     overflow-x: clip;
   }
+  /* el año elegido se agranda: margen a la derecha para que "2025" no quede cortado */
+  .timeline__years {
+    padding-right: 22px;
+  }
   .timeline__year {
     font-size: 0;
     padding: 0 1px;
@@ -1023,4 +1027,126 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+/* Condados sin mapa del CDL: rinde año por año en lugar del mapa y la carrera de barras (YieldHistory) */
+.history__stage--nomap {
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 0.9fr);
+}
+.yh {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+.yh__title {
+  margin: 0;
+  font: 800 28px/1.1 var(--font-display);
+}
+.yh__crop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+.yh__crop i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.yh__crop span {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.yh__bars {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.yh__bar {
+  display: grid;
+  grid-template-rows: 20px 120px 20px;
+  align-items: end;
+  justify-items: center;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.yh__bar:focus-visible {
+  outline: 2px solid var(--wheat-gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.yh__v {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.yh__mark {
+  margin-right: 1px;
+  color: var(--ink);
+}
+.yh__fill {
+  align-self: end;
+  width: 100%;
+  min-height: 2px;
+  border-radius: 3px 3px 0 0;
+  opacity: 0.45;
+  transition: opacity 0.2s;
+}
+.yh__fill.is-missing {
+  opacity: 1;
+  border: 1px dashed var(--ink-3);
+  border-bottom: 0;
+  background: repeating-linear-gradient(135deg, rgba(246, 241, 228, 0.06) 0 6px, transparent 6px 12px);
+}
+.yh__bar:hover .yh__fill,
+.yh__bar.is-on .yh__fill {
+  opacity: 1;
+}
+.yh__bar.is-on .yh__v,
+.yh__bar.is-on .yh__y {
+  color: var(--wheat-gold);
+  font-weight: 700;
+}
+.yh__y {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.yh__note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+@media (max-width: 1100px) {
+  .history__stage--nomap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .yh__bar {
+    grid-template-rows: 18px 90px 18px;
+  }
+  .yh__v {
+    font-size: 10px;
+  }
+  .yh__bars {
+    gap: 3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .yh__fill {
+    transition: none;
+  }
 }

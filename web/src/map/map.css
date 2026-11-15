@@ -52,6 +52,8 @@ body[data-level="globe"] .maplayer #nav{display:none}
 .maplayer #c-state{margin:4px 0 0;font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .maplayer #c-status{display:flex;align-items:flex-start;gap:8px;margin:12px 0 0;font-size:13px;font-weight:700;line-height:1.35}
 .maplayer #c-status.ok{color:var(--sprout)}
+.maplayer #c-status.part{color:var(--cream)}
+.maplayer #legend .src{font-weight:500;color:var(--ink-2)}
 /* "Missing data": el mismo recuadro rayado que usan las otras pantallas (ui/Missing) */
 .maplayer #c-status.missing,.maplayer #c-corn.missing{padding:8px 10px;border:1px dashed var(--ink-3);border-radius:8px;background:repeating-linear-gradient(135deg,rgba(246,241,228,.06) 0 6px,transparent 6px 12px);color:var(--ink-2)}
 .maplayer #c-corn{display:flex;align-items:center;gap:8px;margin:16px 0 0}

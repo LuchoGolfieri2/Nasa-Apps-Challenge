@@ -11,6 +11,7 @@ import { CdlMap } from "./CdlMap";
 import { Timeline } from "./Timeline";
 import { usePlayback } from "./usePlayback";
 import { useRasters } from "./useRasters";
+import { YieldHistory } from "./YieldHistory";
 import { YearFacts } from "./YearFacts";
 import "./history.css";
 
@@ -26,7 +27,13 @@ const DEMO = [
   { fips: "17113", label: "McLean, IL" },
 ];
 
-export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchParams }) {
+export function HistoryScreen({
+  fips,
+  query,
+}: {
+  fips: string;
+  query: URLSearchParams;
+}) {
   const [county, setCounty] = useState<County | null>(null);
   const [failed, setFailed] = useState(false);
   const [highlight, setHighlight] = useState<CropId | null>(null);
@@ -84,7 +91,12 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "Space" || !canPlay) return;
-      if ((e.target as HTMLElement).closest("button, a, input, select, textarea, summary, [role=slider]")) return;
+      if (
+        (e.target as HTMLElement).closest(
+          "button, a, input, select, textarea, summary, [role=slider]",
+        )
+      )
+        return;
       e.preventDefault();
       pb.toggle();
     };
@@ -96,7 +108,9 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
     return (
       <main className="history history--empty">
         <h1>No history for this county yet</h1>
-        <Missing what={`Field Rewind has no data file for county ${fips}. The year-by-year history is loaded for Story (IA), McLean (IL) and Sumner (KS) so far.`} />
+        <Missing
+          what={`Field Rewind has no data file for county ${fips}. Yield and weather history is loaded for Iowa, Illinois and Indiana counties; the crop map, for Story (IA), McLean (IL) and Sumner (KS).`}
+        />
         <p>
           <a className="btn btn--primary" href="#/county/19169">
             Rewind Story County, IA
@@ -114,7 +128,11 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
   }
 
   const current = county.years[index];
-  const marks = Object.fromEntries(county.years.filter((y) => y.weather?.tags.length).map((y) => [y.year, y.weather!.tags]));
+  const marks = Object.fromEntries(
+    county.years
+      .filter((y) => y.weather?.tags.length)
+      .map((y) => [y.year, y.weather!.tags]),
+  );
 
   const lit = highlight ?? pinned;
   const rewind = () => {
@@ -125,10 +143,28 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
 
   const guide = (
     <div className={guideOpen ? "guide guide--open" : "guide"}>
-      <button type="button" className="guide__btn" aria-expanded={guideOpen} onClick={() => setGuideOpen((o) => !o)}>
+      <button
+        type="button"
+        className="guide__btn"
+        aria-expanded={guideOpen}
+        onClick={() => setGuideOpen((o) => !o)}
+      >
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
-          <path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2 1-1.2 1.8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
+          <path
+            d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.3c-.8.4-1.2 1-1.2 1.8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
           <circle cx="12" cy="17" r="1.2" fill="currentColor" />
         </svg>
         How to read
@@ -137,28 +173,39 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
         <div className="guide__panel">
           <ul>
             <li>
-              <b>Each square is 30 meters of land</b>, colored by the crop the USDA satellite map found there that year.
+              <b>Each square is 30 meters of land</b>, colored by the crop the
+              USDA satellite map found there that year.
             </li>
             <li>
               <b>Numbers are for the whole county</b>, not for a single field.
             </li>
             <li>
-              <b>Only whole years are data.</b> The change you see between two years is an animation: fields don't switch in
-              that order.
+              <b>Only whole years are data.</b> The change you see between two
+              years is an animation: fields don't switch in that order.
             </li>
             <li>
-              <b>The map is right about 9 times in 10</b> for corn and soybeans, and less often for minor crops.
+              <b>The map is right about 9 times in 10</b> for corn and soybeans,
+              and less often for minor crops.
             </li>
           </ul>
-          <p>Scroll or double-click to zoom in. Point at a year to peek at it. Press space to play.</p>
+          <p>
+            Scroll or double-click to zoom in. Point at a year to peek at it.
+            Press space to play.
+          </p>
         </div>
       ) : null}
     </div>
   );
   const switcher = DEMO.some((d) => d.fips === county.fips)
     ? DEMO
-    : [{ fips: county.fips, label: `${county.name}, ${county.state}` }, ...DEMO];
-  const maxSeq = Math.max(1, ...(county.common_rotations?.items.map((t) => t.pct) ?? []));
+    : [
+        { fips: county.fips, label: `${county.name}, ${county.state}` },
+        ...DEMO,
+      ];
+  const maxSeq = Math.max(
+    1,
+    ...(county.common_rotations?.items.map((t) => t.pct) ?? []),
+  );
 
   return (
     <main className="history">
@@ -169,7 +216,12 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
         <span aria-hidden="true"> › </span>
         <label className="history__switch">
           <span className="visually-hidden">County</span>
-          <select value={county.fips} onChange={(e) => (window.location.hash = `#/county/${e.target.value}`)}>
+          <select
+            value={county.fips}
+            onChange={(e) =>
+              (window.location.hash = `#/county/${e.target.value}`)
+            }
+          >
             {switcher.map((d) => (
               <option key={d.fips} value={d.fips}>
                 {d.label}
@@ -179,44 +231,55 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
         </label>
       </p>
 
-      <div className="history__stage">
-        <BarRace
-          years={county.years}
-          pb={pb}
-          index={index}
-          between={between}
-          highlight={lit}
-          onHighlight={setHighlight}
-          pinned={pinned}
-          onPin={(c) => setPinned((p) => (p === c ? null : c))}
-          source={county.raster?.source ?? "USDA CDL"}
-        />
-
-        <div className="history__map">
-          {county.raster ? (
-            <CdlMap
-              info={county.raster}
-              years={years}
-              rasters={rasters}
+      <div
+        className={`history__stage${county.raster ? "" : " history__stage--nomap"}`}
+      >
+        {county.raster ? (
+          <>
+            <BarRace
+              years={county.years}
               pb={pb}
               index={index}
-              playing={playing}
               between={between}
               highlight={lit}
-              countyName={county.name}
-              overlay={guide}
+              onHighlight={setHighlight}
+              pinned={pinned}
+              onPin={(c) => setPinned((p) => (p === c ? null : c))}
+              source={county.raster?.source ?? "USDA CDL"}
             />
-          ) : (
-            <Missing what="the crop map (USDA CDL) is not loaded for this county" />
-          )}
-        </div>
+
+            <div className="history__map">
+              {county.raster ? (
+                <CdlMap
+                  info={county.raster}
+                  years={years}
+                  rasters={rasters}
+                  pb={pb}
+                  index={index}
+                  playing={playing}
+                  between={between}
+                  highlight={lit}
+                  countyName={county.name}
+                  overlay={guide}
+                />
+              ) : (
+                <Missing what="the crop map (USDA CDL) is not loaded for this county" />
+              )}
+            </div>
+          </>
+        ) : (
+          <YieldHistory county={county} year={year} onYear={pickYear} />
+        )}
 
         <div className="history__story">
           {/* aria-live apagado durante el play para no leer once titulares seguidos */}
           <div className="headline" aria-live={playing ? "off" : "polite"}>
             <h1>
               <span className="headline__year">{current.year}</span>
-              <span className="visually-hidden"> in {county.name} County: </span>
+              <span className="visually-hidden">
+                {" "}
+                in {county.name} County:{" "}
+              </span>
             </h1>
             <ul>
               {current.headline.map((h) => (
@@ -242,7 +305,10 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
           data={county.years}
           onRewind={rewind}
         />
-        <a className="btn btn--primary history__next" href={`#/county/${county.fips}/next`}>
+        <a
+          className="btn btn--primary history__next"
+          href={`#/county/${county.fips}/next`}
+        >
           Options for next season →
         </a>
       </div>
@@ -251,47 +317,64 @@ export function HistoryScreen({ fips, query }: { fips: string; query: URLSearchP
         <h2 id="more-title">
           {years.length} years in {county.name} County
         </h2>
-        <div className="history__cards">
-          <div className="card">
-            <h3>
-              Most common sequences, {years[1] ?? years[0]}–{years[years.length - 1]}
-            </h3>
-            {county.common_rotations ? (
-              <>
-                <ol className="rotations">
-                  {county.common_rotations.items.map((t) => (
-                    <li key={`${t.from}-${t.to}`}>
-                      <span>{t.label}</span>
-                      <span className="rotations__track" aria-hidden="true">
-                        <span className="rotations__bar" style={{ width: `${(100 * t.pct) / maxSeq}%` }}>
-                          <i style={{ background: CROP_COLOR[t.from] }} />
-                          <i style={{ background: CROP_COLOR[t.to] }} />
+        {/* Sin CDL las dos tarjetas serían solo faltantes: ya lo dice YieldHistory arriba */}
+        {county.raster ? (
+          <div className="history__cards">
+            <div className="card">
+              <h3>
+                Most common sequences, {years[1] ?? years[0]}–
+                {years[years.length - 1]}
+              </h3>
+              {county.common_rotations ? (
+                <>
+                  <ol className="rotations">
+                    {county.common_rotations.items.map((t) => (
+                      <li key={`${t.from}-${t.to}`}>
+                        <span>{t.label}</span>
+                        <span className="rotations__track" aria-hidden="true">
+                          <span
+                            className="rotations__bar"
+                            style={{ width: `${(100 * t.pct) / maxSeq}%` }}
+                          >
+                            <i style={{ background: CROP_COLOR[t.from] }} />
+                            <i style={{ background: CROP_COLOR[t.to] }} />
+                          </span>
                         </span>
-                      </span>
-                      <b>{Math.round(t.pct)}%</b>
-                    </li>
-                  ))}
-                </ol>
-                <p className="history__small">
-                  Share of cropland that went from the first crop one year to the second crop the next.{" "}
-                  <SourceChip source={county.common_rotations.source} />
-                </p>
-              </>
-            ) : (
-              <Missing what="crop sequences for this county" />
-            )}
+                        <b>{Math.round(t.pct)}%</b>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="history__small">
+                    Share of cropland that went from the first crop one year to
+                    the second crop the next.{" "}
+                    <SourceChip source={county.common_rotations.source} />
+                  </p>
+                </>
+              ) : (
+                <Missing what="crop sequences for this county" />
+              )}
+            </div>
+            <div className="card">
+              <h3>Crop mix, year by year</h3>
+              <DecadeMix
+                years={county.years}
+                year={year}
+                lit={lit}
+                onYear={pickYear}
+              />
+              <p className="history__small">
+                Share of the county's cropland each year. Tap a year to rewind
+                to it.{" "}
+                <SourceChip source={county.raster?.source ?? "USDA CDL"} />
+              </p>
+            </div>
           </div>
-          <div className="card">
-            <h3>Crop mix, year by year</h3>
-            <DecadeMix years={county.years} year={year} lit={lit} onYear={pickYear} />
-            <p className="history__small">
-              Share of the county's cropland each year. Tap a year to rewind to it.{" "}
-              <SourceChip source={county.raster?.source ?? "USDA CDL"} />
-            </p>
-          </div>
-        </div>
+        ) : null}
         {/* En pantallas angostas el botón sale de la barra fija, que si no tapa media pantalla. */}
-        <a className="btn btn--primary history__next history__next--end" href={`#/county/${county.fips}/next`}>
+        <a
+          className="btn btn--primary history__next history__next--end"
+          href={`#/county/${county.fips}/next`}
+        >
           Options for next season →
         </a>
       </section>
@@ -311,14 +394,19 @@ function DecadeMix({
   lit: CropId | null;
   onYear: (y: number) => void;
 }) {
-  const shown = CROPS.filter((c) => years.some((y) => (y.crops_pct?.[c] ?? 0) >= 2));
-  if (!years.some((y) => y.crops_pct)) return <Missing what="crop areas for this county" />;
+  const shown = CROPS.filter((c) =>
+    years.some((y) => (y.crops_pct?.[c] ?? 0) >= 2),
+  );
+  if (!years.some((y) => y.crops_pct))
+    return <Missing what="crop areas for this county" />;
   return (
     <>
       <div className="mix">
         {years.map((y) => {
           const pct = y.crops_pct;
-          const top = pct ? [...shown].sort((a, b) => pct[b] - pct[a]).slice(0, 3) : [];
+          const top = pct
+            ? [...shown].sort((a, b) => pct[b] - pct[a]).slice(0, 3)
+            : [];
           return (
             <button
               key={y.year}
@@ -330,7 +418,13 @@ function DecadeMix({
                   ? `${y.year}: ${top.map((c) => `${CROP_LABEL[c]} ${Math.round(pct[c])}%`).join(", ")}`
                   : `${y.year}: missing data`
               }
-              title={pct ? top.map((c) => `${CROP_LABEL[c]} ${Math.round(pct[c])}%`).join(" · ") : "Missing data"}
+              title={
+                pct
+                  ? top
+                      .map((c) => `${CROP_LABEL[c]} ${Math.round(pct[c])}%`)
+                      .join(" · ")
+                  : "Missing data"
+              }
               onClick={() => onYear(y.year)}
             >
               <span className="mix__stack" aria-hidden="true">
@@ -340,7 +434,11 @@ function DecadeMix({
                     .map((c) => (
                       <i
                         key={c}
-                        style={{ flexGrow: pct[c], background: CROP_COLOR[c], opacity: lit && lit !== c ? 0.25 : 1 }}
+                        style={{
+                          flexGrow: pct[c],
+                          background: CROP_COLOR[c],
+                          opacity: lit && lit !== c ? 0.25 : 1,
+                        }}
                       />
                     ))
                 ) : (
@@ -348,7 +446,9 @@ function DecadeMix({
                 )}
               </span>
               <span className="mix__year">
-                <span className="mix__century">{String(y.year).slice(0, 2)}</span>
+                <span className="mix__century">
+                  {String(y.year).slice(0, 2)}
+                </span>
                 {String(y.year).slice(2)}
               </span>
             </button>
