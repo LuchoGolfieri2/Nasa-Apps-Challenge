@@ -188,9 +188,9 @@ for (const s of STATES) {
   if (!span) span = [s.bounds[0][0], s.bounds[1][0]];
   s.labelP = [(span[0] + span[1]) / 2, cy]; s.roomX = (span[1] - span[0]) / 2;
 }
-const DEMO = D.demo, START = D.start, HOME = D.home;
+const START = D.start, HOME = D.home;
 const COUNTY_K = 3.2;
-const FAR = {lat: 8, k: 0.55}; // portada: el globo chico y lejos, girando detrás del velo
+const FAR = {lat: 8, k: 0.55}; // portada: el globo chico y lejos, quieto detrás del velo
 
 function angDist([a, b], [c, d]) { // distancia sobre la esfera, en radianes
   const s = Math.sin(((d - b) * rad) / 2) ** 2 + Math.cos(b * rad) * Math.cos(d * rad) * Math.sin(((c - a) * rad) / 2) ** 2;
@@ -206,7 +206,7 @@ function dest([lon, lat], brg, d) {
 // ---- vista: R = {lon, lat, k}; k = 1 es el globo de inicio (radio = 43 % del lado corto)
 const R0 = 512 / (2 * Math.PI);
 let W = 0, H = 0, DPR = 1, base = 1;
-const R = {lon: HOME.lon + 55, ...FAR};
+const R = {lon: HOME.lon, ...FAR};
 const zoomOfK = (k) => Math.log2((base * k) / R0);
 const kOfZoom = (z) => (R0 * 2 ** z) / base;
 const K_MIN = 0.5, K_MAX = 70;
@@ -214,8 +214,7 @@ const K_MIN = 0.5, K_MAX = 70;
 let V = null, level = 'globe', selState = null, selCounty = null, hover = null, take = null;
 // estado o provincia elegido (buscador, clic, ruta): contorno blanco que salta al llegar y su nombre
 let stateFocus = null, statePopAt = 0;
-let lastInput = performance.now(), spinV = 0, lastT = 0;
-const SPIN_SPEED = 3; // grados por segundo cuando nadie toca el mapa
+let lastT = 0;
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const T0 = performance.now();
 const $ = (id) => document.getElementById(id);
@@ -367,7 +366,7 @@ function applyHash() {
     if (!isLanding()) {
       document.body.classList.add('landing');
       selState = null; selCounty = null; level = 'globe';
-      flyTo({lon: R.lon + 40, ...FAR}, reduceMotion.matches ? 600 : 1400);
+      flyTo({lon: HOME.lon, ...FAR}, reduceMotion.matches ? 600 : 1400);
       updateUI();
     }
   } else {
@@ -390,10 +389,6 @@ function applyHash() {
 window.addEventListener('hashchange', applyHash);
 
 // ---- deck.gl
-const markInput = () => { lastInput = performance.now(); spinV = 0; };
-['pointerdown', 'wheel', 'keydown', 'touchstart'].forEach((e) =>
-  window.addEventListener(e, markInput, {capture: true, passive: true}));
-window.addEventListener('pointermove', (e) => { if (e.buttons) lastInput = performance.now(); }, {capture: true, passive: true});
 
 const viewState = () => ({longitude: R.lon, latitude: R.lat, zoom: zoomOfK(R.k),
   minZoom: zoomOfK(K_MIN), maxZoom: zoomOfK(K_MAX)});
@@ -457,7 +452,7 @@ const deckgl = new Deck({
   useDevicePixels: 2,
   onViewStateChange: ({viewState: vs, interactionState: is}) => {
     if (take || isLanding()) return;
-    if (is && (is.isDragging || is.isZooming || is.isPanning || is.inTransition)) { V = null; lastInput = performance.now(); }
+    if (is && (is.isDragging || is.isZooming || is.isPanning || is.inTransition)) V = null;
     R.lon = vs.longitude; R.lat = Math.max(-80, Math.min(80, vs.latitude)); R.k = kOfZoom(vs.zoom);
   },
   getCursor: ({isDragging, isHovering}) => (isDragging ? 'grabbing' : isHovering ? 'pointer' : 'grab'),
@@ -578,14 +573,13 @@ function buildLayers(a) {
     for (const s of STATES) if (s !== focus && front(s.centroid))
       LABELS.push({p: s.labelP, text: s.properties.name.toUpperCase(), size, alpha: al, caps: true, state: s});
   }
-  // nombres de condado centrados en su centroide. Prioridad: seleccionado, demo, el resto.
-  // Seleccionado y demo se muestran siempre; el resto solo si entra adentro de su condado.
+  // nombres de condado centrados en su centroide, todos con la misma regla (los demos ya no tienen prioridad).
+  // El seleccionado se muestra siempre; el resto (demos incluidos) solo si entra adentro de su condado.
   if (a > 0.3) {
     const size = R.k > 20 ? 20 : 15, alpha = clamp01((a - 0.3) / 0.3);
     const add = (c, prio) => { if (front(c.centroid)) LABELS.push({p: c.centroid, text: c.properties.name, size, alpha, county: c, prio}); };
     if (selCounty) add(selCounty, 0);
-    for (const id of Object.keys(DEMO)) if (countyById[id] !== selCounty) add(countyById[id], 2);
-    for (const c of COUNTIES) if (c !== selCounty && !DEMO[c.id]) add(c, 3);
+    for (const c of COUNTIES) if (c !== selCounty) add(c, 3);
   }
   LABELS.sort((x, y) => (x.prio ?? -1) - (y.prio ?? -1));
   return layers;
@@ -810,17 +804,12 @@ function frame(now) {
 function step(now) {
   const t = (now - T0) / 1000, dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0; lastT = now;
   if (V) {
-    lastInput = now; spinV = 0;
     const s = Math.min(1, (now - V.start) / V.dur), l = ease(s);
     R.lon = V.from.lon + (V.to.lon - V.from.lon) * l;
     R.lat = V.from.lat + (V.to.lat - V.from.lat) * l;
     R.k = Math.exp(Math.log(V.from.k) + (Math.log(V.to.k) - Math.log(V.from.k)) * l);
     if (s >= 1) V = null;
-  } else { // giro: arranca 3 s después del último toque (en la portada, enseguida), entra suave y frena al tocar
-    const idle = level === 'globe' && !take && !reduceMotion.matches && (isLanding() || now - lastInput > 3000);
-    spinV += ((idle ? SPIN_SPEED : 0) - spinV) * (1 - Math.exp(-dt / (idle ? 1.2 : 0.25)));
-    if (spinV > 0.001) R.lon = ((((R.lon - spinV * dt + 180) % 360) + 360) % 360) - 180;
-  }
+  } // sin giro automático: el globo solo se mueve con vuelos de cámara o cuando lo mueve la persona
   followCamera();
   const a = Math.round(clamp01((R.k - COUNTY_K) / 2) * 50) / 50;
   const u = clamp01(1.6 - R.k * 0.35);
@@ -1074,8 +1063,6 @@ document.addEventListener('pointerdown', (e) => { if (!layersMenu.hidden && !lay
 setMode('yield');
 $('home').addEventListener('click', goHome);
 $('enter').addEventListener('click', () => { location.hash = '#/map'; });
-// Botón de entrada: vuela directo al condado de demo y abre su tarjeta en el mapa
-$('cta').addEventListener('click', () => flyToCounty(START));
 $('c-open').addEventListener('click', openHistory);
 $('c-next').addEventListener('click', () => {
   if (!selCounty || growing) return;

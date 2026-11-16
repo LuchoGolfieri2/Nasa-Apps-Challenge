@@ -126,6 +126,14 @@ export interface CropMix {
   source: string;
   prototype: boolean;
 }
+export interface ByWeather {
+  years: number[];
+  /** "<cultivo>_<rotación>" → rinde predicho por año de clima; null = el modelo no tiene ese año */
+  yield_bu_ac: Record<string, Array<number | null>>;
+  source: string;
+  prototype: boolean;
+}
+
 export interface NextData {
   fips: string;
   name: string;
@@ -138,6 +146,8 @@ export interface NextData {
   default_crop: PlanCrop;
   /** null = no se puede predecir (sin precio del estado para comparar maíz con soja) */
   prediction?: Prediction | null;
+  /** Rinde de cada opción con el clima de cada año (My Farm, F40). Claves "corn_rotado"… alineadas con years */
+  by_weather?: ByWeather | null;
   /** null = sin mapas del CDL recientes ni condados parecidos que los tengan */
   mix?: CropMix | null;
   rotation_context: {

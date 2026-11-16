@@ -4,6 +4,7 @@ Arma los JSON de la pantalla 3 ("Next season") con datos reales:
 
   backend/Datos/escenarios_rotacion_resumen.csv  → rango p10 / mediana / p90 por opción (modelo del punto 2)
   backend/Datos/escenarios_rotacion.csv          → predicción por clima de cada año (2009–2023): la "prediction" de la pantalla
+                                                    y "by_weather" (rinde de cada opción por año de clima, para My Farm)
   backend/Datos/front/explicaciones.json         → razones, riesgos, confianza y años (punto 3)
   backend/Datos/front/gemelos.json               → condados gemelos por opción y cultivos nuevos (punto 5)
   backend/Datos/precios_costos.csv               → precio NASS y costo operativo ERS por estado (scripts/build_precios_costos.py)
@@ -162,6 +163,23 @@ def predict(fips, scen, prices):
         "method": "Share of past seasons' weather (2009–2023) in which this option leaves the most per acre over operating costs, "
                   "among corn and soybeans in three rotations. Same price and cost every year: only the weather changes.",
         "source": f"{MODEL_SRC} · USDA ERS costs",
+        "prototype": False,
+    }
+
+
+def by_weather(fips, scen):
+    """Rinde predicho de cada opción con el clima de cada año (2009–2023), para el tablero de My Farm (F40).
+    Una lista por opción ("corn_rotado", ...), alineada con "years"; null donde el modelo no tiene ese año."""
+    by_year = scen.get(fips)
+    if not by_year:
+        return None
+    years = sorted(by_year)
+    keys = sorted({k for y in years for k in by_year[y]})
+    return {
+        "years": years,
+        "yield_bu_ac": {f"{c}_{r}": [round(by_year[y][(c, r)], 1) if (c, r) in by_year[y] else None for y in years]
+                        for c, r in keys},
+        "source": MODEL_SRC,
         "prototype": False,
     }
 
@@ -527,6 +545,7 @@ def main():
             "note": explic.get("note"),
             "default_crop": "corn",
             "prediction": predict(fips, scen, prices),
+            "by_weather": by_weather(fips, scen),
             "mix": crop_mix(fips, rates, neighbors, mix_season),
             "rotation_context": cdl_context(fips, ex),
             "crops": crops,
