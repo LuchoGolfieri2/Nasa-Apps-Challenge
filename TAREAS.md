@@ -58,8 +58,10 @@ Ejemplo:
   - Aprobación: ese volumen pasa el límite de 5 GB de `CLAUDE.md` (regla 6); hace falta el OK del equipo antes de empezar.
   - Peso en el sitio: a 30 m serían ~2,5 GB, demasiado para hospedarlos junto al repo; a 60 m, unos 0,7 GB; otra salida es alojarlos en un almacenamiento aparte.
   - Decisión actual: por ahora solo algunos condados llevan el mapa lote a lote (Story, McLean, Sumner); el resto usa una vista liviana (ver F32). Los datos de modelo y de los 10 estados los suben los de ML: no tocar acá.
-- [ ] **F32** Vista liviana para los condados sin mapa lote a lote · Libre · En pausa (decisión 15/11: por ahora no se hace)
+  - 15/11 noche: el resto ya tiene la vista liviana de F32 (mapa a 150 m en los 11 estados).
+- [x] ~~**F32** Vista liviana para los condados sin mapa lote a lote~~ · ✅ Walicki, Seba, Loubet y Diego
   - Hoy esos condados (ej. Perry, IL) muestran solo rinde, clima y "Missing data" donde iría el mapa.
+  - Hecho con la opción A (15/11 noche): mapa del CDL a 150 m ("lower detail") en los 940 condados sin el de 30 m; los 11 estados quedan 943/943 con mapa (`scripts/check_lowres.py`). Reparto y pasos en `docs/lowres-cdl-reparto.md`. El globo ya muestra "Full history" en los 943 (`globe-data.json`).
   - Probado: CropScape devuelve un mapa real reducido (~160 m por píxel) en un PNG de ~18 KB y 3 s, con `GetMap` de `wms_cdlall.cgi` (capa `cdl_<año>`, bbox del condado, 256 px de ancho), sin bajar los 2 MB del original.
   - Opciones bocetadas (elegir una al retomar):
     - **A · Mapa real en baja resolución:** el mismo mapa con play, rotulado "Lower detail". ~100–200 MB para ~1.000 condados × 11 años, ~1,5 h de descarga liviana.

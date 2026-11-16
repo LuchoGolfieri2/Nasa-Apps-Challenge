@@ -865,7 +865,7 @@ function birthCard(origin, instant = false) {
     : `${stateById[c.properties.state].properties.name} · FIPS ${c.id}`;
   $('c-status').textContent = ar ? `${AR_ZONE[c.stat.zone] || 'Weather match: Missing data'} · yields 2001–2025 (MAGyP)`
     : hist === 'full' ? `Full history · 2015–2025 · crop map${corn ? ', yield and weather' : ' (USDA CDL)'}`
-    : hist ? 'Yield and weather history · crop map: Missing data' : 'Missing data: history not loaded for this county yet';
+    : hist ? 'Yield and weather history · crop map: Missing data' : 'Missing data: Field Rewind has no history for this county';
   $('c-status').className = ar ? (c.stat.zone === 'fuera' ? 'part' : 'ok') : hist === 'full' ? 'ok' : hist ? 'part' : 'missing';
   $('c-corn-l').textContent = ar ? 'Corn yield, 2021–2025 average · MAGyP' : 'Corn yield, 2021–2025 average · USDA NASS';
   $('c-corn-v').textContent = corn ? `${c.stat.corn_bu_ac} bu/acre` : 'Missing data';
