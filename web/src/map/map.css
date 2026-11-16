@@ -235,8 +235,18 @@ body.recording .maplayer #home{pointer-events:none}
   .maplayer #layers-menu [role=radio]:hover{background:rgba(15,42,29,.05)}
 }
 @media (max-width:760px){
-  .maplayer #dock{left:12px;bottom:16px}
+  /* Celular: de abajo hacia arriba y sin pisarse, los créditos (a todo el ancho), el selector "Color by" y el
+     botón de Story con su ayuda. Antes los tres compartían los últimos 100 px y se tapaban. */
+  .maplayer #sources{left:16px;right:16px;bottom:calc(10px + env(safe-area-inset-bottom));text-align:center;font-size:10.5px;line-height:1.4}
+  .maplayer #dock{left:12px;bottom:calc(52px + env(safe-area-inset-bottom))}
+  .maplayer #start{bottom:calc(124px + env(safe-area-inset-bottom));gap:6px}
   .maplayer #layers-btn .txt small{display:none}
+}
+/* La ayuda del globo según el dispositivo: rueda del mouse o pellizco */
+.maplayer #start .hint-touch{display:none}
+@media (hover:none) and (pointer:coarse){
+  .maplayer #start .hint-mouse{display:none}
+  .maplayer #start .hint-touch{display:inline}
 }
 @media (prefers-reduced-motion:reduce){.maplayer #layers-menu{animation:none}}
 .maplayer #legend .t.wrap{flex-wrap:wrap;white-space:normal;row-gap:2px}
