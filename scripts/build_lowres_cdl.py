@@ -188,7 +188,7 @@ def a_ficha(fips: str, res: dict, ficha: dict) -> dict:
         "gray_step": bfd.PASO_GRIS, "crs": "EPSG:5070", "origin": res["origin"], "pixel_m": PIXEL_M,
         "source": FUENTE, "prototype": False,
     }
-    ficha["common_rotations"] = {"items": comunes, "source": bfd.FUENTE_CDL, "prototype": False} if comunes else None
+    ficha["common_rotations"] = {"items": comunes, "source": FUENTE, "prototype": False} if comunes else None
     fuente = f"{FUENTE} · {lista[0]}–{lista[-1]}"
     ficha["sources"] = [fuente] + [s for s in ficha["sources"] if not s.startswith("USDA CDL")]
     return ficha
