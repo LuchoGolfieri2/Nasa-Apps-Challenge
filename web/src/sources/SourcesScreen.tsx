@@ -1,5 +1,5 @@
 import { MODEL_STATES_TEXT } from "../data/states";
-import { DATASETS, NASA_USDA_COUNT, NOT_YET } from "./datasets";
+import { DATASETS, NASA_USDA_COUNT, NOT_YET, REFERENCE_COUNT } from "./datasets";
 import "./sources.css";
 
 /** Pantalla 4 · Fuentes y límites (F25). */
@@ -10,7 +10,8 @@ export function SourcesScreen() {
         <p className="sources__eyebrow">Sources &amp; limits</p>
         <h1>Where every number comes from</h1>
         <p className="sources__lead">
-          Field Rewind uses <b>{NASA_USDA_COUNT} NASA and USDA datasets</b>. Every number on screen carries a chip with its source.
+          Field Rewind uses <b>{NASA_USDA_COUNT} NASA and USDA datasets</b>, plus {REFERENCE_COUNT} reference sources for
+          boundaries, soil and Argentine yields. Every number on screen carries a chip with its source.
         </p>
       </header>
 
