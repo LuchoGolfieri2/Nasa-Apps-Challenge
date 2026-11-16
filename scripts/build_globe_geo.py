@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
@@ -86,6 +87,27 @@ def redondear(geom: dict, nd: int = 4) -> dict:
     return {"type": geom["type"], "coordinates": r(geom["coordinates"])}
 
 
+def km2_anillo(anillo: list) -> float:
+    """Área aproximada de un anillo en km² (grados a km a la latitud media)."""
+    lat = sum(p[1] for p in anillo) / len(anillo)
+    k = 111.32 * 111.32 * math.cos(math.radians(lat))
+    a = sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(anillo, anillo[1:] + anillo[:1]))
+    return abs(a) / 2 * k
+
+
+def limpiar_contorno(geom: dict, min_km2: float = 1.0) -> dict:
+    """Saca lo que la unión de condados deja entre condado y condado: los huecos (ningún estado de la zona tiene
+    enclaves) y las astillas de menos de min_km2. Sin esto, el globo dibuja el borde de cada uno y quedan trazos
+    blancos sueltos adentro del estado. Las islas grandes (Madeline, WI; Kelleys, OH) se quedan."""
+    polys = geom["coordinates"] if geom["type"] == "MultiPolygon" else [geom["coordinates"]]
+    partes = [[p[0]] for p in polys if km2_anillo(p[0]) >= min_km2]
+    if not partes:  # nunca vaciar un estado: queda la parte más grande
+        partes = [[max(polys, key=lambda p: km2_anillo(p[0]))[0]]]
+    if len(partes) == 1:
+        return {"type": "Polygon", "coordinates": partes[0]}
+    return {"type": "MultiPolygon", "coordinates": partes}
+
+
 def contorno_estado(geoms: list[dict]) -> dict | None:
     try:
         from shapely.geometry import mapping, shape
@@ -94,7 +116,7 @@ def contorno_estado(geoms: list[dict]) -> dict | None:
         return None
     # buffer(0.0005) pega bordes que quedaron separados por la simplificación; el simplify devuelve un contorno liviano
     u = unary_union([shape(g).buffer(0.0005) for g in geoms]).buffer(-0.0005).simplify(0.003)
-    return redondear(mapping(u))
+    return limpiar_contorno(redondear(mapping(u)))
 
 
 def main() -> None:
