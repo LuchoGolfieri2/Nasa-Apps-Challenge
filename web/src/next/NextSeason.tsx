@@ -391,13 +391,21 @@ const YieldRange: React.FC<{data: NextData; pred: Prediction}> = ({data, pred}) 
   const last = pred.years[pred.years.length - 1];
   return (
     <section className="ns-sec ns-range" aria-labelledby="ns-range-h">
-      <h2 id="ns-range-h" className="ns-sec-h">
-        <Icon name="bars" size={30} />
-        What the county can expect
-      </h2>
+      <div className="ns-range-head">
+        <h2 id="ns-range-h" className="ns-sec-h">
+          <Icon name="bars" size={30} />
+          What the county can expect
+        </h2>
+        <a className="btn" href={`#/county/${data.fips}`}>
+          See this county year by year
+          <span aria-hidden="true"> →</span>
+        </a>
+      </div>
       <p className="ns-lead">
-        The model ran this county&apos;s soil and rotation through the weather of {pred.seasons} past seasons
-        ({first}–{last}).
+        The model ran this county&apos;s soil and rotation through the weather of {pred.seasons} past seasons{' '}
+        <span className="ns-nowrap">
+          ({first}–{last}).
+        </span>
       </p>
       {rows.length ? (
         <ul className="ns-range-rows">
@@ -447,16 +455,10 @@ const YieldRange: React.FC<{data: NextData; pred: Prediction}> = ({data, pred}) 
           <b className="ns-missing">Missing data:</b> no yield range for this county.
         </p>
       )}
-      <div className="ns-range-foot">
-        <p>
-          Real single years swing about twice as much as the range above.{' '}
-          <SourceChip source={rows[0]?.source || 'Field Rewind model · 2009–2023'} />
-        </p>
-        <a className="btn" href={`#/county/${data.fips}`}>
-          See this county year by year
-          <span aria-hidden="true"> →</span>
-        </a>
-      </div>
+      <p className="ns-range-foot">
+        Real single years swing about twice as much as the range above.{' '}
+        <SourceChip source={rows[0]?.source || 'Field Rewind model · 2009–2023'} />
+      </p>
     </section>
   );
 };
