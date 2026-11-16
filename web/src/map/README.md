@@ -28,7 +28,7 @@ durante el vuelo y al arrastrar el mapa. En el celular (≤ 760 px) se apoya aba
   al pasar a otro condado la actual sale en 150 ms y recién ahí nace la nueva.
 - Se cierra con ×, Escape o un clic en mapa vacío; la cámara se queda y la ruta pasa a `#/state/XX`. También se cierra sola si
   te alejás del nivel de condado.
-- "Next season: what to plant →" aparece solo si el modelo cubre el condado (`next-available.json`); si no, se escribe el faltante.
+- "Next season: what to expect →" aparece solo si el modelo cubre el condado (`next-available.json`); si no, se escribe el faltante.
 - "See more": la tarjeta crece hasta cubrir la pantalla (260 ms) y se abre la historia; la ficha del condado empieza a bajar al tocar el botón. Al volver, la tarjeta ya está abierta.
 - Con `prefers-reduced-motion` todo es un fundido, sin escala ni desplazamiento.
 - La lógica está en `globe.js` ("tarjeta del condado"): `showCard`, `placeCard` (posición por cuadro), `closeCard`, `openHistory`.

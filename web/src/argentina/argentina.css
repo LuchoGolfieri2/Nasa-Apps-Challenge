@@ -1,9 +1,6 @@
 /* Ficha de un departamento de Argentina (#/depto/<id>). Fondo claro, como la historia y Próxima campaña. */
 .ar { max-width: 1440px; margin: 0 auto; padding: 24px clamp(16px, 3vw, 40px) 56px; color: var(--ink); }
 
-  background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-card);
-  padding: 18px 20px;
-}
 
 .ar-toggle { display: inline-flex; flex-wrap: wrap; background: var(--surface-2); border-radius: 999px; padding: 3px; gap: 2px; }
 .ar-toggle button {
@@ -16,15 +13,8 @@
 }
 .ar-toggle--small button { min-height: 30px; padding: 4px 10px; font-size: 12px; }
 
-  position: absolute; transform: translate(-50%, calc(-100% - 8px)); margin: 0; pointer-events: none; white-space: nowrap;
-  background: var(--solid-bg); border: 1px solid var(--solid-line); box-shadow: var(--solid-shadow);
-  border-radius: var(--radius-s); padding: 5px 9px; font-size: 12px; line-height: 1.4; color: var(--ink);
-}
 
 
-  font: 500 15px var(--font-body); color: var(--ink); background: var(--surface-1);
-  border: 1px solid var(--line-strong); border-radius: var(--radius-s); padding: 0 10px; min-height: 44px;
-}
 
 .ar-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 .ar-card section { display: grid; gap: 8px; }
@@ -54,14 +44,6 @@
 .ar-cmp__us { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: var(--primary-strong); border-radius: 2px; }
 .ar-cmp__ar { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: var(--wheat-gold); border: 2px solid var(--night); }
 
-.ar-series { display: grid; gap: 4px; }
-.ar-series__bars { position: relative; display: flex; align-items: flex-end; gap: 3px; height: 130px; padding-top: 14px; }
-.ar-series__col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
-.ar-series__col i { display: block; width: 100%; border-radius: 3px 3px 0 0; background: var(--wheat-gold); }
-.ar-series__col i.ar-series__none { height: 100%; background: repeating-linear-gradient(45deg, #eef0eb 0 2px, #dfe3dc 2px 4px); border-radius: 3px; }
-.ar-series__us { position: absolute; left: 0; right: 0; border-top: 2px dashed var(--primary-strong); pointer-events: none; z-index: 1; }
-.ar-series__us em { position: absolute; right: 0; top: -18px; font: 600 11px var(--font-body); font-style: normal; color: var(--primary-strong); background: var(--surface-1); padding: 0 4px; }
-.ar-series__axis { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-3); }
 
 .ar-tablewrap { display: grid; gap: 6px; overflow-x: auto; }
 .ar-table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -100,3 +82,37 @@
 }
 .ar .ar-cols { margin-top: 8px; }
 .ar ol.ar-analogs { list-style: none; padding-left: 0; }
+
+/* Cultivos con su color e ícono de la app (CROP_COLOR, CropIcon) */
+.ar-crop { display: inline-flex; align-items: center; gap: 6px; }
+.ar-toggle button { display: inline-flex; align-items: center; gap: 5px; }
+
+/* Rinde por campaña: barras con eje, típico de acá, análogos de EE. UU., mejor y peor campaña y detalle al pasar */
+.ar-series { display: grid; gap: 6px; }
+.ar-series__lead { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.ar-series__legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-2); }
+.ar-series__legend li { display: inline-flex; align-items: center; gap: 6px; }
+.ar-series__legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.ar-series__legend i.ar-series__key-typ { height: 0; width: 18px; border-top: 2px solid var(--ink); border-radius: 0; }
+.ar-series__legend i.ar-series__key-us { height: 0; width: 18px; border-top: 2px dashed var(--primary-strong); border-radius: 0; }
+.ar-series__plot { display: grid; grid-template-columns: 30px 1fr; gap: 6px; margin-top: 18px; }
+.ar-series__yaxis { position: relative; height: 170px; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.ar-series__yaxis span { position: absolute; right: 0; transform: translateY(50%); }
+.ar-series__bars { position: relative; display: flex; align-items: flex-end; gap: 3px; height: 170px; border-bottom: 1px solid var(--line-strong, #cfd6cb); }
+.ar-series__grid { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line, #e3e8e0); pointer-events: none; }
+.ar-series__col { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; cursor: default; outline: none; }
+.ar-series__col i { position: relative; z-index: 1; display: block; width: 100%; border-radius: 3px 3px 0 0; transition: opacity 0.15s; }
+.ar-series__col.is-dim i { opacity: 0.35; }
+.ar-series__col.is-on i { box-shadow: 0 0 0 2px var(--ink); }
+.ar-series__col i.ar-series__none { height: 100%; background: repeating-linear-gradient(45deg, #eef0eb 0 2px, #dfe3dc 2px 4px) !important; border-radius: 3px; }
+.ar-series__typ, .ar-series__us { position: absolute; left: 0; right: 0; pointer-events: none; z-index: 2; }
+.ar-series__typ { border-top: 2px solid var(--ink); opacity: 0.55; }
+.ar-series__us { border-top: 2px dashed var(--primary-strong); }
+.ar-series__mark { position: absolute; left: 50%; transform: translate(-50%, -4px); margin: 0; white-space: nowrap; font: 600 11px var(--font-body); font-style: normal; color: var(--ink); background: var(--surface-1, #fff); border: 1px solid var(--line, #e3e8e0); border-radius: 6px; padding: 1px 6px; z-index: 3; }
+.ar-series__mark b { margin-left: 4px; }
+.ar-series__tip { position: absolute; top: -12px; transform: translate(-50%, -100%); display: grid; gap: 1px; padding: 6px 10px; border-radius: 8px; background: var(--night, #0f2a1d); color: #fff; font-size: 12px; white-space: nowrap; pointer-events: none; z-index: 4; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2); }
+.ar-series__tip span { color: rgba(255, 255, 255, 0.82); }
+.ar-series__axis { margin-left: 36px; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.ar-series__axis { display: flex; gap: 3px; }
+.ar-series__axis span { flex: 1; text-align: center; white-space: nowrap; overflow: visible; }
+.ar-series__foot { margin: 2px 0 0; font-size: 12px; color: var(--ink-3); }

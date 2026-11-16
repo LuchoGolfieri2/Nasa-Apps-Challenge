@@ -1,0 +1,81 @@
+/* "See more" de Argentina con el vidrio de EE. UU. (DeptGlass). Va después de globe-stage.css. */
+
+.ar-glass__kind { font-weight: 400; opacity: 0.7; }
+
+/* El período ocupa más que un año: un poco más chico que el año de EE. UU. */
+.ar-glass .history__stage--globe .headline__year { font-size: clamp(34px, 3.4vw, 52px); letter-spacing: -0.01em; }
+.ar-glass .headline li.ar-glass__why { font-size: 13px; font-weight: 400; line-height: 1.45; color: var(--ink-3); }
+.ar-glass .headline li.ar-glass__why b { color: var(--ink); font-weight: 600; }
+
+/* Zona: arriba a la izquierda, como "How to read" en EE. UU. */
+.ar-glass__zone {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 4;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.ar-glass__zone--fuera { background: rgba(243, 227, 184, 0.92); color: #5c4210; }
+.ar-glass__zone--cerca { background: rgba(233, 185, 73, 0.92); color: #3d2a05; }
+.ar-glass__zone--dentro { background: rgba(47, 125, 79, 0.92); color: #fff; }
+
+/* Comparación con los análogos dentro del vidrio */
+.ar-glass__h { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: var(--ink); }
+.ar-glass__cmp .ar-cmp { gap: 12px; }
+.ar-glass__cmp .ar-cmp__label { font-size: 14px; }
+.ar-glass__cmp .ar-cmp__track { height: 18px; background: rgba(255, 255, 255, 0.12); }
+.ar-glass__cmp .ar-cmp__band { background: rgba(142, 208, 129, 0.35); }
+.ar-glass__cmp .ar-cmp__us { background: #fff; }
+.ar-glass__cmp .ar-cmp__ar { border-color: #fff; }
+.ar-glass__cmp .ar-cmp__row > p { font-size: 12px; color: var(--ink-3); }
+.ar-glass__cmp .ar-low { color: #f6c48a; }
+.ar-glass__small { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--ink-3); }
+
+/* Abajo, las tarjetas claras: tablas a todo el ancho */
+.ar-glass .history__more .ar-table { width: 100%; }
+
+/* El nombre del cultivo en el titular, con su color, sobre el vidrio */
+.ar-glass__crop { font-weight: 700; filter: brightness(1.35) saturate(1.1); }
+
+/* Análogos de EE. UU.: tarjeta oscura con el globo y los arcos (AnalogGlobe), como los gemelos de Next season */
+.ar-glass .history__more .card.ar-analog-card {
+  background: linear-gradient(160deg, #173a2a, #0e2a1e);
+  color: #f6f1e4;
+  border-color: rgba(170, 215, 255, 0.14);
+}
+.ar-analog-card h3 { color: #f6f1e4; }
+.ar-analog-card__lead { margin: 4px 0 12px; font-size: 13px; line-height: 1.45; color: rgba(246, 241, 228, 0.75); }
+.ar-analog-card__note { margin: 12px 0 0; font-size: 12px; line-height: 1.45; color: rgba(246, 241, 228, 0.7); }
+.ar-aglobe { position: relative; width: 100%; aspect-ratio: 4 / 3; background: #0e2e5c; border-radius: 14px; overflow: hidden; }
+.ar-aglobe::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(170, 215, 255, 0.18), inset 0 0 50px 8px rgba(6, 22, 44, 0.7);
+}
+.ar-aglobe__canvas, .ar-aglobe__labels { position: absolute; inset: 0; }
+.ar-aglobe__labels { pointer-events: none; }
+.ar-aglobe__label {
+  position: absolute; white-space: nowrap; font: 700 13px var(--font-body, system-ui); color: #f6f1e4;
+  text-shadow: 0 0 3px #0b2217, 0 0 3px #0b2217, 0 1px 4px rgba(0, 0, 0, 0.8); animation: ar-aglobe-pop 0.3s ease-out;
+}
+.ar-aglobe__label.is-origin { font: 800 15px var(--font-display, system-ui); color: #8ed081; }
+.ar-aglobe__label.is-hot { color: #e9b949; }
+.ar-analog-chips { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.ar-analog-chips a {
+  display: inline-flex; align-items: baseline; gap: 6px; padding: 7px 12px; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(246, 241, 228, 0.22); color: #f6f1e4;
+  text-decoration: none; font-size: 14px; transition: background 0.15s, border-color 0.15s;
+}
+.ar-analog-chips a b { font-weight: 700; }
+.ar-analog-chips a span { font-size: 12px; opacity: 0.7; }
+.ar-analog-chips a em { font-style: normal; font-size: 12px; font-weight: 600; color: #8ed081; }
+.ar-analog-chips a:hover, .ar-analog-chips a.is-hot { background: rgba(233, 185, 73, 0.18); border-color: #e9b949; }
+.ar-analog-chips a:hover em, .ar-analog-chips a.is-hot em { color: #e9b949; }
+.ar-analog-chips a:focus-visible { outline: 2px solid #e9b949; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .ar-aglobe__label { animation: none; } }
+@keyframes ar-aglobe-pop { from { opacity: 0; } to { opacity: 1; } }

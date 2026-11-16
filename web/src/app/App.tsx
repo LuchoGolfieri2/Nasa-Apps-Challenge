@@ -4,7 +4,8 @@ import { MapLayer } from "../map/MapLayer";
 import { NextScreen } from "../next/NextScreen";
 import { SourcesScreen } from "../sources/SourcesScreen";
 import { FarmScreen } from "../farm/FarmScreen";
-import { DeptScreen } from "../argentina/DeptScreen";
+/** "See more" de un departamento de Argentina: vidrio sobre el globo, como EE. UU. (DeptGlass). */
+import { DeptGlass } from "../argentina/DeptGlass";
 import { useLocation } from "./router";
 import "./app.css";
 
@@ -54,7 +55,7 @@ export function App() {
           ) : route.name === "sources" ? (
             <SourcesScreen />
           ) : route.name === "depto" ? (
-            <DeptScreen key={route.id} id={route.id} />
+            <DeptGlass key={route.id} id={route.id} />
           ) : route.name === "farm" ? (
             <FarmScreen edit={route.edit} />
           ) : (

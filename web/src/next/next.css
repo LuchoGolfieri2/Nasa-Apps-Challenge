@@ -304,7 +304,8 @@
 .ns-twin-list{display:grid;gap:8px;list-style:none;margin:0;padding:0}
 .ns-side .ns-twin-list li{border-top:0}
 .ns-twins .ns-twin{display:grid;gap:10px;width:100%;margin:0;padding:12px 14px;border-radius:14px;background:var(--surface-2);border:1px solid transparent;text-align:left;transition:background-color .15s ease-out,border-color .15s ease-out}
-.ns-twins .ns-twin.on{background:rgba(233,185,73,.18);border-color:var(--wheat-gold)}
+/* el condado elegido: verde claro (16/11), no el oro de los arcos */
+.ns-twins .ns-twin.on{background:rgba(142,208,129,.26);border-color:var(--field)}
 /* nombre arriba; el porqué y lo que siembran lado a lado, así la lista no se alarga más que el mapa */
 .ns-twins .ns-twin{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:16px;align-items:start}
 .ns-twin-name{grid-column:1 / -1;font-family:var(--font-display);font-size:18px;color:var(--ink-2)}
@@ -318,7 +319,7 @@
 .ns-twins .ns-split{max-width:none;margin-top:2px}
 @media (hover:hover){
   .ns-twins .ns-twin:hover{background:#e3ebdf}
-  .ns-twins .ns-twin.on:hover{background:rgba(233,185,73,.26)}
+  .ns-twins .ns-twin.on:hover{background:rgba(142,208,129,.34)}
   .ns-answer-why:hover{color:var(--primary)!important}
 }
 
@@ -591,3 +592,40 @@
   .ns-full-bar{animation:none}
 }
 .ns-stage .ns-full-close.solid-btn{display:inline-flex;flex-direction:row;align-items:center}
+
+/* ------------------------------------------------- lo que puede rendir el condado (16/11, solo pronóstico) */
+.ns-range-rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.ns-range-rows > li{background:var(--surface-1);border-radius:22px;box-shadow:var(--shadow-card);padding:22px 26px 20px}
+.ns-range-crop{display:flex;align-items:center;gap:10px;font:700 18px/1.2 var(--font-display);color:var(--ink)}
+.ns-range-crop small{font:400 14px/1.2 var(--font-body);color:var(--ink-3)}
+.ns-range-big{margin-top:10px!important;font:800 44px/1 var(--font-display);letter-spacing:-.03em;color:var(--ink);font-variant-numeric:tabular-nums}
+.ns-range-big small{font:500 15px/1 var(--font-body);letter-spacing:0;color:var(--ink-2)}
+.ns-range-track{position:relative;height:12px;margin-top:18px;border-radius:99px;background:rgba(15,42,29,.08)}
+.ns-range-track .span{position:absolute;top:0;bottom:0;border-radius:99px;opacity:.85}
+.ns-range-track .mid{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;border-radius:2px;background:var(--ink)}
+.ns-range-ends{display:flex;justify-content:space-between;margin-top:8px!important;font-size:14px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.ns-range-notes{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:grid;gap:10px}
+.ns-range-note{display:grid;grid-template-columns:18px minmax(0,1fr);gap:9px;align-items:start;font-size:14px;line-height:1.4;color:var(--ink-2)}
+.ns-range-note > svg{margin-top:2px;color:var(--field)}
+.ns-range-note .fr-conf{font-size:14px;margin-right:4px}
+.ns-nowrap{white-space:nowrap}
+.ns-range-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px}
+.ns-range-head > h2{font-size:44px;margin-bottom:0}
+.ns-range-head{margin-bottom:26px}
+@media (max-width:860px){.ns-range-head > h2{font-size:34px}.ns-range-head{margin-bottom:22px}}
+.ns-range-head .btn{flex:none}
+.ns-range-foot{margin-top:20px!important;font-size:14px;color:var(--ink-3)}
+
+/* ------------------------------------------------- My Farm: la recomendación vive ahí, no acá */
+.ns-farm{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px;
+  margin:88px var(--pad) 0;padding:28px 32px;border-radius:26px;background:var(--field);color:#fff}
+.ns-farm > div{flex:1 1 440px}
+.ns-farm .ns-kicker{color:var(--sprout);margin-bottom:8px!important}
+.ns-farm h2{font:800 clamp(24px,2.2vw,32px)/1.1 var(--font-display);letter-spacing:-.025em;color:#fff}
+.ns-farm-cta{flex:none;background:#fff;border-color:#fff;color:var(--field)}
+.ns-farm-cta:hover{background:var(--paper);border-color:var(--paper)}
+@media (max-width:760px){
+  .ns-range-big{font-size:36px}
+  .ns-farm{margin-top:64px;padding:22px 24px}
+  .ns-farm-cta{width:100%;justify-content:center}
+}
