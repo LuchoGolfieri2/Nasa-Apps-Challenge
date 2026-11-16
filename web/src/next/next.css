@@ -591,14 +591,3 @@
   .ns-full-bar{animation:none}
 }
 .ns-stage .ns-full-close.solid-btn{display:inline-flex;flex-direction:row;align-items:center}
-
-/* La respuesta arriba del escenario (16/11): sin vidrio, sobre papel, para que se lea aunque el globo no cargue */
-.ns-hero{width:calc(100% - 64px);max-width:1656px;margin:18px auto 0}
-.ns-hero-top{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
-.ns-hero .ns-kicker{margin-bottom:8px!important}
-.ns-hero-h{display:flex;align-items:center;gap:14px;margin:0;font:800 clamp(30px,3vw,44px)/1.05 var(--font-display);letter-spacing:-.035em;color:var(--ink)}
-.ns-hero .ns-shead-ico{width:56px;height:56px;background:var(--surface-1);box-shadow:var(--shadow-card)}
-.ns-hero .ns-odds{max-width:520px;margin:0}
-.ns-hero .ns-answer{margin-top:18px}
-.ns-hero .ns-seasons{margin:18px 0 0}
-@media (max-width:1100px){.ns-hero{width:calc(100% - 32px)}}
