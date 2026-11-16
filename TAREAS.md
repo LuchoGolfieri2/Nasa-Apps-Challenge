@@ -142,7 +142,8 @@ Ejemplo:
 
 - [x] ~~**F25** Pantalla de fuentes, contador "N NASA & USDA datasets" en la cabecera y avisos (no reemplaza al agrónomo, no es producto oficial de la NASA ni del USDA)~~ · ✅ Lucho/Claude
   - Hecho en `web/src/sources/`.
-- [ ] **F41** Textos de faltantes al día: "not loaded yet" de MODIS, SMAP, POWER y NASS en la historia pasa a "no hay dato para este condado", y Fuentes dice que el mapa del CDL es de 150 m fuera de los 3 condados de demo · 🔨 Seba (15/11 23:00)
+- [x] ~~**F41** Textos de faltantes al día: "not loaded yet" de MODIS, SMAP, POWER y NASS en la historia pasa a "no hay dato para este condado", y Fuentes dice que el mapa del CDL es de 150 m fuera de los 3 condados de demo~~ · ✅ Seba
+  - Hecho en `web/src/history/` (YearTiles, YearFacts, HistoryScreen) y `web/src/sources/datasets.ts`. El globo (`web/src/map/globe.js`) todavía dice "history not loaded for this county yet" en los condados sin ficha: no lo toqué porque es del mapa.
 
 ## My Farm (nueva, 15/11)
 

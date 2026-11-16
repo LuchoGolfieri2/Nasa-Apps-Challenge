@@ -178,7 +178,7 @@ export function YearTiles({ county, y }: { county: County; y: CountyYear }) {
 
   const weatherMissing = hasWeather
     ? `no weather record for ${y.year}`
-    : `rain and temperature (NASA POWER) are not loaded for ${county.name} County yet`;
+    : `no rain and temperature record (NASA POWER) for ${county.name} County`;
 
   // Fuentes de todo el período, así los sellos no aparecen y desaparecen durante el play.
   const sources = uniqueSources(
@@ -219,7 +219,7 @@ export function YearTiles({ county, y }: { county: County; y: CountyYear }) {
             icon={ICON.corn}
             label="Yield"
             value={null}
-            missing={`county yield (USDA NASS) is not loaded for ${county.name} County yet`}
+            missing={`no county yield (USDA NASS) for ${county.name} County`}
           />
         )}
 
@@ -245,7 +245,7 @@ export function YearTiles({ county, y }: { county: County; y: CountyYear }) {
               label="Peak greenness (vigor, not yield)"
               value={y.greenness ? <Num n={y.greenness.peak.toFixed(2)} /> : null}
               missing={
-                hasGreen ? `no crop greenness for ${y.year}` : "crop greenness (NASA MODIS) is not loaded yet"
+                hasGreen ? `no crop greenness for ${y.year}` : `no crop greenness (NASA MODIS) for ${county.name} County`
               }
               prototype={y.greenness?.prototype}
             />
@@ -254,7 +254,7 @@ export function YearTiles({ county, y }: { county: County; y: CountyYear }) {
               label="Soil water"
               value={y.soil_water ? <b className="tile__word">{y.soil_water.label}</b> : null}
               missing={
-                hasSoil ? `no soil water record for ${y.year}` : "water in the soil (NASA SMAP) is not loaded yet"
+                hasSoil ? `no soil water record for ${y.year}` : `no soil water record (NASA SMAP) for ${county.name} County`
               }
               prototype={y.soil_water?.prototype}
             />
@@ -264,7 +264,7 @@ export function YearTiles({ county, y }: { county: County; y: CountyYear }) {
             icon={ICON.leaf}
             label="Greenness · soil water"
             value={null}
-            missing="crop greenness (NASA MODIS) and water in the soil (NASA SMAP) are not loaded yet"
+            missing={`no crop greenness (NASA MODIS) or soil water (NASA SMAP) for ${county.name} County`}
           />
         )}
       </ul>

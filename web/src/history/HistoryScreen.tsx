@@ -136,9 +136,9 @@ export function HistoryScreen({
   if (failed) {
     return (
       <main className="history history--empty">
-        <h1>No history for this county yet</h1>
+        <h1>No history for this county</h1>
         <Missing
-          what={`Field Rewind has no data file for county ${fips}. Yield and weather history is not loaded for this county yet; the crop map is loaded for Story (IA), McLean (IL) and Sumner (KS).`}
+          what={`Field Rewind has no data file for county ${fips}: there is no yield, weather or crop map history for it.`}
         />
         <p>
           <a className="btn btn--primary" href="#/county/19169">
