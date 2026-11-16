@@ -65,7 +65,7 @@ export function YearFacts({ county, y }: { county: County; y: CountyYear }) {
             what={
               hasYieldSomewhere
                 ? `no county yield for ${y.year}`
-                : `county yield (USDA NASS) is not loaded for ${county.name} County yet`
+                : `no county yield (USDA NASS) for ${county.name} County`
             }
           />
         )}
@@ -95,7 +95,7 @@ export function YearFacts({ county, y }: { county: County; y: CountyYear }) {
             what={
               hasWeatherSomewhere
                 ? `no weather record for ${y.year}`
-                : `rain and temperature (NASA POWER) are not loaded for ${county.name} County yet`
+                : `no rain and temperature record (NASA POWER) for ${county.name} County`
             }
           />
         )}
@@ -116,7 +116,7 @@ export function YearFacts({ county, y }: { county: County; y: CountyYear }) {
             {y.soil_water ? <span>Soil water: {y.soil_water.label}</span> : null}
           </span>
         ) : (
-          <Missing what="crop greenness (NASA MODIS) and water in the soil (NASA SMAP) are not loaded yet" />
+          <Missing what={`no crop greenness (NASA MODIS) or soil water (NASA SMAP) for ${county.name} County`} />
         )}
       </Fact>
     </dl>
@@ -152,7 +152,7 @@ export function YearLines({ county, y }: { county: County; y: CountyYear }) {
           what={
             county.years.some((v) => v.yield)
               ? `no county yield for ${y.year}`
-              : `county yield (USDA NASS) is not loaded for ${county.name} County yet`
+              : `no county yield (USDA NASS) for ${county.name} County`
           }
         />
       )}
@@ -166,7 +166,7 @@ export function YearLines({ county, y }: { county: County; y: CountyYear }) {
           what={
             county.years.some((v) => v.weather)
               ? `no weather record for ${y.year}`
-              : `rain and temperature (NASA POWER) are not loaded for ${county.name} County yet`
+              : `no rain and temperature record (NASA POWER) for ${county.name} County`
           }
         />
       )}

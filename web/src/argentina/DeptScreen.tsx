@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import D from "../map/globe-data.json";
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
+import { CropIcon } from "../ui/CropIcon";
+import { CROP_COLOR } from "../ui/crops";
 import { type ArCrop, type ArDept, type YieldCompare, CROP_LABEL, loadArDept } from "./data";
 import "./argentina.css";
 
@@ -81,6 +83,7 @@ function DeptCard({ id }: { id: string }) {
           <div className="ar-toggle ar-toggle--small" role="group" aria-label="Crop">
             {CROPS.map((c) => (
               <button key={c} type="button" aria-pressed={crop === c} onClick={() => setCrop(c)}>
+                <CropIcon crop={c} size={16} />
                 {CROP_LABEL[c]}
               </button>
             ))}
@@ -138,13 +141,16 @@ function DeptCard({ id }: { id: string }) {
   );
 }
 
-function CompareRow({ crop, y }: { crop: ArCrop; y: YieldCompare }) {
+export function CompareRow({ crop, y, onDark = false }: { crop: ArCrop; y: YieldCompare; onDark?: boolean }) {
   const max = Math.max(y.us_analogs.p90, y.ar_median.bu_ac) * 1.12;
   const pct = (v: number) => `${(100 * v) / max}%`;
   return (
     <li className="ar-cmp__row">
       <div className="ar-cmp__label">
-        <b>{CROP_LABEL[crop]}</b>
+        <b className="ar-crop">
+          <CropIcon crop={crop} size={18} onDark={onDark} />
+          {CROP_LABEL[crop]}
+        </b>
         <span>
           {Math.round(y.ar_median.bu_ac)} vs {Math.round(y.us_analogs.median)} bu/acre ·{" "}
           <b className={y.ratio_ar_us < 0.9 ? "ar-low" : y.ratio_ar_us > 1.1 ? "ar-high" : ""}>{Math.round(y.ratio_ar_us * 100)}%</b>
@@ -155,45 +161,124 @@ function CompareRow({ crop, y }: { crop: ArCrop; y: YieldCompare }) {
         role="img"
         aria-label={`${CROP_LABEL[crop]}: Argentina median ${Math.round(y.ar_median.bu_ac)} bu/acre; U.S. analogs ${Math.round(y.us_analogs.p10)} to ${Math.round(y.us_analogs.p90)}, median ${Math.round(y.us_analogs.median)}.`}
       >
-        <span className="ar-cmp__band" style={{ left: pct(y.us_analogs.p10), width: `calc(${pct(y.us_analogs.p90)} - ${pct(y.us_analogs.p10)})` }} />
+        <span className="ar-cmp__band" style={{ background: `${CROP_COLOR[crop]}55`, left: pct(y.us_analogs.p10), width: `calc(${pct(y.us_analogs.p90)} - ${pct(y.us_analogs.p10)})` }} />
         <span className="ar-cmp__us" style={{ left: pct(y.us_analogs.median) }} />
-        <span className="ar-cmp__ar" style={{ left: pct(y.ar_median.bu_ac) }} />
+        <span className="ar-cmp__ar" style={{ background: CROP_COLOR[crop], left: pct(y.ar_median.bu_ac) }} />
       </div>
       <p className="ar-small ar-muted">{y.text}</p>
     </li>
   );
 }
 
-function YieldSeries({ d, crop }: { d: ArDept; crop: ArCrop }) {
-  const rows = d.yields.map((y) => ({ year: y.year, campaign: y.campaign, v: y[crop] ?? null }));
+export function YieldSeries({ d, crop }: { d: ArDept; crop: ArCrop }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const rows = (d.yields ?? []).map((y) => ({ year: y.year, campaign: y.campaign, v: y[crop] ?? null }));
   const vals = rows.map((r) => r.v?.bu_ac ?? null).filter((v): v is number => v !== null);
   if (!vals.length) return <Missing what={`MAGyP has no ${CROP_LABEL[crop].toLowerCase()} yields for this department`} />;
   const us = d.yield_compare?.[crop]?.us_analogs.median ?? null;
-  const max = Math.max(...vals, us ?? 0) * 1.08;
+  const typical = d.yield_compare?.[crop]?.ar_median.bu_ac ?? [...vals].sort((x, y) => x - y)[Math.floor(vals.length / 2)];
+  const step = Math.max(...vals, us ?? 0) > 120 ? 50 : 20;
+  const top = Math.ceil((Math.max(...vals, us ?? 0) * 1.12) / step) * step;
+  const ticks = Array.from({ length: Math.floor(top / step) + 1 }, (_, i) => i * step);
+  const y = (v: number) => `${(100 * v) / top}%`;
+  const best = rows.reduce((m, r, i) => (r.v && (m < 0 || r.v.bu_ac > rows[m].v!.bu_ac) ? i : m), -1);
+  const worst = rows.reduce((m, r, i) => (r.v && (m < 0 || r.v.bu_ac < rows[m].v!.bu_ac) ? i : m), -1);
+  const color = CROP_COLOR[crop];
+  const short = (c: string) => `${c.slice(2, 4)}/${c.slice(7, 9)}`;
+  const shown = hover ?? null;
+  const pctVs = (v: number) => Math.round((100 * (v - typical)) / typical);
+  const name = CROP_LABEL[crop].toLowerCase();
   return (
     <div className="ar-series">
-      <div className="ar-series__bars" role="img" aria-label={`${CROP_LABEL[crop]} yield by season, ${rows[0].campaign} to ${rows[rows.length - 1].campaign}.`}>
+      <p className="ar-series__lead">
+        Each bar is one season: the average {name} yield across {d.name}, in bushels per acre. Taller bar, better season.
+      </p>
+      <ul className="ar-series__legend">
+        <li>
+          <i style={{ background: color }} /> {d.name}, each season
+        </li>
+        <li>
+          <i className="ar-series__key-typ" /> Typical here: {Math.round(typical)}
+        </li>
         {us !== null ? (
-          <span className="ar-series__us" style={{ bottom: `${(100 * us) / max}%` }}>
-            <em>U.S. analogs {Math.round(us)}</em>
-          </span>
+          <li>
+            <i className="ar-series__key-us" /> Similar-weather U.S. counties: {Math.round(us)}
+          </li>
         ) : null}
-        {rows.map((r) => (
-          <span key={r.year} className="ar-series__col" title={`${r.campaign}: ${r.v ? `${Math.round(r.v.bu_ac)} bu/acre (${Math.round(r.v.kg_ha).toLocaleString("en-US")} kg/ha)` : "Missing data"}`}>
-            {r.v ? <i style={{ height: `${(100 * r.v.bu_ac) / max}%` }} /> : <i className="ar-series__none" />}
-          </span>
-        ))}
+      </ul>
+      <div className="ar-series__plot">
+        <div className="ar-series__yaxis" aria-hidden="true">
+          {ticks.map((t) => (
+            <span key={t} style={{ bottom: y(t) }}>
+              {t}
+            </span>
+          ))}
+        </div>
+        <div
+          className="ar-series__bars"
+          role="img"
+          aria-label={`${CROP_LABEL[crop]} yield by season in ${d.name}, ${rows[0].campaign} to ${rows[rows.length - 1].campaign}. Typical ${Math.round(typical)} bu/acre${us !== null ? `; similar-weather U.S. counties ${Math.round(us)}` : ""}. Best ${rows[best].campaign}, ${Math.round(rows[best].v!.bu_ac)}; worst ${rows[worst].campaign}, ${Math.round(rows[worst].v!.bu_ac)}.`}
+          onMouseLeave={() => setHover(null)}
+        >
+          {ticks.map((t) => (
+            <span key={t} className="ar-series__grid" style={{ bottom: y(t) }} aria-hidden="true" />
+          ))}
+          <span className="ar-series__typ" style={{ bottom: y(typical) }} aria-hidden="true" />
+          {us !== null ? <span className="ar-series__us" style={{ bottom: y(us) }} aria-hidden="true" /> : null}
+          {rows.map((r, i) => (
+            <span
+              key={r.year}
+              className={`ar-series__col${shown === i ? " is-on" : ""}${shown !== null && shown !== i ? " is-dim" : ""}`}
+              onMouseEnter={() => setHover(i)}
+              onFocus={() => setHover(i)}
+              tabIndex={0}
+              aria-label={`${r.campaign}: ${r.v ? `${Math.round(r.v.bu_ac)} bu/acre` : "missing data"}`}
+            >
+              {r.v ? <i style={{ height: y(r.v.bu_ac), background: color }} /> : <i className="ar-series__none" />}
+              {(i === best || i === worst) && shown === null && r.v ? (
+                <em className="ar-series__mark" style={{ bottom: y(r.v.bu_ac) }}>
+                  {i === best ? "Best" : "Worst"} {short(r.campaign)}
+                  <b>{Math.round(r.v.bu_ac)}</b>
+                </em>
+              ) : null}
+            </span>
+          ))}
+          {shown !== null ? (
+            <div
+              className="ar-series__tip"
+              style={{ left: `${(100 * (shown + 0.5)) / rows.length}%` }}
+              role="status"
+            >
+              <b>{rows[shown].campaign}</b>
+              {rows[shown].v ? (
+                <>
+                  <span>
+                    {Math.round(rows[shown].v!.bu_ac)} bu/acre · {Math.round(rows[shown].v!.kg_ha).toLocaleString("en-US")} kg/ha
+                  </span>
+                  <span>
+                    {pctVs(rows[shown].v!.bu_ac) === 0
+                      ? "Same as typical here"
+                      : `${Math.abs(pctVs(rows[shown].v!.bu_ac))}% ${pctVs(rows[shown].v!.bu_ac) > 0 ? "above" : "below"} typical here`}
+                  </span>
+                </>
+              ) : (
+                <span>Missing data</span>
+              )}
+            </div>
+          ) : null}
+        </div>
       </div>
       <div className="ar-series__axis" aria-hidden="true">
-        <span>{rows[0].campaign}</span>
-        <span>bu/acre · striped = no data</span>
-        <span>{rows[rows.length - 1].campaign}</span>
+        {rows.map((r, i) => (
+          <span key={r.year}>{i % 4 === 0 || i === rows.length - 1 ? short(r.campaign) : ""}</span>
+        ))}
       </div>
+      <p className="ar-series__foot">Season = planting year / harvest year. Hover a bar for its number. Striped = no data.</p>
     </div>
   );
 }
 
-function ClimateTable({ rows }: { rows: NonNullable<ArDept["climate"]> }) {
+export function ClimateTable({ rows }: { rows: NonNullable<ArDept["climate"]> }) {
   const last = rows.slice(-6).reverse();
   const n = (v: number | null, u: string) => (v === null ? "—" : `${Math.round(v)}${u}`);
   return (
@@ -234,7 +319,7 @@ const SOIL_ROWS: { k: string; label: string; unit: string }[] = [
   { k: "ph", label: "pH", unit: "" },
 ];
 
-function SoilTable({ d }: { d: ArDept }) {
+export function SoilTable({ d }: { d: ArDept }) {
   if (!d.soil) return <Missing what="SoilGrids soil for this department" />;
   const an = d.analogs[0];
   const v = (s: Record<string, number | null> | null, k: string, u: string) =>

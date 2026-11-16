@@ -11,7 +11,7 @@ export interface Dataset {
 }
 
 export const DATASETS: Dataset[] = [
-  { name: "Cropland Data Layer (CDL)", agency: "USDA", gives: "What was planted, field by field", where: "County history map, crop race, rotations", detail: "30 m · 2015–2025" },
+  { name: "Cropland Data Layer (CDL)", agency: "USDA", gives: "What was planted where, year by year", where: "County history map, crop race, rotations", detail: "30 m in 3 demo counties, 150 m in the rest (areas counted at 30 m) · 2015–2025" },
   { name: "NASS Quick Stats", agency: "USDA", gives: "County yield", where: "Yield model, county history", detail: "County · 2009–2023" },
   { name: "NASS prices and ERS costs", agency: "USDA", gives: "Crop prices and operating costs per acre", where: "Income in Next season", detail: "State price · Heartland costs · median 2021–2025" },
   { name: "SSURGO soil survey (NRCS)", agency: "USDA", gives: "Soil drainage, productivity and organic carbon", where: "Counties like yours", detail: "Soil map units, averaged per county" },

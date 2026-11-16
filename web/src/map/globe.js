@@ -33,6 +33,9 @@ const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream), NIGHT 
 const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
 const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
 const NEXT_AVAILABLE = NEXT_LIST; // condados con datos del modelo para la pantalla Next season
+// En pantallas táctiles se toca, no se hace clic
+const TAP = typeof matchMedia === 'function' && matchMedia('(hover:none) and (pointer:coarse)').matches ? 'Tap' : 'Click';
+const LABEL_FONT = '700 15px "DM Sans", system-ui, sans-serif', SUB_FONT = '500 13px "DM Sans", system-ui, sans-serif';
 // data/states.ts: un solo lugar para sumar estados. Las provincias argentinas suman su código (BA, CB, ER, LP, SF);
 // sus ids INDEC (06, 14, 30, 42, 82) no chocan con los FIPS de los 11 estados.
 const POSTAL = {...POSTAL_BY_FIPS, ...Object.fromEntries(AR.provinces.map((p) => [p.id, p.postal]))};
@@ -209,6 +212,8 @@ const kOfZoom = (z) => (R0 * 2 ** z) / base;
 const K_MIN = 0.5, K_MAX = 70;
 
 let V = null, level = 'globe', selState = null, selCounty = null, hover = null, take = null;
+// estado o provincia elegido (buscador, clic, ruta): contorno blanco que salta al llegar y su nombre
+let stateFocus = null, statePopAt = 0;
 let lastInput = performance.now(), spinV = 0, lastT = 0;
 const SPIN_SPEED = 3; // grados por segundo cuando nadie toca el mapa
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -295,6 +300,7 @@ const emit = (name, detail) => window.dispatchEvent(new CustomEvent(`fieldrewind
 function flyToState(id, move = true) {
   const s = stateById[id]; if (!s) return;
   selState = s; selCounty = null; level = 'state';
+  stateFocus = s; statePopAt = performance.now() + (move ? 1500 : 0); // el salto, cuando termina el vuelo
   updateUI();
   if (move) flyTo({lon: s.centroid[0], lat: s.centroid[1], k: fitK(s, 0.7)}, 1500);
   emit('state', {fips: id, name: s.properties.name});
@@ -305,7 +311,7 @@ function flyToState(id, move = true) {
  */
 function flyToCounty(id, {dur = 1500, at = null, instant = false, fromSearch = false} = {}) {
   const c = countyById[id]; if (!c) return;
-  selState = stateById[c.properties.state]; selCounty = c; level = 'county'; cardFromSearch = fromSearch;
+  selState = stateById[c.properties.state]; selCounty = c; level = 'county'; cardFromSearch = fromSearch; stateFocus = null;
   updateUI();
   // si la tarjeta de este condado ya está, se respeta su lado
   const side = cardCounty === c && cardPhase !== 'hidden' && cardPhase !== 'swapping' ? cardSide : pickSide(c, !!at);
@@ -319,7 +325,7 @@ function flyToCounty(id, {dur = 1500, at = null, instant = false, fromSearch = f
   if (instant) { V = null; Object.assign(R, to); } else flyTo(to, reduceMotion.matches ? 600 : dur);
   emit('county', {fips: id, name: c.properties.name, state: selState.properties.name, hasHistory: !!historyOf(c)});
 }
-function reset() { selState = null; selCounty = null; level = 'globe'; flyTo(HOME, 1400); updateUI(); }
+function reset() { selState = null; selCounty = null; level = 'globe'; stateFocus = null; flyTo(HOME, 1400); updateUI(); }
 /** Vuelve a la portada (logo + Start) */
 const goHome = () => { location.hash = '#/'; };
 function goBack() {
@@ -548,12 +554,28 @@ function buildLayers(a) {
         lineWidthUnits: 'pixels', getLineColor: WHITE, getLineWidth: 3.5}));
   }
 
+  // estado o provincia elegido: borde blanco grueso sobre uno oscuro, que salta (se engrosa y vuelve) al llegar
+  const focus = level === 'state' && stateFocus === selState ? selState : null;
+  if (focus) {
+    const s = (performance.now() - statePopAt) / 700;
+    const pop = reduceMotion.matches || s < 0 || s > 1 ? 0 : Math.sin(Math.PI * s) * 4;
+    const w = 4.5 + pop;
+    layers.push(
+      new GeoJsonLayer({id: 'state-focus-dark', parameters: SURFACE, data: one('focus', focus), filled: false, stroked: true, ...ROUND,
+        lineWidthUnits: 'pixels', getLineWidth: w + 3, getLineColor: [...NIGHT, 200], updateTriggers: {getLineWidth: w}}),
+      new GeoJsonLayer({id: 'state-focus', parameters: SURFACE, data: one('focus', focus), filled: false, stroked: true, ...ROUND,
+        lineWidthUnits: 'pixels', getLineWidth: w, getLineColor: WHITE, updateTriggers: {getLineWidth: w}}));
+  }
+
   // los rótulos se dibujan en el canvas de arriba (sombra suave), ver drawLabels()
   LABELS = [];
+  // el nombre del elegido va siempre, primero y completo (no pasa a la sigla)
+  if (focus && front(focus.centroid))
+    LABELS.push({p: focus.labelP, text: focus.properties.name.toUpperCase(), size: 20, alpha: 1, caps: true, state: focus, focus: true, prio: -2});
   // los nombres de estado le ceden el lugar a los de condado: nunca se ven los dos
   if (R.k > 1.7 && a < 0.3) {
     const al = Math.min(1, R.k - 1.7) * clamp01(1 - a / 0.3), size = Math.min(18, 9 + R.k * 1.4);
-    for (const s of STATES) if (front(s.centroid))
+    for (const s of STATES) if (s !== focus && front(s.centroid))
       LABELS.push({p: s.labelP, text: s.properties.name.toUpperCase(), size, alpha: al, caps: true, state: s});
   }
   // nombres de condado centrados en su centroide. Prioridad: seleccionado, demo, el resto.
@@ -564,8 +586,8 @@ function buildLayers(a) {
     if (selCounty) add(selCounty, 0);
     for (const id of Object.keys(DEMO)) if (countyById[id] !== selCounty) add(countyById[id], 2);
     for (const c of COUNTIES) if (c !== selCounty && !DEMO[c.id]) add(c, 3);
-    LABELS.sort((x, y) => (x.prio ?? -1) - (y.prio ?? -1));
   }
+  LABELS.sort((x, y) => (x.prio ?? -1) - (y.prio ?? -1));
   return layers;
 }
 
@@ -674,7 +696,7 @@ function drawLabels(c) {
     const w = textWidth(text, l.size);
     return w <= maxW ? l.size : l.size * (maxW / w);
   };
-  const stateLabels = LABELS.filter((l) => l.state);
+  const stateLabels = LABELS.filter((l) => l.state && !l.focus);
   const useFull = stateLabels.every((l) => fitState(l, l.text) >= MIN_STATE_PX);
   for (const l of stateLabels) {
     if (!useFull) l.text = POSTAL[l.state.id];
@@ -688,6 +710,7 @@ function drawLabels(c) {
       if (placed.some((s) => overlaps(r, s)) || cover.some((s) => overlaps(r, s))) continue;
       placed.push(r);
     }
+    if (l.focus) { c.globalAlpha = 1; shadowText(c, l.text, x, y, '#fff'); continue; }
     if (l.county) {
       const w = measure(c, l.text, l.size), h = l.size * 1.1, f = l.county, [cx, cy] = f.centroid;
       if (l.prio === 3) { // el resto: solo si entra en el condado, con 15 % de aire
@@ -741,23 +764,35 @@ function drawHud(u, r, a) {
   drawMissing(c, a);
   drawLabels(c);
   if (R.k <= 1.7 && !take && !isLanding() && angDist([-93.5, 40], [R.lon, R.lat]) < 1.45) { // rótulo con línea
-    const [x, y] = viewport.project([-93.4, 40.6]), x2 = x + base * 0.3, y2 = y - base * 0.3;
+    const [x, y] = viewport.project([-93.4, 40.6]);
     c.globalAlpha = Math.max(0, Math.min(1, 1.7 - R.k));
-    c.beginPath(); c.moveTo(x, y); c.lineTo(x2 - 8, y2 + 8); c.strokeStyle = COL.glow; c.lineWidth = 1.5; c.stroke();
-    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-    c.font = '700 15px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '1.2px'; shadowText(c, HIGHLIGHT_LABEL, x2, y2 - 6, COL.glow);
-    c.font = '500 13px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '0px'; shadowText(c, 'Click a state to explore', x2, y2 + 13, 'rgba(246,241,228,0.85)');
+    calloutLabel(c, x, y, -1, HIGHLIGHT_LABEL, `${TAP} a state to explore`);
     c.globalAlpha = 1;
   }
   if (R.k <= 1.7 && !take && !isLanding() && angDist([-61, -35], [R.lon, R.lat]) < 1.0) { // Argentina, el mismo rótulo
-    const [x, y] = viewport.project([-58.6, -34.8]), x2 = x + base * 0.3, y2 = y + base * 0.22;
+    const [x, y] = viewport.project([-58.6, -34.8]);
     c.globalAlpha = Math.max(0, Math.min(1, 1.7 - R.k));
-    c.beginPath(); c.moveTo(x, y); c.lineTo(x2 - 8, y2 - 8); c.strokeStyle = COL.glow; c.lineWidth = 1.5; c.stroke();
-    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-    c.font = '700 15px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '1.2px'; shadowText(c, `ARGENTINA · ${AR.provinces.length} PROVINCES`, x2, y2 + 6, COL.glow);
-    c.font = '500 13px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '0px'; shadowText(c, 'Click a province to explore', x2, y2 + 25, 'rgba(246,241,228,0.85)');
+    calloutLabel(c, x, y, 1, `ARGENTINA · ${AR.provinces.length} PROVINCES`, `${TAP} a province to explore`);
     c.globalAlpha = 1;
   }
+}
+
+// Rótulo con línea desde el punto (x, y): arriba (dy = −1) o abajo (dy = 1), a la derecha. Si no entra en la
+// pantalla (celular), va a la izquierda; si tampoco entra, se corre hasta el borde derecho para no cortarse.
+function calloutLabel(c, x, y, dy, title, sub) {
+  const off = base * 0.3, M = 12;
+  c.font = LABEL_FONT; c.letterSpacing = '1.2px'; const w1 = c.measureText(title).width;
+  c.font = SUB_FONT; c.letterSpacing = '0px'; const w = Math.max(w1, c.measureText(sub).width);
+  let side = 1, x2 = x + off;
+  if (x2 + w > W - M) {
+    if (x - off - w >= M) { side = -1; x2 = x - off; } else x2 = Math.max(M, W - M - w);
+  }
+  const y2 = dy < 0 ? y - off : y + base * 0.22;
+  c.beginPath(); c.moveTo(x, y); c.lineTo(x2 - 8 * side, y2 - 8 * dy); c.strokeStyle = COL.glow; c.lineWidth = 1.5; c.stroke();
+  c.textAlign = side > 0 ? 'left' : 'right'; c.textBaseline = 'alphabetic';
+  const t1 = dy < 0 ? y2 - 6 : y2 + 6;
+  c.font = LABEL_FONT; c.letterSpacing = '1.2px'; shadowText(c, title, x2, t1, COL.glow);
+  c.font = SUB_FONT; c.letterSpacing = '0px'; shadowText(c, sub, x2, t1 + 19, 'rgba(246,241,228,0.85)');
 }
 
 function frame(now) {
@@ -865,7 +900,7 @@ function birthCard(origin, instant = false) {
     : `${stateById[c.properties.state].properties.name} · FIPS ${c.id}`;
   $('c-status').textContent = ar ? `${AR_ZONE[c.stat.zone] || 'Weather match: Missing data'} · yields 2001–2025 (MAGyP)`
     : hist === 'full' ? `Full history · 2015–2025 · crop map${corn ? ', yield and weather' : ' (USDA CDL)'}`
-    : hist ? 'Yield and weather history · crop map: Missing data' : 'Missing data: history not loaded for this county yet';
+    : hist ? 'Yield and weather history · crop map: Missing data' : 'Missing data: Field Rewind has no history for this county';
   $('c-status').className = ar ? (c.stat.zone === 'fuera' ? 'part' : 'ok') : hist === 'full' ? 'ok' : hist ? 'part' : 'missing';
   $('c-corn-l').textContent = ar ? 'Corn yield, 2021–2025 average · MAGyP' : 'Corn yield, 2021–2025 average · USDA NASS';
   $('c-corn-v').textContent = corn ? `${c.stat.corn_bu_ac} bu/acre` : 'Missing data';

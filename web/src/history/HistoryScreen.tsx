@@ -45,7 +45,9 @@ export function HistoryScreen({
   const slot = useRef<HTMLDivElement>(null);
   const storyRef = useScrollFade();
   const [cdlView, setCdlView] = useState<CdlView>({ k: 1, x: 0, y: 0 });
-  const autoplay = useRef(query.get("play") === "1");
+  // Al entrar, los años pasan solos (desde el globo, Next season, My Farm o cualquier link). Solo queda quieta si el
+  // link pide un año puntual (?year=2012, "tap a year") o si pide ?play=0.
+  const autoplay = useRef(query.get("play") === "1" || (!query.has("year") && query.get("play") !== "0"));
   /** La línea de tiempo tiene que verse al cargar: se mide lo que hay arriba y abajo del escenario y él ocupa el resto */
   const page = useRef<HTMLElement>(null);
   const eyebrow = useRef<HTMLElement>(null);
@@ -87,7 +89,7 @@ export function HistoryScreen({
         if (cancelled) return;
         const all = c.years.map((y) => y.year);
         const asked = all.indexOf(Number(query.get("year")));
-        // Con ?play=1 arranca en el primer año; si no, en el último (o el de la URL).
+        // Si va a reproducirse arranca en el primer año; si no, en el de la URL (o el último).
         pb.reset(asked >= 0 ? asked : autoplay.current ? 0 : all.length - 1);
         setCounty(c);
       })
@@ -107,6 +109,46 @@ export function HistoryScreen({
   useEffect(() => {
     if (year !== null) replaceQuery("year", String(year));
   }, [year]);
+
+  // Celular y tablet (≤1100 px): el escenario tiene el mapa arriba y la columna del año abajo, y el alto de esa
+  // columna cambia con cada año (titular de 1 a 3 líneas, más o menos cultivos en las barras). Si el escenario se
+  // achica y se agranda, se mueven su borde y todo lo de abajo. Acá solo crece: queda con el alto del año más largo.
+  const stage = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = stage.current;
+    if (!el) return;
+    const narrow = window.matchMedia("(max-width: 1100px)");
+    let max = 0;
+    let width = window.innerWidth;
+    const grow = () => {
+      if (!narrow.matches) {
+        max = 0;
+        el.style.minHeight = "";
+        return;
+      }
+      const h = el.offsetHeight;
+      if (h > max + 0.5) {
+        max = h;
+        el.style.minHeight = `${h}px`;
+      }
+    };
+    // al girar el teléfono se vuelve a medir (la barra del navegador cambia solo el alto: eso no cuenta)
+    const onResize = () => {
+      if (window.innerWidth === width) return;
+      width = window.innerWidth;
+      max = 0;
+      el.style.minHeight = "";
+      grow();
+    };
+    const ro = new ResizeObserver(grow);
+    ro.observe(el);
+    window.addEventListener("resize", onResize);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", onResize);
+      el.style.minHeight = "";
+    };
+  }, [county]);
 
   // Play automático pedido por la URL: arranca cuando terminaron de cargar los mapas.
   useEffect(() => {
@@ -136,9 +178,9 @@ export function HistoryScreen({
   if (failed) {
     return (
       <main className="history history--empty">
-        <h1>No history for this county yet</h1>
+        <h1>No history for this county</h1>
         <Missing
-          what={`Field Rewind has no data file for county ${fips}. Yield and weather history is not loaded for this county yet; the crop map is loaded for Story (IA), McLean (IL) and Sumner (KS).`}
+          what={`Field Rewind has no data file for county ${fips}: there is no yield, weather or crop map history for it.`}
         />
         <p>
           <a className="btn btn--primary" href="#/county/19169">
@@ -265,6 +307,7 @@ export function HistoryScreen({
       </nav>
 
       <div
+        ref={stage}
         className={`history__stage${county.raster ? "" : " history__stage--nomap"}${onGlobe ? " history__stage--globe" : ""}`}
       >
         {onGlobe ? (

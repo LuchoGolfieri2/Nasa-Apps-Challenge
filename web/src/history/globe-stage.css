@@ -213,6 +213,12 @@
     padding: 0 12px;
     overflow: visible;
   }
+  /* El globo de fondo con un alto fijo (más que el escenario; lo que sobra lo recorta el escenario). Si siguiera el
+     alto del escenario, que cambia con cada año, la cámara se recalcularía y el fondo saltaría durante el play. */
+  .history__stage--globe .cglobe {
+    bottom: auto;
+    height: max(100%, 1700px);
+  }
   .cdl--globe .cdl__zoom {
     right: 16px;
   }
