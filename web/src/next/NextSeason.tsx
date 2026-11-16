@@ -447,16 +447,16 @@ const YieldRange: React.FC<{data: NextData; pred: Prediction}> = ({data, pred}) 
           <b className="ns-missing">Missing data:</b> no yield range for this county.
         </p>
       )}
-      <p className="ns-range-foot">
-        Real single years swing about twice as much as the range above.{' '}
-        <SourceChip source={rows[0]?.source || 'Field Rewind model · 2009–2023'} />
-      </p>
-      <p className="ns-range-link">
+      <div className="ns-range-foot">
+        <p>
+          Real single years swing about twice as much as the range above.{' '}
+          <SourceChip source={rows[0]?.source || 'Field Rewind model · 2009–2023'} />
+        </p>
         <a className="btn" href={`#/county/${data.fips}`}>
           See this county year by year
           <span aria-hidden="true"> →</span>
         </a>
-      </p>
+      </div>
     </section>
   );
 };
