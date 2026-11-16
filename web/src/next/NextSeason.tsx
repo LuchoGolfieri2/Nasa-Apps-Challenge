@@ -201,6 +201,27 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
 
   return (
     <div className="ns">
+      {/* LA RESPUESTA, ARRIBA: lo que paga más, cuántas veces ganó y las cifras. Va antes del globo para que se lea sin depender de él */}
+      <section className="ns-hero" aria-labelledby="ns-best-h">
+        <div className="ns-hero-top">
+          <div>
+            <p className="ns-kicker">
+              <Icon name="star" size={16} />
+              What pays best per acre
+            </p>
+            <h2 id="ns-best-h" className="ns-hero-h">
+              <span className="ns-shead-ico">
+                <CropDot crop={option.crop} size={28} />
+              </span>
+              {title}
+            </h2>
+          </div>
+          <Odds pred={pred} />
+        </div>
+        <Answer option={option} usual={usual} />
+        <Seasons data={data} pred={pred} onYear={goYear} />
+      </section>
+
       {/* ESCENARIO: el globo con los condados parecidos y, encima en vidrio, la predicción y de dónde sale */}
       {/* el hueco que deja el escenario mientras está a pantalla completa, para que la página no salte */}
       {full.active ? <div ref={full.holeRef} className="ns-stage-hole" style={{height: full.holeH}} aria-hidden="true" /> : null}
@@ -241,20 +262,6 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
 
         <aside className="ns-scol">
           <MixCard mix={data.mix} />
-          <section className="ns-glass ns-best" aria-labelledby="ns-best-h">
-            <p className="ns-kicker">
-              <Icon name="star" size={16} />
-              What pays best per acre
-            </p>
-            <h2 id="ns-best-h">
-              <span className="ns-shead-ico">
-                <CropDot crop={option.crop} size={24} />
-              </span>
-              {title}
-            </h2>
-            <Odds pred={pred} />
-            <Seasons data={data} pred={pred} onYear={goYear} />
-          </section>
         </aside>
 
         {full.active ? (
@@ -350,14 +357,6 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
       ) : null}
 
       <Sources data={data} pred={pred} option={option} twins={twins} />
-
-      <h2 className="ns-sec-h ns-best-h">
-        <span className="ns-shead-ico">
-          <CropDot crop={option.crop} size={24} />
-        </span>
-        {title}: what pays best, in numbers
-      </h2>
-      <Answer option={option} usual={usual} />
 
       <section id="ns-detail" className="ns-detail ns-paper ns-detail--single" aria-label="Why and what could go wrong">
         <div>
