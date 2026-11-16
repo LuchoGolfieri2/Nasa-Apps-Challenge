@@ -212,6 +212,8 @@ const kOfZoom = (z) => (R0 * 2 ** z) / base;
 const K_MIN = 0.5, K_MAX = 70;
 
 let V = null, level = 'globe', selState = null, selCounty = null, hover = null, take = null;
+// estado o provincia elegido (buscador, clic, ruta): contorno blanco que salta al llegar y su nombre
+let stateFocus = null, statePopAt = 0;
 let lastInput = performance.now(), spinV = 0, lastT = 0;
 const SPIN_SPEED = 3; // grados por segundo cuando nadie toca el mapa
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -298,6 +300,7 @@ const emit = (name, detail) => window.dispatchEvent(new CustomEvent(`fieldrewind
 function flyToState(id, move = true) {
   const s = stateById[id]; if (!s) return;
   selState = s; selCounty = null; level = 'state';
+  stateFocus = s; statePopAt = performance.now() + (move ? 1500 : 0); // el salto, cuando termina el vuelo
   updateUI();
   if (move) flyTo({lon: s.centroid[0], lat: s.centroid[1], k: fitK(s, 0.7)}, 1500);
   emit('state', {fips: id, name: s.properties.name});
@@ -308,7 +311,7 @@ function flyToState(id, move = true) {
  */
 function flyToCounty(id, {dur = 1500, at = null, instant = false, fromSearch = false} = {}) {
   const c = countyById[id]; if (!c) return;
-  selState = stateById[c.properties.state]; selCounty = c; level = 'county'; cardFromSearch = fromSearch;
+  selState = stateById[c.properties.state]; selCounty = c; level = 'county'; cardFromSearch = fromSearch; stateFocus = null;
   updateUI();
   // si la tarjeta de este condado ya está, se respeta su lado
   const side = cardCounty === c && cardPhase !== 'hidden' && cardPhase !== 'swapping' ? cardSide : pickSide(c, !!at);
@@ -322,7 +325,7 @@ function flyToCounty(id, {dur = 1500, at = null, instant = false, fromSearch = f
   if (instant) { V = null; Object.assign(R, to); } else flyTo(to, reduceMotion.matches ? 600 : dur);
   emit('county', {fips: id, name: c.properties.name, state: selState.properties.name, hasHistory: !!historyOf(c)});
 }
-function reset() { selState = null; selCounty = null; level = 'globe'; flyTo(HOME, 1400); updateUI(); }
+function reset() { selState = null; selCounty = null; level = 'globe'; stateFocus = null; flyTo(HOME, 1400); updateUI(); }
 /** Vuelve a la portada (logo + Start) */
 const goHome = () => { location.hash = '#/'; };
 function goBack() {
@@ -551,12 +554,28 @@ function buildLayers(a) {
         lineWidthUnits: 'pixels', getLineColor: WHITE, getLineWidth: 3.5}));
   }
 
+  // estado o provincia elegido: borde blanco grueso sobre uno oscuro, que salta (se engrosa y vuelve) al llegar
+  const focus = level === 'state' && stateFocus === selState ? selState : null;
+  if (focus) {
+    const s = (performance.now() - statePopAt) / 700;
+    const pop = reduceMotion.matches || s < 0 || s > 1 ? 0 : Math.sin(Math.PI * s) * 4;
+    const w = 4.5 + pop;
+    layers.push(
+      new GeoJsonLayer({id: 'state-focus-dark', parameters: SURFACE, data: one('focus', focus), filled: false, stroked: true, ...ROUND,
+        lineWidthUnits: 'pixels', getLineWidth: w + 3, getLineColor: [...NIGHT, 200], updateTriggers: {getLineWidth: w}}),
+      new GeoJsonLayer({id: 'state-focus', parameters: SURFACE, data: one('focus', focus), filled: false, stroked: true, ...ROUND,
+        lineWidthUnits: 'pixels', getLineWidth: w, getLineColor: WHITE, updateTriggers: {getLineWidth: w}}));
+  }
+
   // los rótulos se dibujan en el canvas de arriba (sombra suave), ver drawLabels()
   LABELS = [];
+  // el nombre del elegido va siempre, primero y completo (no pasa a la sigla)
+  if (focus && front(focus.centroid))
+    LABELS.push({p: focus.labelP, text: focus.properties.name.toUpperCase(), size: 20, alpha: 1, caps: true, state: focus, focus: true, prio: -2});
   // los nombres de estado le ceden el lugar a los de condado: nunca se ven los dos
   if (R.k > 1.7 && a < 0.3) {
     const al = Math.min(1, R.k - 1.7) * clamp01(1 - a / 0.3), size = Math.min(18, 9 + R.k * 1.4);
-    for (const s of STATES) if (front(s.centroid))
+    for (const s of STATES) if (s !== focus && front(s.centroid))
       LABELS.push({p: s.labelP, text: s.properties.name.toUpperCase(), size, alpha: al, caps: true, state: s});
   }
   // nombres de condado centrados en su centroide. Prioridad: seleccionado, demo, el resto.
@@ -567,8 +586,8 @@ function buildLayers(a) {
     if (selCounty) add(selCounty, 0);
     for (const id of Object.keys(DEMO)) if (countyById[id] !== selCounty) add(countyById[id], 2);
     for (const c of COUNTIES) if (c !== selCounty && !DEMO[c.id]) add(c, 3);
-    LABELS.sort((x, y) => (x.prio ?? -1) - (y.prio ?? -1));
   }
+  LABELS.sort((x, y) => (x.prio ?? -1) - (y.prio ?? -1));
   return layers;
 }
 
@@ -677,7 +696,7 @@ function drawLabels(c) {
     const w = textWidth(text, l.size);
     return w <= maxW ? l.size : l.size * (maxW / w);
   };
-  const stateLabels = LABELS.filter((l) => l.state);
+  const stateLabels = LABELS.filter((l) => l.state && !l.focus);
   const useFull = stateLabels.every((l) => fitState(l, l.text) >= MIN_STATE_PX);
   for (const l of stateLabels) {
     if (!useFull) l.text = POSTAL[l.state.id];
@@ -691,6 +710,7 @@ function drawLabels(c) {
       if (placed.some((s) => overlaps(r, s)) || cover.some((s) => overlaps(r, s))) continue;
       placed.push(r);
     }
+    if (l.focus) { c.globalAlpha = 1; shadowText(c, l.text, x, y, '#fff'); continue; }
     if (l.county) {
       const w = measure(c, l.text, l.size), h = l.size * 1.1, f = l.county, [cx, cy] = f.centroid;
       if (l.prio === 3) { // el resto: solo si entra en el condado, con 15 % de aire
