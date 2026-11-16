@@ -6,16 +6,16 @@
  * acre ese año, y la probabilidad es la parte de esos años en que ganó (scripts/build_next_json.py, `prediction`).
  * El cultivo y las prioridades del productor quedan en My Farm.
  *
- * La página se recorre con scroll:
- *   1. Escenario (como "See more" de la historia): el globo con los condados parecidos y, encima en vidrio,
+ * La página se recorre con scroll (orden desde el 16/11: primero la respuesta y por qué, al final el mapa):
+ *   1. Las cifras de lo que paga más: rinde típico, diferencia con lo habitual, ingreso y confianza
+ *   2. Por qué lo elige y qué puede salir mal
+ *   3. Los condados parecidos (el detalle de los que se ven en el mapa de abajo)
+ *   4. Escenario: el globo con los condados parecidos y, encima en vidrio,
  *      - la mezcla esperada de cultivos (`mix`): qué parte del terreno de maíz y soja va a cada cambio de cultivo,
  *        con su rango (capas 1 y 2: costumbre del condado en el CDL y desvíos de los condados parecidos)
  *      - lo que paga más por acre (`prediction`), con su probabilidad y los 15 climas pasados (cada uno lleva a la
  *        historia en ese año). No es lo que va a sembrar todo el condado.
- *   2. De dónde sale cada parte (mapas del CDL, clima, modelo, precios y costos, gemelos)
- *   3. Las cifras de lo que paga más: rinde típico, diferencia con lo habitual, ingreso y confianza
- *   4. Por qué y qué puede salir mal
- *   5. El detalle de los condados parecidos
+ *   5. De dónde sale cada parte (mapas del CDL, clima, modelo, precios y costos, gemelos)
  *   6. Lo que todavía no se sabe
  *
  * Uso:  <NextSeason data={json} onYearClick={(y) => navigate(`#/county/${fips}?year=${y}`)} />
@@ -201,6 +201,99 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
 
   return (
     <div className="ns">
+      {/* LA RESPUESTA EN CIFRAS, arriba de todo (mismo bloque de antes, solo cambió de lugar) */}
+      <h2 className="ns-sec-h ns-best-h">
+        <span className="ns-shead-ico">
+          <CropDot crop={option.crop} size={24} />
+        </span>
+        {title}: what pays best, in numbers
+      </h2>
+      <Answer option={option} usual={usual} />
+      <p className="ns-unit">
+        {plan.label} yield in bushels per acre, for the whole county: the model&apos;s average across this county&apos;s weather since 2009 (low 10%, typical, top 10%). Real single years swing about twice as much. Tap a year to see it in the county history.{' '}
+        <SourceChip source={option.source || 'Field Rewind model · 2009–2023'} />
+      </p>
+
+
+      <section id="ns-detail" className="ns-detail ns-paper ns-detail--single" aria-label="Why and what could go wrong">
+        <div>
+          <h2 className="ns-detail-h ns-detail-h--pro">
+            <Icon name="check" size={24} />
+            Why the model picks it
+          </h2>
+          <ul>
+            {pros.length ? pros.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">Nothing else stands out in favor of this option in the data.</li>}
+          </ul>
+        </div>
+        <div>
+          <h2 className="ns-detail-h ns-detail-h--con">
+            <Icon name="alert" size={24} />
+            What could go wrong
+          </h2>
+          <ul>
+            {cons.length ? cons.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">No risk specific to this option shows up in the data.</li>}
+          </ul>
+          {option.range_driver ? (
+            <p className="ns-driver">
+              {option.range_driver.text} <SourceChip source={option.range_driver.source_label ?? 'NASA POWER'} />
+            </p>
+          ) : null}
+        </div>
+      </section>
+      {/* GEMELOS de la opción predicha: los condados parecidos, justo arriba del mapa donde se ven */}
+      {twins.length ? (
+        <section className="ns-sec ns-twins ns-twins--list" aria-labelledby="ns-twins-title">
+          <h2 id="ns-twins-title" className="ns-sec-h">
+            <Icon name="pin" size={30} />
+            Similar counties
+          </h2>
+          <p className="ns-lead">
+            Counties with the same kind of soil and weather as {data.name} County that grew {optName}. Tap one to find it on the globe.
+            {option.twins_note ? (
+              <>
+                {' '}
+                <Confidence level={option.twins_note.confidence.level} />
+              </>
+            ) : null}
+          </p>
+          <ol className="ns-twin-grid">
+            {twins.map((t) => (
+              <li key={t.fips}>
+                <button type="button" className={`ns-twin ${twinSel === t.fips ? 'on' : ''}`} aria-pressed={twinSel === t.fips} onClick={() => pickTwin(t.fips, true)}>
+                  <span className="ns-twin-name">
+                    <b>{t.name}</b>, {t.state}
+                  </span>
+                  <span className="ns-twin-why">
+                    <span className="ns-twin-label">Why it&apos;s similar</span>
+                    <span className="ns-twin-reasons">
+                      {t.similar_on.length ? (
+                        t.similar_on.map((s) => (
+                          <span key={s} className="ns-why">
+                            <Icon name={similarIcon(s)} size={16} />
+                            {s.charAt(0).toUpperCase() + s.slice(1)}
+                          </span>
+                        ))
+                      ) : (
+                        <small className="ns-missing">Missing data: what makes it similar</small>
+                      )}
+                    </span>
+                  </span>
+                  <span className="ns-twin-why">
+                    <span className="ns-twin-label">What they plant</span>
+                    <CropSplit twin={t} />
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+          <p className="ns-side-src">
+            {[...new Set(twins.map((t) => t.source))].map((src) => (
+              <SourceChip key={src} source={src} />
+            ))}
+          </p>
+        </section>
+      ) : null}
+
       {/* ESCENARIO: el globo con los condados parecidos y, encima en vidrio, la predicción y de dónde sale */}
       {/* el hueco que deja el escenario mientras está a pantalla completa, para que la página no salte */}
       {full.active ? <div ref={full.holeRef} className="ns-stage-hole" style={{height: full.holeH}} aria-hidden="true" /> : null}
@@ -296,98 +389,6 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
       </section>
 
       <Sources data={data} pred={pred} option={option} twins={twins} />
-
-      <h2 className="ns-sec-h ns-best-h">
-        <span className="ns-shead-ico">
-          <CropDot crop={option.crop} size={24} />
-        </span>
-        {title}: what pays best, in numbers
-      </h2>
-      <Answer option={option} usual={usual} />
-
-      <section id="ns-detail" className="ns-detail ns-paper ns-detail--single" aria-label="Why and what could go wrong">
-        <div>
-          <h2 className="ns-detail-h ns-detail-h--pro">
-            <Icon name="check" size={24} />
-            Why the model picks it
-          </h2>
-          <ul>
-            {pros.length ? pros.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">Nothing else stands out in favor of this option in the data.</li>}
-          </ul>
-        </div>
-        <div>
-          <h2 className="ns-detail-h ns-detail-h--con">
-            <Icon name="alert" size={24} />
-            What could go wrong
-          </h2>
-          <ul>
-            {cons.length ? cons.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">No risk specific to this option shows up in the data.</li>}
-          </ul>
-          {option.range_driver ? (
-            <p className="ns-driver">
-              {option.range_driver.text} <SourceChip source={option.range_driver.source_label ?? 'NASA POWER'} />
-            </p>
-          ) : null}
-        </div>
-      </section>
-      <p className="ns-unit">
-        {plan.label} yield in bushels per acre, for the whole county: the model&apos;s average across this county&apos;s weather since 2009 (low 10%, typical, top 10%). Real single years swing about twice as much. Tap a year to see it in the county history.{' '}
-        <SourceChip source={option.source || 'Field Rewind model · 2009–2023'} />
-      </p>
-
-      {/* GEMELOS de la opción predicha: el detalle de los que se ven en el globo de arriba */}
-      {twins.length ? (
-        <section className="ns-sec ns-twins ns-twins--list" aria-labelledby="ns-twins-title">
-          <h2 id="ns-twins-title" className="ns-sec-h">
-            <Icon name="pin" size={30} />
-            Similar counties
-          </h2>
-          <p className="ns-lead">
-            Counties with the same kind of soil and weather as {data.name} County that grew {optName}. Tap one to find it on the globe.
-            {option.twins_note ? (
-              <>
-                {' '}
-                <Confidence level={option.twins_note.confidence.level} />
-              </>
-            ) : null}
-          </p>
-          <ol className="ns-twin-grid">
-            {twins.map((t) => (
-              <li key={t.fips}>
-                <button type="button" className={`ns-twin ${twinSel === t.fips ? 'on' : ''}`} aria-pressed={twinSel === t.fips} onClick={() => pickTwin(t.fips, true)}>
-                  <span className="ns-twin-name">
-                    <b>{t.name}</b>, {t.state}
-                  </span>
-                  <span className="ns-twin-why">
-                    <span className="ns-twin-label">Why it&apos;s similar</span>
-                    <span className="ns-twin-reasons">
-                      {t.similar_on.length ? (
-                        t.similar_on.map((s) => (
-                          <span key={s} className="ns-why">
-                            <Icon name={similarIcon(s)} size={16} />
-                            {s.charAt(0).toUpperCase() + s.slice(1)}
-                          </span>
-                        ))
-                      ) : (
-                        <small className="ns-missing">Missing data: what makes it similar</small>
-                      )}
-                    </span>
-                  </span>
-                  <span className="ns-twin-why">
-                    <span className="ns-twin-label">What they plant</span>
-                    <CropSplit twin={t} />
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ol>
-          <p className="ns-side-src">
-            {[...new Set(twins.map((t) => t.source))].map((src) => (
-              <SourceChip key={src} source={src} />
-            ))}
-          </p>
-        </section>
-      ) : null}
 
       {/* FALTANTES */}
       {data.missing.length ? (

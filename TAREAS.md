@@ -74,6 +74,7 @@ Ejemplo:
   - Por qué: la avena no es una clase del CDL (cae en `other`), pero en Próxima campaña ya es un cultivo propio con ícono y color (`web/src/ui/crops.ts`, `CropIcon`). Hoy las barras "What they plant" de los gemelos la muestran como "Other crops". Con la entrega final del 15/11 `gemelos.json` sigue emitiendo solo `corn`, `soy`, `wheat` y `other`.
   - No hay que reentrenar nada: el punto 5 es una búsqueda de vecinos y el cambio es solo de nombres al guardar. Verificar antes que el área sembrada de avena por condado esté en la entrega.
 - [x] ~~**F38** Verificar que se subieron los datos de todos los condados y lugares que se marcan en el globo (EE. UU. y Argentina)~~ · ✅ Lucho/Claude
+  - 15/11 (noche): datos finales en el front con `scripts/build_final_into_front.py`: verdor, agua en el suelo, economía y clima futuro en los 943 condados; mezcla de cultivos en los que no tienen mapa. Tarjetas "Money left per acre" y "Climate scenario" en Historia. Fuentes actualizada.
   - Hecho EE. UU. (15/11): `python3 scripts/check_coverage.py` cruza globo, historia, Próxima campaña y modelo. Resultado: 919 polígonos (los 10 estados completos), 890 fichas, 895 de Próxima campaña, 0 gemelos rotos y 0 valores en 0. Los 29 condados sin historia los marca el globo con "Missing data": 24 no están en la tabla del modelo (ciudades y zonas de bosque, como St. Louis city o Vilas) y 5 tienen datos de modelo solo antes de 2015. Dakota del Norte sigue sin polígonos ni modelo.
   - Hecho Argentina, datos (15/11): `python3 scripts/build_argentina.py` arma `web/public/data/argentina/` con la entrega final: 219 departamentos (15 `dentro`, 102 `cerca`, 102 `fuera`), polígonos, condados análogos, rindes del MAGyP contra EE. UU. y clima de Buenos Aires. Sin predicción del modelo. Contrato: `docs/argentina-front.md`.
   - Hecho Argentina, interfaz y control (15/11): pantalla `#/argentina` (F39) y `scripts/check_coverage.py` controla que los 219 departamentos tengan ficha y zona, y que ninguno tenga predicción.
@@ -87,7 +88,7 @@ Ejemplo:
 ## Pantalla 1 · Mapa
 
 - [x] ~~**F39** Argentina en la interfaz: pantalla `#/argentina` con el mapa de los 219 departamentos por zona, la ficha de cada uno (rinde del MAGyP contra sus análogos de EE. UU., clima de Buenos Aires, suelo) y enlaces a los condados análogos. Sin predicción, según `docs/argentina-front.md`~~ · ✅ Lucho/Claude
-  - Hecho (15/11): `web/src/argentina/`. Mapa plano (SVG, sin WebGL) de los 219 departamentos, pintado por zona o por rinde ÷ análogos de EE. UU. (maíz, soja, trigo); selector por provincia; ficha con zona y aviso, "No yield estimate", rinde contra el rango p10–p90 de los 3 análogos, serie del MAGyP 2001–2025, clima de Buenos Aires (octubre–marzo), suelo SoilGrids contra el primer análogo y enlaces a la historia de los análogos. Entradas: "Argentina" en la barra de arriba y en el globo. Revisado a 1920×1080 y 390×844: sin scroll horizontal y axe AA sin fallas.
+  - Hecho (15/11), rehecho a pedido de Lucho: **Argentina entra al globo igual que EE. UU.**, sin botón ni pantalla aparte. Las 5 provincias se encienden como los estados; al tocar una baja la cámara y aparecen sus departamentos pintados por rinde de maíz (MAGyP, escala propia) o por superficie sembrada; cada departamento abre su tarjeta y "See more" (`#/depto/<id>`). Datos del globo: `scripts/build_globe_argentina.py`. Detalle en `docs/argentina-front.md`.
 - [x] ~~**F11** Globo girando con atmósfera, los 3 estados encendidos con latido que se apaga al interactuar~~ · ✅ Naim
   - Archivos: `web/src/map/globe.js` (deck.gl + Blue Marble de GIBS)
   - Sin latido: el resaltado es fijo, porque un latido parece un dato en vivo y no lo es. Gira solo a 3°/s tras 3 s sin tocarlo.
@@ -145,6 +146,7 @@ Ejemplo:
 ## My Farm (nueva, 15/11)
 
 - [x] ~~**F29** My Farm: perfil del campo (condado, acres, cultivos de los últimos años, costo y precio propios, prioridades) guardado en el navegador; pantalla tipo dashboard con ilustraciones de cultivos, medidor y curva de rinde; Next season usa ese perfil~~ · ✅ Lucho
+- [ ] **F40** My Farm como CRM: tablero estadístico (ingreso con el consejo frente a seguir igual por año de clima, quién ya lo hace en el condado, condados gemelos que lo hicieron y cuánto subieron, rinde del condado, datos faltantes) y botón para exportar un PDF con cada número, su fuente y su método · 🔨 Naim (15/11 21:53)
 
 ## Video y entrega
 
