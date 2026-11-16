@@ -18,7 +18,7 @@
  *
  * Uso:  <NextSeason data={json} onYearClick={(y) => navigate(`#/county/${fips}?year=${y}`)} />
  */
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {CropIcon} from '../ui/CropIcon';
 import {CountUp} from '../ui/CountUp';
 import {Confidence, PrototypeStamp, SourceChip} from './bits';
@@ -34,107 +34,6 @@ const CropDot: React.FC<{crop: DisplayCrop; size?: number}> = ({crop, size = 20}
 
 /** El globo deja libre la columna de vidrio de la derecha y la fila de gemelos de abajo */
 const STAGE_FRAME: Frame = {left: 0.08, right: 0.44, top: 0.2, bottom: 0.2};
-/** En pantalla completa el globo usa casi todo el lugar (solo los botones de arriba y los gemelos de abajo) */
-const FULL_FRAME: Frame = {left: 0.08, right: 0.08, top: 0.16, bottom: 0.18};
-
-type StagePhase = 'in' | 'opening' | 'open' | 'closing';
-type Box = {top: number; left: number; width: number; height: number};
-const FULL_MS = 480;
-const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const boxOf = (el: Element): Box => {
-  const r = el.getBoundingClientRect();
-  return {top: r.top, left: r.left, width: r.width, height: r.height};
-};
-
-/**
- * Globo a pantalla completa con animación (FLIP): el escenario pasa a `position: fixed` en el mismo lugar donde
- * estaba, y en el cuadro siguiente viaja a ocupar toda la ventana. Al cerrar hace el camino inverso hasta el hueco
- * que dejó en la página. Escape cierra, la página no se desplaza mientras está abierto y el foco va y vuelve.
- */
-function useFullStage() {
-  const stageRef = useRef<HTMLElement>(null);
-  const holeRef = useRef<HTMLDivElement>(null);
-  const openerRef = useRef<HTMLButtonElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const [phase, setPhase] = useState<StagePhase>('in');
-  const [box, setBox] = useState<Box | null>(null);
-  const [holeH, setHoleH] = useState(0);
-  const [recenter, setRecenter] = useState(0);
-  const backFromFull = useRef(false);
-
-  const open = () => {
-    const el = stageRef.current;
-    if (!el || phase !== 'in') return;
-    const b = boxOf(el);
-    setHoleH(b.height);
-    setBox(b);
-    setPhase('opening');
-  };
-  const close = () => {
-    if (phase !== 'open' && phase !== 'opening') return;
-    const hole = holeRef.current;
-    if (hole) setBox(boxOf(hole));
-    setPhase('closing');
-  };
-
-  useEffect(() => {
-    if (phase === 'opening') {
-      // dos cuadros: primero se pinta fijo en su lugar; después viaja a pantalla completa
-      let r2 = 0;
-      const r1 = requestAnimationFrame(() => {
-        r2 = requestAnimationFrame(() => {
-          setBox(null);
-          setPhase('open');
-        });
-      });
-      return () => {
-        cancelAnimationFrame(r1);
-        cancelAnimationFrame(r2);
-      };
-    }
-    if (phase === 'open') {
-      closeRef.current?.focus({preventScroll: true});
-    }
-    // el foco vuelve al botón que abrió, ya visible otra vez
-    if (phase === 'in' && backFromFull.current) {
-      backFromFull.current = false;
-      openerRef.current?.focus({preventScroll: true});
-    }
-    if (phase === 'closing') {
-      const t = window.setTimeout(() => {
-        setBox(null);
-        setPhase('in');
-        backFromFull.current = true;
-      }, reduceMotion() ? 0 : FULL_MS);
-      return () => window.clearTimeout(t);
-    }
-    return undefined;
-  }, [phase]);
-
-  const active = phase !== 'in';
-  useEffect(() => {
-    if (!active) return;
-    const html = document.documentElement;
-    const prev = html.style.overflow;
-    html.style.overflow = 'hidden';
-    return () => {
-      html.style.overflow = prev;
-    };
-  }, [active]);
-
-  useEffect(() => {
-    if (phase !== 'open') return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
-
-  return {phase, active, box, holeH, recenter, stageRef, holeRef, openerRef, closeRef, open, close, recenterNow: () => setRecenter((n) => n + 1)};
-}
-
 
 const fmt = (v: number) => Math.round(v).toString();
 
@@ -155,7 +54,6 @@ function findOption(data: NextData, id: string): NextOption | undefined {
 
 export const NextSeason: React.FC<NextSeasonProps> = ({data}) => {
   const [twinSel, setTwinSel] = useState<string | null>(null);
-  const full = useFullStage();
   const pred = data.prediction ?? null;
   const option = pred ? findOption(data, pred.option_id) : undefined;
   const twinById = useMemo(() => Object.fromEntries(data.twins.map((t) => [t.fips, t])), [data.twins]);
@@ -194,17 +92,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data}) => {
   return (
     <div className="ns">
       {/* ESCENARIO: el globo con los condados parecidos y, encima en vidrio, la predicción y de dónde sale */}
-      {/* el hueco que deja el escenario mientras está a pantalla completa, para que la página no salte */}
-      {full.active ? <div ref={full.holeRef} className="ns-stage-hole" style={{height: full.holeH}} aria-hidden="true" /> : null}
-      <section
-        id="ns-stage"
-        ref={full.stageRef}
-        className={`ns-stage${full.active ? ' is-fixed' : ''}${full.phase === 'open' ? ' is-full' : ''}`}
-        style={full.box ?? undefined}
-        aria-label={full.phase === 'open' ? `${data.name} County and similar counties on the globe` : 'Next season prediction over the globe'}
-        role={full.active ? 'dialog' : undefined}
-        aria-modal={full.active ? true : undefined}
-      >
+      <section id="ns-stage" className="ns-stage" aria-label="Next season over the globe">
         {data.centroid ? (
           <TwinGlobe
             origin={{fips: data.fips, name: data.name, centroid: data.centroid}}
@@ -213,9 +101,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data}) => {
             animateKey={option.id}
             selected={twinSel}
             onSelect={setTwinSel}
-            frame={full.phase === 'opening' || full.phase === 'open' ? FULL_FRAME : STAGE_FRAME}
-            interactive={full.phase === 'open'}
-            recenterKey={full.recenter}
+            frame={STAGE_FRAME}
           />
         ) : (
           <p className="ns-glass ns-nogeo">
@@ -235,20 +121,6 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data}) => {
           <MixCard mix={data.mix} />
         </aside>
 
-        {full.active ? (
-          <div className="ns-full-bar">
-            <p className="ns-glass ns-full-hint">Drag to turn the globe · scroll or pinch to zoom</p>
-            <button type="button" className="ns-glass ns-full-btn" onClick={full.recenterNow}>
-              <Icon name="recenter" size={18} />
-              Recenter
-            </button>
-            <button type="button" ref={full.closeRef} className="ns-full-close solid-btn" onClick={full.close}>
-              <Icon name="close" size={18} />
-              Close
-            </button>
-          </div>
-        ) : null}
-
         <div className="ns-stage-foot">
           {twins.length ? (
             <ul className="ns-stage-twins" aria-label="Similar counties">
@@ -266,10 +138,6 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data}) => {
               <b>Missing data:</b> no similar county backs this option yet.
             </p>
           )}
-          <button type="button" ref={full.openerRef} className="ns-open solid-btn" onClick={full.open} aria-expanded={full.active}>
-            Open in the map
-            <Icon name="expand" size={18} />
-          </button>
         </div>
       </section>
 
