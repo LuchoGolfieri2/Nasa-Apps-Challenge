@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Deck, _GlobeView as GlobeView, _GlobeViewport as GlobeViewport, COORDINATE_SYSTEM } from "@deck.gl/core";
 import type { Layer } from "@deck.gl/core";
-import { BitmapLayer, GeoJsonLayer, PathLayer, ScatterplotLayer, SolidPolygonLayer } from "@deck.gl/layers";
+import { BitmapLayer, GeoJsonLayer, PathLayer, ScatterplotLayer } from "@deck.gl/layers";
 import { TileLayer } from "@deck.gl/geo-layers";
 import D from "../map/globe-data.json";
 import A from "../map/globe-argentina.json";
@@ -21,19 +21,15 @@ export type Analog = { fips: string; name: string; state: string; centroid: Pt }
 
 const TILE_URL =
   "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg";
-const OCEAN: RGB = [14, 46, 92];
 const NIGHT: RGB = [15, 42, 29];
 const GLOW: RGB = [142, 208, 129];
 const CREAM: RGB = [246, 241, 228];
 const GOLD: RGB = [233, 185, 73];
 /**
- * El mundo en celdas de 10°: un solo polígono gigante se dibuja como triángulos planos que cortan la esfera (con el
- * globo entero a la vista se ve una línea recta y media Tierra más oscura). En celdas chicas siguen la curvatura.
+ * Sin polígonos del mundo (océano, velo): con el globo entero a la vista, las capas sin prueba de profundidad pintan
+ * también la cara de atrás y aparece un corte recto en el meridiano central. El oscurecido va en la imagen (tinte).
  */
-const WORLD: number[][][] = [];
-for (let lon = -180; lon < 180; lon += 10)
-  for (let lat = -90; lat < 90; lat += 10)
-    WORLD.push([[lon, lat], [lon + 10, lat], [lon + 10, lat + 10], [lon, lat + 10]]);
+const TINT: RGB = [150, 172, 160];
 const SURFACE = { depthWriteEnabled: false, depthCompare: "always" as const };
 /** Los arcos cruzan medio continente: trazos 20 veces más largos que en Next season (sino son puntitos). */
 const SCALE = 20;
@@ -196,7 +192,6 @@ export function AnalogGlobe({
         parameters: SURFACE,
       });
     const layers: Layer[] = [
-      new SolidPolygonLayer({ id: "ocean", data: WORLD, getPolygon: (d: number[][]) => d as unknown as number[], getFillColor: OCEAN, parameters: SURFACE }),
       new TileLayer({
         id: "bluemarble",
         data: TILE_URL,
@@ -212,11 +207,12 @@ export function AnalogGlobe({
             image: props.data,
             bounds: [w, s, e, n],
             _imageCoordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
-            parameters: SURFACE,
+            tintColor: TINT,
+            // con prueba de profundidad: sin ella, los mosaicos de la cara de atrás (Asia) se pintan encima
+            parameters: { depthWriteEnabled: true, depthCompare: "less-equal" as const },
           });
         },
       }),
-      new SolidPolygonLayer({ id: "veil", data: WORLD, getPolygon: (d: number[][]) => d as unknown as number[], getFillColor: [...NIGHT, 110], parameters: SURFACE }),
       lines("us-counties", near, CREAM, 50, 0.6),
       lines("states", STATES, CREAM, 200, 1),
       lines("provinces", PROVINCES, CREAM, 200, 1),
