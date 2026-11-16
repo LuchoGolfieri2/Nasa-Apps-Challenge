@@ -8,6 +8,7 @@ import { CROP_COLOR } from "../ui/crops";
 import { type ArCrop, type ArDept, type YieldCompare, CROP_LABEL, loadArDept } from "./data";
 import { ClimateTable, CompareRow, SoilTable, YieldSeries } from "./DeptScreen";
 import { DeptGlobe } from "./DeptGlobe";
+import { AnalogGlobe } from "./AnalogGlobe";
 import "../history/history.css";
 import "../history/hero.css";
 import "../history/globe-stage.css";
@@ -28,6 +29,8 @@ const WITH_HISTORY = new Set(
     .map((c) => c.id),
 );
 
+const analogHref = (fips: string) => (WITH_HISTORY.has(fips) ? `#/county/${fips}` : `#/map/${fips}`);
+
 function median(xs: (number | null | undefined)[]): number | null {
   const v = xs.filter((x): x is number => typeof x === "number").sort((a, b) => a - b);
   if (!v.length) return null;
@@ -39,6 +42,7 @@ export function DeptGlass({ id }: { id: string }) {
   const [d, setD] = useState<ArDept | null>(null);
   const [failed, setFailed] = useState(false);
   const [crop, setCrop] = useState<ArCrop>("corn");
+  const [hotAnalog, setHotAnalog] = useState<string | null>(null);
   const slot = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let off = false;
@@ -180,22 +184,40 @@ export function DeptGlass({ id }: { id: string }) {
             <h3>Soil, 0–30 cm</h3>
             <SoilTable d={d} />
           </div>
-          <div className="card">
+          <div className="card ar-analog-card">
             <h3>U.S. counties with the most similar weather</h3>
-            <ol className="ar-analogs">
+            <p className="ar-analog-card__lead">
+              Season weather here looks most like these {d.analogs.length} counties in the U.S. Tap one to see what they grew.
+            </p>
+            <AnalogGlobe
+              id={id}
+              name={d.name}
+              centroid={d.centroid}
+              analogs={d.analogs}
+              hot={hotAnalog}
+              onHot={setHotAnalog}
+              hrefOf={analogHref}
+            />
+            <ul className="ar-analog-chips">
               {d.analogs.map((a) => (
                 <li key={a.fips}>
-                  <a href={WITH_HISTORY.has(a.fips) ? `#/county/${a.fips}` : `#/map/${a.fips}`}>
-                    <b>
-                      {a.name} County, {a.state}
-                    </b>
-                    <span>{WITH_HISTORY.has(a.fips) ? "Rewind its history →" : "See it on the map →"}</span>
+                  <a
+                    href={analogHref(a.fips)}
+                    className={hotAnalog === a.fips ? "is-hot" : undefined}
+                    onMouseEnter={() => setHotAnalog(a.fips)}
+                    onMouseLeave={() => setHotAnalog(null)}
+                    onFocus={() => setHotAnalog(a.fips)}
+                    onBlur={() => setHotAnalog(null)}
+                  >
+                    <b>{a.name}</b>
+                    <span>{a.state}</span>
+                    <em>{WITH_HISTORY.has(a.fips) ? "Rewind →" : "Map →"}</em>
                   </a>
                 </li>
               ))}
-            </ol>
+            </ul>
             {d.radiation_diff_mj_m2_day !== null ? (
-              <p className="history__small">
+              <p className="ar-analog-card__note">
                 This department gets about {Math.abs(d.radiation_diff_mj_m2_day)} MJ/m² per day{" "}
                 {d.radiation_diff_mj_m2_day > 0 ? "more" : "less"} sunlight in its season than its closest analog.
               </p>

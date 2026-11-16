@@ -82,10 +82,10 @@ const COUNTY_BOUNDS = new Map(
 /** Márgenes del encuadre, en fracción del contenedor: arriba hay más lugar para los rótulos. */
 const PAD: Frame = {left: 0.1, right: 0.1, top: 0.16, bottom: 0.1};
 
-const groundKm = (a: Pt, b: Pt) => Math.hypot((b[0] - a[0]) * Math.cos(((a[1] + b[1]) / 2) * rad), b[1] - a[1]) * 111.32;
+export const groundKm = (a: Pt, b: Pt) => Math.hypot((b[0] - a[0]) * Math.cos(((a[1] + b[1]) / 2) * rad), b[1] - a[1]) * 111.32;
 
 /** Arco levantado sobre la esfera: 48 puntos [lon, lat, altura en m]; la altura crece con la distancia. */
-function arcPath(a: Pt, b: Pt): number[][] {
+export function arcPath(a: Pt, b: Pt): number[][] {
   const top = Math.max(40, groundKm(a, b) * 0.22) * 1000;
   return Array.from({length: 48}, (_, i) => {
     const t = i / 47;
@@ -101,7 +101,7 @@ function pointAt(path: number[][], t: number): number[] {
   return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
 }
 /** Tramo del arco entre las fracciones a y b. */
-function slice(path: number[][], a: number, b: number): number[][] {
+export function slice(path: number[][], a: number, b: number): number[][] {
   const n = path.length - 1;
   const out = [pointAt(path, a)];
   for (let i = Math.ceil(a * n); i < b * n; i++) if (i / n > a) out.push(path[i]);
@@ -112,7 +112,7 @@ function slice(path: number[][], a: number, b: number): number[][] {
  * Arco en líneas cortadas que avanzan hacia tu condado: `shift` (km) corre los trazos; `reach` (0..1) es cuánto
  * del arco ya se dibujó (entra de a poco desde el gemelo).
  */
-function dashes(path: number[][], km: number, shift: number, reach: number): number[][][] {
+export function dashes(path: number[][], km: number, shift: number, reach: number): number[][][] {
   const period = (DASH_KM + GAP_KM) / km;
   const dash = DASH_KM / km;
   const out: number[][][] = [];

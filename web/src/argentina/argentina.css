@@ -1,9 +1,6 @@
 /* Ficha de un departamento de Argentina (#/depto/<id>). Fondo claro, como la historia y Próxima campaña. */
 .ar { max-width: 1440px; margin: 0 auto; padding: 24px clamp(16px, 3vw, 40px) 56px; color: var(--ink); }
 
-  background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-card);
-  padding: 18px 20px;
-}
 
 .ar-toggle { display: inline-flex; flex-wrap: wrap; background: var(--surface-2); border-radius: 999px; padding: 3px; gap: 2px; }
 .ar-toggle button {
@@ -16,15 +13,8 @@
 }
 .ar-toggle--small button { min-height: 30px; padding: 4px 10px; font-size: 12px; }
 
-  position: absolute; transform: translate(-50%, calc(-100% - 8px)); margin: 0; pointer-events: none; white-space: nowrap;
-  background: var(--solid-bg); border: 1px solid var(--solid-line); box-shadow: var(--solid-shadow);
-  border-radius: var(--radius-s); padding: 5px 9px; font-size: 12px; line-height: 1.4; color: var(--ink);
-}
 
 
-  font: 500 15px var(--font-body); color: var(--ink); background: var(--surface-1);
-  border: 1px solid var(--line-strong); border-radius: var(--radius-s); padding: 0 10px; min-height: 44px;
-}
 
 .ar-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 .ar-card section { display: grid; gap: 8px; }
