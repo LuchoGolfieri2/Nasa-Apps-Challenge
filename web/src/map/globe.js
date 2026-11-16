@@ -33,6 +33,9 @@ const LEAF = hex(COL.leaf), GLOW = hex(COL.glow), CREAM = hex(COL.cream), NIGHT 
 const WHITE = [255, 255, 255], OCEAN = [14, 46, 92];
 const TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg';
 const NEXT_AVAILABLE = NEXT_LIST; // condados con datos del modelo para la pantalla Next season
+// En pantallas táctiles se toca, no se hace clic
+const TAP = typeof matchMedia === 'function' && matchMedia('(hover:none) and (pointer:coarse)').matches ? 'Tap' : 'Click';
+const LABEL_FONT = '700 15px "DM Sans", system-ui, sans-serif', SUB_FONT = '500 13px "DM Sans", system-ui, sans-serif';
 // data/states.ts: un solo lugar para sumar estados. Las provincias argentinas suman su código (BA, CB, ER, LP, SF);
 // sus ids INDEC (06, 14, 30, 42, 82) no chocan con los FIPS de los 11 estados.
 const POSTAL = {...POSTAL_BY_FIPS, ...Object.fromEntries(AR.provinces.map((p) => [p.id, p.postal]))};
@@ -741,23 +744,35 @@ function drawHud(u, r, a) {
   drawMissing(c, a);
   drawLabels(c);
   if (R.k <= 1.7 && !take && !isLanding() && angDist([-93.5, 40], [R.lon, R.lat]) < 1.45) { // rótulo con línea
-    const [x, y] = viewport.project([-93.4, 40.6]), x2 = x + base * 0.3, y2 = y - base * 0.3;
+    const [x, y] = viewport.project([-93.4, 40.6]);
     c.globalAlpha = Math.max(0, Math.min(1, 1.7 - R.k));
-    c.beginPath(); c.moveTo(x, y); c.lineTo(x2 - 8, y2 + 8); c.strokeStyle = COL.glow; c.lineWidth = 1.5; c.stroke();
-    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-    c.font = '700 15px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '1.2px'; shadowText(c, HIGHLIGHT_LABEL, x2, y2 - 6, COL.glow);
-    c.font = '500 13px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '0px'; shadowText(c, 'Click a state to explore', x2, y2 + 13, 'rgba(246,241,228,0.85)');
+    calloutLabel(c, x, y, -1, HIGHLIGHT_LABEL, `${TAP} a state to explore`);
     c.globalAlpha = 1;
   }
   if (R.k <= 1.7 && !take && !isLanding() && angDist([-61, -35], [R.lon, R.lat]) < 1.0) { // Argentina, el mismo rótulo
-    const [x, y] = viewport.project([-58.6, -34.8]), x2 = x + base * 0.3, y2 = y + base * 0.22;
+    const [x, y] = viewport.project([-58.6, -34.8]);
     c.globalAlpha = Math.max(0, Math.min(1, 1.7 - R.k));
-    c.beginPath(); c.moveTo(x, y); c.lineTo(x2 - 8, y2 - 8); c.strokeStyle = COL.glow; c.lineWidth = 1.5; c.stroke();
-    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-    c.font = '700 15px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '1.2px'; shadowText(c, `ARGENTINA · ${AR.provinces.length} PROVINCES`, x2, y2 + 6, COL.glow);
-    c.font = '500 13px "DM Sans", system-ui, sans-serif'; c.letterSpacing = '0px'; shadowText(c, 'Click a province to explore', x2, y2 + 25, 'rgba(246,241,228,0.85)');
+    calloutLabel(c, x, y, 1, `ARGENTINA · ${AR.provinces.length} PROVINCES`, `${TAP} a province to explore`);
     c.globalAlpha = 1;
   }
+}
+
+// Rótulo con línea desde el punto (x, y): arriba (dy = −1) o abajo (dy = 1), a la derecha. Si no entra en la
+// pantalla (celular), va a la izquierda; si tampoco entra, se corre hasta el borde derecho para no cortarse.
+function calloutLabel(c, x, y, dy, title, sub) {
+  const off = base * 0.3, M = 12;
+  c.font = LABEL_FONT; c.letterSpacing = '1.2px'; const w1 = c.measureText(title).width;
+  c.font = SUB_FONT; c.letterSpacing = '0px'; const w = Math.max(w1, c.measureText(sub).width);
+  let side = 1, x2 = x + off;
+  if (x2 + w > W - M) {
+    if (x - off - w >= M) { side = -1; x2 = x - off; } else x2 = Math.max(M, W - M - w);
+  }
+  const y2 = dy < 0 ? y - off : y + base * 0.22;
+  c.beginPath(); c.moveTo(x, y); c.lineTo(x2 - 8 * side, y2 - 8 * dy); c.strokeStyle = COL.glow; c.lineWidth = 1.5; c.stroke();
+  c.textAlign = side > 0 ? 'left' : 'right'; c.textBaseline = 'alphabetic';
+  const t1 = dy < 0 ? y2 - 6 : y2 + 6;
+  c.font = LABEL_FONT; c.letterSpacing = '1.2px'; shadowText(c, title, x2, t1, COL.glow);
+  c.font = SUB_FONT; c.letterSpacing = '0px'; shadowText(c, sub, x2, t1 + 19, 'rgba(246,241,228,0.85)');
 }
 
 function frame(now) {
