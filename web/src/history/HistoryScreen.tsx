@@ -5,6 +5,7 @@ import type { County, CountyYear, RasterInfo } from "../data/types";
 import type { CropId } from "../ui/crops";
 import { CROPS, CROP_COLOR, CROP_LABEL, splitChartCrops } from "../ui/crops";
 import { CropIcon } from "../ui/CropIcon";
+import { wipeTo } from "../ui/wipe";
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 import { BarRace } from "./BarRace";
@@ -375,6 +376,7 @@ export function HistoryScreen({
         <a
           className="btn btn--primary history__next"
           href={`#/county/${county.fips}/next`}
+          onClick={(e) => wipeTo(e, "Next season")}
         >
           Options for next season →
         </a>
@@ -445,6 +447,7 @@ export function HistoryScreen({
         <a
           className="btn btn--primary history__next history__next--end"
           href={`#/county/${county.fips}/next`}
+          onClick={(e) => wipeTo(e, "Next season")}
         >
           Options for next season →
         </a>
