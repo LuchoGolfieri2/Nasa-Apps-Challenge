@@ -341,10 +341,6 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
             For your own field
           </p>
           <h2 id="ns-farm-h">Want a recommendation for your field?</h2>
-          <p className="ns-farm-sub">
-            This page is what the county as a whole can expect. My Farm takes your crop and what matters to you —
-            less risk, more income, soil, water — and compares the options for your land.
-          </p>
         </div>
         <a className="btn btn--primary ns-farm-cta" href="#/farm">
           Set up My Farm
@@ -400,7 +396,7 @@ const YieldRange: React.FC<{data: NextData; pred: Prediction; onYear: (y: number
       </h2>
       <p className="ns-lead">
         The model ran this county&apos;s soil and rotation through the weather of {pred.seasons} past seasons
-        ({first}–{last}). This is the yield it came out with, for the whole county.
+        ({first}–{last}).
       </p>
       {rows.length ? (
         <ul className="ns-range-rows">
@@ -435,8 +431,7 @@ const YieldRange: React.FC<{data: NextData; pred: Prediction; onYear: (y: number
         </p>
       )}
       <div className="ns-range-years">
-        <p className="ns-range-years-h">The {pred.seasons} seasons behind that range. Tap one to see it in the county history.</p>
-        <ol>
+        <ol aria-label={`The ${pred.seasons} seasons behind that range. Each one opens that year in the county history.`}>
           {pred.years.map((y) => (
             <li key={y}>
               <button type="button" className="ns-year" onClick={() => onYear(y)} title={`See ${y} in the county history`}>
