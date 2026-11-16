@@ -201,6 +201,15 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
 
   return (
     <div className="ns">
+      {/* LA RESPUESTA EN CIFRAS, arriba de todo (mismo bloque de antes, solo cambió de lugar) */}
+      <h2 className="ns-sec-h ns-best-h">
+        <span className="ns-shead-ico">
+          <CropDot crop={option.crop} size={24} />
+        </span>
+        {title}: what pays best, in numbers
+      </h2>
+      <Answer option={option} usual={usual} />
+
       {/* ESCENARIO: el globo con los condados parecidos y, encima en vidrio, la predicción y de dónde sale */}
       {/* el hueco que deja el escenario mientras está a pantalla completa, para que la página no salte */}
       {full.active ? <div ref={full.holeRef} className="ns-stage-hole" style={{height: full.holeH}} aria-hidden="true" /> : null}
@@ -350,14 +359,6 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
       ) : null}
 
       <Sources data={data} pred={pred} option={option} twins={twins} />
-
-      <h2 className="ns-sec-h ns-best-h">
-        <span className="ns-shead-ico">
-          <CropDot crop={option.crop} size={24} />
-        </span>
-        {title}: what pays best, in numbers
-      </h2>
-      <Answer option={option} usual={usual} />
 
       <section id="ns-detail" className="ns-detail ns-paper ns-detail--single" aria-label="Why and what could go wrong">
         <div>
