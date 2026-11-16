@@ -172,7 +172,7 @@ export function CompareRow({ crop, y, onDark = false }: { crop: ArCrop; y: Yield
 
 export function YieldSeries({ d, crop }: { d: ArDept; crop: ArCrop }) {
   const [hover, setHover] = useState<number | null>(null);
-  const rows = d.yields.map((y) => ({ year: y.year, campaign: y.campaign, v: y[crop] ?? null }));
+  const rows = (d.yields ?? []).map((y) => ({ year: y.year, campaign: y.campaign, v: y[crop] ?? null }));
   const vals = rows.map((r) => r.v?.bu_ac ?? null).filter((v): v is number => v !== null);
   if (!vals.length) return <Missing what={`MAGyP has no ${CROP_LABEL[crop].toLowerCase()} yields for this department`} />;
   const us = d.yield_compare?.[crop]?.us_analogs.median ?? null;

@@ -62,7 +62,7 @@ export function DeptGlass({ id }: { id: string }) {
     janHigh: median(clim.map((c) => c.january_max_temp_c)),
   };
   const climMissing = d.climate_note ?? "season weather (NASA POWER) is not loaded for this department";
-  const years = d.yields.length;
+  const years = d.yields?.length ?? 0;
 
   return (
     <main className="history ar-glass">
@@ -149,7 +149,7 @@ export function DeptGlass({ id }: { id: string }) {
 
       <section className="history__more" aria-labelledby="ar-more">
         <h2 id="ar-more">
-          {years} seasons in {d.name}
+          {years ? `${years} seasons in ${d.name}` : `More on ${d.name}`}
         </h2>
         <div className="history__cards">
           <div className="card">
