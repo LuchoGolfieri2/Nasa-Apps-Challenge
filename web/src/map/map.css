@@ -105,7 +105,7 @@ body:not([data-level="globe"]) .maplayer #start{opacity:0;pointer-events:none}
 .maplayer #cta{font-size:16px;padding:0 24px}
 .maplayer #start small{font-size:13px;color:var(--ink-2)}
 
-/* Portada: un velo sobre el globo que gira. Al tocar Start el velo se va y la cámara vuela a EE. UU. */
+/* Portada: un velo sobre el globo quieto. Al tocar Start el velo se va y la cámara vuela a EE. UU. */
 .maplayer #landing{inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;text-align:center;background:rgba(0,0,0,.6);
   opacity:0;visibility:hidden;pointer-events:none;transition:opacity .6s ease-out,visibility 0s linear .6s}
 body.landing .maplayer #landing{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .4s ease-out,visibility 0s}
