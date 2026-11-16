@@ -3,6 +3,8 @@ import D from "../map/globe-data.json";
 import { ICON, Num, Tile } from "../history/YearTiles";
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
+import { CropIcon } from "../ui/CropIcon";
+import { CROP_COLOR } from "../ui/crops";
 import { type ArCrop, type ArDept, type YieldCompare, CROP_LABEL, loadArDept } from "./data";
 import { ClimateTable, CompareRow, SoilTable, YieldSeries } from "./DeptScreen";
 import { DeptGlobe } from "./DeptGlobe";
@@ -95,7 +97,8 @@ export function DeptGlass({ id }: { id: string }) {
                   {ranked.map((c, i) => (
                     <span key={c}>
                       {i ? ", " : ""}
-                      {CROP_LABEL[c].toLowerCase()} {Math.round(compare[c]!.ratio_ar_us * 100)}%
+                      <b className="ar-glass__crop" style={{ color: CROP_COLOR[c] }}>{CROP_LABEL[c].toLowerCase()}</b>{" "}
+                      {Math.round(compare[c]!.ratio_ar_us * 100)}%
                     </span>
                   ))}
                   .
@@ -114,7 +117,7 @@ export function DeptGlass({ id }: { id: string }) {
             <h2 className="ar-glass__h">Yield vs its U.S. weather analogs</h2>
             {ranked.length ? (
               <ul className="ar-cmp">
-                {CROPS.map((c) => (compare[c] ? <CompareRow key={c} crop={c} y={compare[c] as YieldCompare} /> : null))}
+                {CROPS.map((c) => (compare[c] ? <CompareRow key={c} crop={c} y={compare[c] as YieldCompare} onDark /> : null))}
               </ul>
             ) : (
               <Missing what="MAGyP has no yields for this department" />
@@ -155,6 +158,7 @@ export function DeptGlass({ id }: { id: string }) {
               <div className="ar-toggle ar-toggle--small" role="group" aria-label="Crop">
                 {CROPS.map((c) => (
                   <button key={c} type="button" aria-pressed={crop === c} onClick={() => setCrop(c)}>
+                    <CropIcon crop={c} size={16} />
                     {CROP_LABEL[c]}
                   </button>
                 ))}

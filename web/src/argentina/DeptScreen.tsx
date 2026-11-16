@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import D from "../map/globe-data.json";
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
+import { CropIcon } from "../ui/CropIcon";
+import { CROP_COLOR } from "../ui/crops";
 import { type ArCrop, type ArDept, type YieldCompare, CROP_LABEL, loadArDept } from "./data";
 import "./argentina.css";
 
@@ -81,6 +83,7 @@ function DeptCard({ id }: { id: string }) {
           <div className="ar-toggle ar-toggle--small" role="group" aria-label="Crop">
             {CROPS.map((c) => (
               <button key={c} type="button" aria-pressed={crop === c} onClick={() => setCrop(c)}>
+                <CropIcon crop={c} size={16} />
                 {CROP_LABEL[c]}
               </button>
             ))}
@@ -138,13 +141,16 @@ function DeptCard({ id }: { id: string }) {
   );
 }
 
-export function CompareRow({ crop, y }: { crop: ArCrop; y: YieldCompare }) {
+export function CompareRow({ crop, y, onDark = false }: { crop: ArCrop; y: YieldCompare; onDark?: boolean }) {
   const max = Math.max(y.us_analogs.p90, y.ar_median.bu_ac) * 1.12;
   const pct = (v: number) => `${(100 * v) / max}%`;
   return (
     <li className="ar-cmp__row">
       <div className="ar-cmp__label">
-        <b>{CROP_LABEL[crop]}</b>
+        <b className="ar-crop">
+          <CropIcon crop={crop} size={18} onDark={onDark} />
+          {CROP_LABEL[crop]}
+        </b>
         <span>
           {Math.round(y.ar_median.bu_ac)} vs {Math.round(y.us_analogs.median)} bu/acre ·{" "}
           <b className={y.ratio_ar_us < 0.9 ? "ar-low" : y.ratio_ar_us > 1.1 ? "ar-high" : ""}>{Math.round(y.ratio_ar_us * 100)}%</b>
@@ -155,9 +161,9 @@ export function CompareRow({ crop, y }: { crop: ArCrop; y: YieldCompare }) {
         role="img"
         aria-label={`${CROP_LABEL[crop]}: Argentina median ${Math.round(y.ar_median.bu_ac)} bu/acre; U.S. analogs ${Math.round(y.us_analogs.p10)} to ${Math.round(y.us_analogs.p90)}, median ${Math.round(y.us_analogs.median)}.`}
       >
-        <span className="ar-cmp__band" style={{ left: pct(y.us_analogs.p10), width: `calc(${pct(y.us_analogs.p90)} - ${pct(y.us_analogs.p10)})` }} />
+        <span className="ar-cmp__band" style={{ background: `${CROP_COLOR[crop]}55`, left: pct(y.us_analogs.p10), width: `calc(${pct(y.us_analogs.p90)} - ${pct(y.us_analogs.p10)})` }} />
         <span className="ar-cmp__us" style={{ left: pct(y.us_analogs.median) }} />
-        <span className="ar-cmp__ar" style={{ left: pct(y.ar_median.bu_ac) }} />
+        <span className="ar-cmp__ar" style={{ background: CROP_COLOR[crop], left: pct(y.ar_median.bu_ac) }} />
       </div>
       <p className="ar-small ar-muted">{y.text}</p>
     </li>
@@ -180,7 +186,7 @@ export function YieldSeries({ d, crop }: { d: ArDept; crop: ArCrop }) {
         ) : null}
         {rows.map((r) => (
           <span key={r.year} className="ar-series__col" title={`${r.campaign}: ${r.v ? `${Math.round(r.v.bu_ac)} bu/acre (${Math.round(r.v.kg_ha).toLocaleString("en-US")} kg/ha)` : "Missing data"}`}>
-            {r.v ? <i style={{ height: `${(100 * r.v.bu_ac) / max}%` }} /> : <i className="ar-series__none" />}
+            {r.v ? <i style={{ height: `${(100 * r.v.bu_ac) / max}%`, background: CROP_COLOR[crop] }} /> : <i className="ar-series__none" />}
           </span>
         ))}
       </div>

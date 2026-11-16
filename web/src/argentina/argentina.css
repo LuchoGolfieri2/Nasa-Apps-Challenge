@@ -100,3 +100,7 @@
 }
 .ar .ar-cols { margin-top: 8px; }
 .ar ol.ar-analogs { list-style: none; padding-left: 0; }
+
+/* Cultivos con su color e ícono de la app (CROP_COLOR, CropIcon) */
+.ar-crop { display: inline-flex; align-items: center; gap: 6px; }
+.ar-toggle button { display: inline-flex; align-items: center; gap: 5px; }

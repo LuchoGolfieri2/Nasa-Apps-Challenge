@@ -39,3 +39,6 @@
 
 /* Abajo, las tarjetas claras: tablas a todo el ancho */
 .ar-glass .history__more .ar-table { width: 100%; }
+
+/* El nombre del cultivo en el titular, con su color, sobre el vidrio */
+.ar-glass__crop { font-weight: 700; filter: brightness(1.35) saturate(1.1); }

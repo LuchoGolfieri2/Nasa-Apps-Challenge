@@ -20,7 +20,8 @@ const BLUE_MARBLE =
 const OCEAN: RGB = [14, 46, 92];
 const NIGHT: RGB = [15, 42, 29];
 const CREAM: RGB = [246, 241, 228];
-const SPROUT: RGB = [143, 209, 138];
+/** Departamento elegido: el verde brote de la app, casi opaco, así se lee como "seleccionado" y no se ve el pixelado del fondo. */
+const SPROUT: RGB = [142, 208, 129];
 const WORLD = [[[-180, 90], [0, 90], [180, 90], [180, -90], [0, -90], [-180, -90]]];
 const SURFACE = { depthWriteEnabled: false, depthCompare: "always" as const };
 const INTRO_MS = 1000;
@@ -175,7 +176,7 @@ export function DeptGlobe({ id, slot }: { id: string; slot: React.RefObject<HTML
         id: "veil",
         data: WORLD,
         getPolygon: (d: number[][]) => d as unknown as number[],
-        getFillColor: [...NIGHT, 70],
+        getFillColor: [...NIGHT, 150],
         parameters: SURFACE,
       }),
       lines("depts", others, CREAM, 80, 0.8),
@@ -186,7 +187,7 @@ export function DeptGlobe({ id, slot }: { id: string; slot: React.RefObject<HTML
         data: [dept.f] as unknown as GeoFeatures,
         filled: true,
         stroked: true,
-        getFillColor: [...SPROUT, 70],
+        getFillColor: [...SPROUT, 175],
         lineWidthUnits: "pixels",
         getLineWidth: 3,
         getLineColor: [255, 255, 255, 255],
