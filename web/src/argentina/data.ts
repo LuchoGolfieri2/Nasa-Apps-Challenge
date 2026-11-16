@@ -51,6 +51,7 @@ export interface ArDept {
   id_depto: string;
   name: string;
   province: string;
+  centroid: [number, number];
   zone: Zone;
   zone_label: string;
   zone_text: string;
