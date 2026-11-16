@@ -295,47 +295,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
         </div>
       </section>
 
-      <Sources data={data} pred={pred} option={option} twins={twins} />
-
-      <h2 className="ns-sec-h ns-best-h">
-        <span className="ns-shead-ico">
-          <CropDot crop={option.crop} size={24} />
-        </span>
-        {title}: what pays best, in numbers
-      </h2>
-      <Answer option={option} usual={usual} />
-
-      <section id="ns-detail" className="ns-detail ns-paper ns-detail--single" aria-label="Why and what could go wrong">
-        <div>
-          <h2 className="ns-detail-h ns-detail-h--pro">
-            <Icon name="check" size={24} />
-            Why the model picks it
-          </h2>
-          <ul>
-            {pros.length ? pros.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">Nothing else stands out in favor of this option in the data.</li>}
-          </ul>
-        </div>
-        <div>
-          <h2 className="ns-detail-h ns-detail-h--con">
-            <Icon name="alert" size={24} />
-            What could go wrong
-          </h2>
-          <ul>
-            {cons.length ? cons.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">No risk specific to this option shows up in the data.</li>}
-          </ul>
-          {option.range_driver ? (
-            <p className="ns-driver">
-              {option.range_driver.text} <SourceChip source={option.range_driver.source_label ?? 'NASA POWER'} />
-            </p>
-          ) : null}
-        </div>
-      </section>
-      <p className="ns-unit">
-        {plan.label} yield in bushels per acre, for the whole county: the model&apos;s average across this county&apos;s weather since 2009 (low 10%, typical, top 10%). Real single years swing about twice as much. Tap a year to see it in the county history.{' '}
-        <SourceChip source={option.source || 'Field Rewind model · 2009–2023'} />
-      </p>
-
-      {/* GEMELOS de la opción predicha: el detalle de los que se ven en el globo de arriba */}
+      {/* GEMELOS de la opción predicha: el detalle de los que se ven en el globo, justo debajo de él */}
       {twins.length ? (
         <section className="ns-sec ns-twins ns-twins--list" aria-labelledby="ns-twins-title">
           <h2 id="ns-twins-title" className="ns-sec-h">
@@ -388,6 +348,46 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
           </p>
         </section>
       ) : null}
+
+      <Sources data={data} pred={pred} option={option} twins={twins} />
+
+      <h2 className="ns-sec-h ns-best-h">
+        <span className="ns-shead-ico">
+          <CropDot crop={option.crop} size={24} />
+        </span>
+        {title}: what pays best, in numbers
+      </h2>
+      <Answer option={option} usual={usual} />
+
+      <section id="ns-detail" className="ns-detail ns-paper ns-detail--single" aria-label="Why and what could go wrong">
+        <div>
+          <h2 className="ns-detail-h ns-detail-h--pro">
+            <Icon name="check" size={24} />
+            Why the model picks it
+          </h2>
+          <ul>
+            {pros.length ? pros.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">Nothing else stands out in favor of this option in the data.</li>}
+          </ul>
+        </div>
+        <div>
+          <h2 className="ns-detail-h ns-detail-h--con">
+            <Icon name="alert" size={24} />
+            What could go wrong
+          </h2>
+          <ul>
+            {cons.length ? cons.map((r, i) => <ReasonItem key={i} reason={r} onYear={goYear} />) : <li className="ns-reason ns-reason--none">No risk specific to this option shows up in the data.</li>}
+          </ul>
+          {option.range_driver ? (
+            <p className="ns-driver">
+              {option.range_driver.text} <SourceChip source={option.range_driver.source_label ?? 'NASA POWER'} />
+            </p>
+          ) : null}
+        </div>
+      </section>
+      <p className="ns-unit">
+        {plan.label} yield in bushels per acre, for the whole county: the model&apos;s average across this county&apos;s weather since 2009 (low 10%, typical, top 10%). Real single years swing about twice as much. Tap a year to see it in the county history.{' '}
+        <SourceChip source={option.source || 'Field Rewind model · 2009–2023'} />
+      </p>
 
       {/* FALTANTES */}
       {data.missing.length ? (
