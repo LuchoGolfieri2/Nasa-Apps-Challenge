@@ -378,7 +378,7 @@ export function HistoryScreen({
           href={`#/county/${county.fips}/next`}
           onClick={(e) => wipeTo(e, "Next season")}
         >
-          Options for next season →
+          Next season: what to expect →
         </a>
       </div>
 
@@ -449,7 +449,7 @@ export function HistoryScreen({
           href={`#/county/${county.fips}/next`}
           onClick={(e) => wipeTo(e, "Next season")}
         >
-          Options for next season →
+          Next season: what to expect →
         </a>
       </section>
     </main>
