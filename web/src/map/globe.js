@@ -61,8 +61,41 @@ const densifyRing = (ring) => ring.flatMap((p, i) => {
 });
 const densify = (g) => ({...g, coordinates: g.type === 'Polygon' ? g.coordinates.map(densifyRing)
   : g.coordinates.map((poly) => poly.map(densifyRing))});
-const STATES = [...D.states, ...AR.provinces].map((o) => toFeature({...o, geometry: densify(o.geometry)}));
+// El contorno de cada estado sale de unir sus condados y trae restos: huecos de pocos metros entre condados y
+// polígonos sueltos sin área. Con el brillo de 9 px se veían como rayitas sobre el estado. Se dejan solo los
+// anillos exteriores de más de MIN_PART grados² (~100 km²): se van las astillas y los islotes, quedan los estados.
+const MIN_PART = 0.01;
+const ringArea = (r) => { let s = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) s += (r[j][0] - r[i][0]) * (r[j][1] + r[i][1]); return Math.abs(s / 2); };
+const cleanState = (g) => ({type: 'MultiPolygon',
+  coordinates: (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).map((p) => [p[0]]).filter((p) => ringArea(p[0]) >= MIN_PART)});
+// nombre en inglés desde data/states.ts (el JSON puede traerlo en castellano, p. ej. "Dakota del Norte")
+const nameOf = (o) => (STATE_LIST.find((s) => s.fips === o.id) || o).name;
+// provincias argentinas = estados (globe-argentina.json): mismo limpiado y mismo halo
+const STATE_SRC = [...D.states, ...AR.provinces];
+const STATES = STATE_SRC.map((o) => toFeature({...o, name: nameOf(o), geometry: densify(cleanState(o.geometry))}));
 const COUNTIES = [...D.counties, ...AR.departments].map(toFeature);
+// El halo de 9 px es semitransparente: en los bordes de río (Red River, Mississippi) los zigzags se pisan y se
+// suman en una mancha brillante. El halo usa un contorno simplificado (Douglas-Peucker, GLOW_TOL°); el borde fino
+// de 1,5 px sigue con el contorno real.
+const GLOW_TOL = 0.05;
+function simplifyRing(r) {
+  const keep = new Uint8Array(r.length); keep[0] = keep[r.length - 1] = 1;
+  const stack = [[0, r.length - 1]];
+  while (stack.length) {
+    const [i, j] = stack.pop(), [ax, ay] = r[i], [bx, by] = r[j], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-12;
+    let best = -1, far = 0;
+    for (let k = i + 1; k < j; k++) {
+      const d = L > 1e-12 ? Math.abs(dx * (r[k][1] - ay) - dy * (r[k][0] - ax)) / L : Math.hypot(r[k][0] - ax, r[k][1] - ay);
+      if (d > far) { far = d; best = k; }
+    }
+    if (far > GLOW_TOL) { keep[best] = 1; stack.push([i, best], [best, j]); }
+  }
+  return r.filter((_, k) => keep[k]);
+}
+const STATES_GLOW = STATE_SRC.map((o) => {
+  const g = cleanState(o.geometry);
+  return {type: 'Feature', id: o.id, properties: {}, geometry: densify({...g, coordinates: g.coordinates.map((p) => p.map(simplifyRing))})};
+});
 const stateById = Object.fromEntries(STATES.map((f) => [f.id, f]));
 const countyById = Object.fromEntries(COUNTIES.map((f) => [f.id, f]));
 // Rampa del rinde de maíz: viridis (apta para daltonismo), de 150 a 230+ bu/acre
@@ -137,6 +170,20 @@ function room(rings, [cx, cy], axis) {
 for (const c of COUNTIES) {
   const g = c.geometry, rings = g.type === 'Polygon' ? g.coordinates : g.coordinates.flat();
   c.roomX = room(rings, c.centroid, 0); c.roomY = room(rings, c.centroid, 1);
+}
+// estados: el rótulo va en el medio del tramo este-oeste que cruza el centroide (el centroide de Minnesota queda
+// pegado a Wisconsin) y puede ocupar ese tramo entero: labelP = punto del rótulo, roomX = medio ancho del tramo.
+for (const s of STATES) {
+  const [cx, cy] = s.centroid, hits = [];
+  for (const ring of s.geometry.coordinates.flat()) for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[j], b = ring[i];
+    if ((a[1] > cy) !== (b[1] > cy)) hits.push(a[0] + ((cy - a[1]) / (b[1] - a[1])) * (b[0] - a[0]));
+  }
+  hits.sort((x, y) => x - y);
+  let span = null;
+  for (let i = 0; i + 1 < hits.length; i += 2) if (cx >= hits[i] && cx <= hits[i + 1]) span = [hits[i], hits[i + 1]];
+  if (!span) span = [s.bounds[0][0], s.bounds[1][0]];
+  s.labelP = [(span[0] + span[1]) / 2, cy]; s.roomX = (span[1] - span[0]) / 2;
 }
 const DEMO = D.demo, START = D.start, HOME = D.home;
 const COUNTY_K = 3.2;
@@ -433,6 +480,9 @@ const one = (key, obj) => { if (!obj) return []; const m = memo.get(key); if (m 
 // no escriben profundidad (SURFACE): entre ellas manda el orden en que se dibujan.
 const GROUND_SINK_M = 25000;
 const SURFACE = {depthWriteEnabled: false};
+// Esquinas redondeadas en todos los bordes: con la esquina en punta (miter, la de deck.gl por defecto) cada giro
+// cerrado de un borde de río (Red River entre ND y MN) saca un pico de hasta 4 veces el grosor de la línea.
+const ROUND = {lineJointRounded: true, lineCapRounded: true};
 let groundBias = 0, depthUnit = 0;
 const groundOffset = () => [0, groundBias];
 function updateGroundBias() {
@@ -460,10 +510,10 @@ function buildLayers(a) {
           _imageCoordinateSystem: COORDINATE_SYSTEM.CARTESIAN, parameters: SURFACE});
       }}),
     // brillo fijo debajo de los estados con datos (no late: no es un dato en vivo)
-    new GeoJsonLayer({id: 'states-glow', parameters: SURFACE, data: STATES, filled: false, stroked: true, lineWidthUnits: 'pixels',
+    new GeoJsonLayer({id: 'states-glow', parameters: SURFACE, data: STATES_GLOW, filled: false, stroked: true, ...ROUND, lineWidthUnits: 'pixels',
       getLineWidth: 9, getLineColor: [...GLOW, Math.round(65 * stateFade)],
       updateTriggers: {getLineColor: [stateFade]}}),
-    new GeoJsonLayer({id: 'states', parameters: SURFACE, data: STATES, filled: true, stroked: true, pickable: R.k <= COUNTY_K + 0.6,
+    new GeoJsonLayer({id: 'states', parameters: SURFACE, data: STATES, filled: true, stroked: true, ...ROUND, pickable: R.k <= COUNTY_K + 0.6,
       lineWidthUnits: 'pixels',
       getFillColor: (f) => {
         const dim = selState && selState !== f ? 0.45 : 1;
@@ -482,19 +532,19 @@ function buildLayers(a) {
     const countyPx = base * R.k * rad * 0.45, edge = Math.max(1.5, Math.min(3, countyPx / 12));
     const fillEdge = a > 0.5 ? edge : Math.min(edge, Math.max(0.3, countyPx / 10));
     layers.push(
-      new GeoJsonLayer({id: 'counties', parameters: SURFACE, data: COUNTIES, opacity: fillA, filled: true, stroked: true,
+      new GeoJsonLayer({id: 'counties', parameters: SURFACE, data: COUNTIES, opacity: fillA, filled: true, stroked: true, ...ROUND,
         pickable: R.k > COUNTY_K + 0.6, lineWidthUnits: 'pixels', getLineWidth: fillEdge, getLineColor: NIGHT,
         updateTriggers: {getLineWidth: fillEdge, getFillColor: mode}, getFillColor: (f) => [...f.rgb, 255]}),
       // borde doble: Papel fino sobre Verde noche, así siempre contrasta uno de los dos con la rampa
-      new GeoJsonLayer({id: 'county-lines', parameters: SURFACE, data: COUNTIES, opacity: a, filled: false, stroked: true,
+      new GeoJsonLayer({id: 'county-lines', parameters: SURFACE, data: COUNTIES, opacity: a, filled: false, stroked: true, ...ROUND,
         lineWidthUnits: 'pixels', getLineWidth: edge / 3, getLineColor: CREAM, updateTriggers: {getLineWidth: edge}}),
-      new GeoJsonLayer({id: 'state-edge-dark', parameters: SURFACE, data: STATES, opacity: a, filled: false, stroked: true,
+      new GeoJsonLayer({id: 'state-edge-dark', parameters: SURFACE, data: STATES, opacity: a, filled: false, stroked: true, ...ROUND,
         lineWidthUnits: 'pixels', getLineWidth: 5, getLineColor: NIGHT}),
-      new GeoJsonLayer({id: 'state-edge', parameters: SURFACE, data: STATES, opacity: a, filled: false, stroked: true,
+      new GeoJsonLayer({id: 'state-edge', parameters: SURFACE, data: STATES, opacity: a, filled: false, stroked: true, ...ROUND,
         lineWidthUnits: 'pixels', getLineWidth: 3, getLineColor: CREAM}),
-      new GeoJsonLayer({id: 'county-hover', parameters: SURFACE, data: one('hover', hoverCounty), filled: true, stroked: true,
+      new GeoJsonLayer({id: 'county-hover', parameters: SURFACE, data: one('hover', hoverCounty), filled: true, stroked: true, ...ROUND,
         lineWidthUnits: 'pixels', getFillColor: [255, 255, 255, 64], getLineColor: CREAM, getLineWidth: 1.5}),
-      new GeoJsonLayer({id: 'county-selected', parameters: SURFACE, data: one('sel', selCounty), filled: false, stroked: true,
+      new GeoJsonLayer({id: 'county-selected', parameters: SURFACE, data: one('sel', selCounty), filled: false, stroked: true, ...ROUND,
         lineWidthUnits: 'pixels', getLineColor: WHITE, getLineWidth: 3.5}));
   }
 
@@ -502,9 +552,9 @@ function buildLayers(a) {
   LABELS = [];
   // los nombres de estado le ceden el lugar a los de condado: nunca se ven los dos
   if (R.k > 1.7 && a < 0.3) {
-    const al = Math.min(1, R.k - 1.7) * clamp01(1 - a / 0.3), size = Math.min(26, 11 + R.k * 2);
+    const al = Math.min(1, R.k - 1.7) * clamp01(1 - a / 0.3), size = Math.min(18, 9 + R.k * 1.4);
     for (const s of STATES) if (front(s.centroid))
-      LABELS.push({p: s.centroid, text: s.properties.name.toUpperCase(), size, alpha: al, caps: true});
+      LABELS.push({p: s.labelP, text: s.properties.name.toUpperCase(), size, alpha: al, caps: true, state: s});
   }
   // nombres de condado centrados en su centroide. Prioridad: seleccionado, demo, el resto.
   // Seleccionado y demo se muestran siempre; el resto solo si entra adentro de su condado.
@@ -604,11 +654,40 @@ function drawLabels(c) {
     .map((el) => { const q = el.getBoundingClientRect(); return [q.left, q.top, q.right, q.bottom]; });
   if (cardPhase !== 'hidden' && cardPhase !== 'waiting')
     cover.push(isSheet() ? [0, H - cardH, W, H] : [cardPos[0], cardPos[1], cardPos[0] + CARD_W, cardPos[1] + cardH]);
+  const setFont = (size, caps) => {
+    c.font = `700 ${size}px "DM Sans", system-ui, sans-serif`;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.letterSpacing = caps ? `${(size * 0.06).toFixed(1)}px` : '0px';
+  };
+  // Nombres de estado: cada uno entra en el 92 % del ancho de su estado a la altura del rótulo (Indiana es
+  // angosto); si no entra, se achica hasta MIN_STATE_PX. Si alguno no entra ni así, todos pasan a la sigla
+  // postal (IA, IL, IN…), para no mezclar nombres y siglas. Si igual choca con otro rótulo, no se dibuja.
+  const MIN_STATE_PX = 8;
+  const textWidth = (text, size) => { // sin el espaciado (no todos los navegadores lo suman en measureText) + espaciado
+    setFont(size, true); const ls = c.letterSpacing; c.letterSpacing = '0px';
+    const m = c.measureText(text).width; c.letterSpacing = ls;
+    return m + size * 0.06 * text.length;
+  };
+  const fitState = (l, text) => {
+    const [cx, cy] = l.state.labelP;
+    const maxW = Math.abs(viewport.project([cx + l.state.roomX, cy])[0] - viewport.project([cx - l.state.roomX, cy])[0]) * 0.92;
+    const w = textWidth(text, l.size);
+    return w <= maxW ? l.size : l.size * (maxW / w);
+  };
+  const stateLabels = LABELS.filter((l) => l.state);
+  const useFull = stateLabels.every((l) => fitState(l, l.text) >= MIN_STATE_PX);
+  for (const l of stateLabels) {
+    if (!useFull) l.text = POSTAL[l.state.id];
+    l.size = Math.max(MIN_STATE_PX, fitState(l, l.text));
+  }
   for (const l of LABELS) {
     const [x, y] = viewport.project(l.p);
-    c.font = `700 ${l.size}px "DM Sans", system-ui, sans-serif`;
-    c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.letterSpacing = l.caps ? `${(l.size * 0.08).toFixed(1)}px` : '0px';
+    setFont(l.size, l.caps);
+    if (l.state) {
+      const w = textWidth(l.text, l.size), r = [x - w / 2 - 1, y - l.size * 0.6, x + w / 2 + 1, y + l.size * 0.6];
+      if (placed.some((s) => overlaps(r, s)) || cover.some((s) => overlaps(r, s))) continue;
+      placed.push(r);
+    }
     if (l.county) {
       const w = measure(c, l.text, l.size), h = l.size * 1.1, f = l.county, [cx, cy] = f.centroid;
       if (l.prio === 3) { // el resto: solo si entra en el condado, con 15 % de aire
