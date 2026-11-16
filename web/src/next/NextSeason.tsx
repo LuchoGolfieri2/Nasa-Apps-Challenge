@@ -209,6 +209,11 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
         {title}: what pays best, in numbers
       </h2>
       <Answer option={option} usual={usual} />
+      <p className="ns-unit">
+        {plan.label} yield in bushels per acre, for the whole county: the model&apos;s average across this county&apos;s weather since 2009 (low 10%, typical, top 10%). Real single years swing about twice as much. Tap a year to see it in the county history.{' '}
+        <SourceChip source={option.source || 'Field Rewind model · 2009–2023'} />
+      </p>
+
 
       <section id="ns-detail" className="ns-detail ns-paper ns-detail--single" aria-label="Why and what could go wrong">
         <div>
@@ -235,11 +240,6 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
           ) : null}
         </div>
       </section>
-      <p className="ns-unit">
-        {plan.label} yield in bushels per acre, for the whole county: the model&apos;s average across this county&apos;s weather since 2009 (low 10%, typical, top 10%). Real single years swing about twice as much. Tap a year to see it in the county history.{' '}
-        <SourceChip source={option.source || 'Field Rewind model · 2009–2023'} />
-      </p>
-
       {/* GEMELOS de la opción predicha: los condados parecidos, justo arriba del mapa donde se ven */}
       {twins.length ? (
         <section className="ns-sec ns-twins ns-twins--list" aria-labelledby="ns-twins-title">
