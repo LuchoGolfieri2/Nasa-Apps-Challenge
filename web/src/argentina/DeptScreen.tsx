@@ -138,7 +138,7 @@ function DeptCard({ id }: { id: string }) {
   );
 }
 
-function CompareRow({ crop, y }: { crop: ArCrop; y: YieldCompare }) {
+export function CompareRow({ crop, y }: { crop: ArCrop; y: YieldCompare }) {
   const max = Math.max(y.us_analogs.p90, y.ar_median.bu_ac) * 1.12;
   const pct = (v: number) => `${(100 * v) / max}%`;
   return (
@@ -164,7 +164,7 @@ function CompareRow({ crop, y }: { crop: ArCrop; y: YieldCompare }) {
   );
 }
 
-function YieldSeries({ d, crop }: { d: ArDept; crop: ArCrop }) {
+export function YieldSeries({ d, crop }: { d: ArDept; crop: ArCrop }) {
   const rows = d.yields.map((y) => ({ year: y.year, campaign: y.campaign, v: y[crop] ?? null }));
   const vals = rows.map((r) => r.v?.bu_ac ?? null).filter((v): v is number => v !== null);
   if (!vals.length) return <Missing what={`MAGyP has no ${CROP_LABEL[crop].toLowerCase()} yields for this department`} />;
@@ -193,7 +193,7 @@ function YieldSeries({ d, crop }: { d: ArDept; crop: ArCrop }) {
   );
 }
 
-function ClimateTable({ rows }: { rows: NonNullable<ArDept["climate"]> }) {
+export function ClimateTable({ rows }: { rows: NonNullable<ArDept["climate"]> }) {
   const last = rows.slice(-6).reverse();
   const n = (v: number | null, u: string) => (v === null ? "—" : `${Math.round(v)}${u}`);
   return (
@@ -234,7 +234,7 @@ const SOIL_ROWS: { k: string; label: string; unit: string }[] = [
   { k: "ph", label: "pH", unit: "" },
 ];
 
-function SoilTable({ d }: { d: ArDept }) {
+export function SoilTable({ d }: { d: ArDept }) {
   if (!d.soil) return <Missing what="SoilGrids soil for this department" />;
   const an = d.analogs[0];
   const v = (s: Record<string, number | null> | null, k: string, u: string) =>
