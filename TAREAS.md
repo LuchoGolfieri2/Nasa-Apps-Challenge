@@ -146,6 +146,7 @@ Ejemplo:
 ## My Farm (nueva, 15/11)
 
 - [x] ~~**F29** My Farm: perfil del campo (condado, acres, cultivos de los últimos años, costo y precio propios, prioridades) guardado en el navegador; pantalla tipo dashboard con ilustraciones de cultivos, medidor y curva de rinde; Next season usa ese perfil~~ · ✅ Lucho
+- [ ] **F40** My Farm como CRM: tablero estadístico (ingreso con el consejo frente a seguir igual por año de clima, quién ya lo hace en el condado, condados gemelos que lo hicieron y cuánto subieron, rinde del condado, datos faltantes) y botón para exportar un PDF con cada número, su fuente y su método · 🔨 Naim (15/11 21:53)
 
 ## Video y entrega
 
