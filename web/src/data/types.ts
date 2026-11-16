@@ -55,6 +55,23 @@ export interface SoilWaterBlock extends Sourced {
   label: string;
 }
 
+export interface EconomicsBlock extends Sourced {
+  /** Por cultivo: precio recibido (por estado), margen sobre costos operativos y costo total por acre (región Heartland del ERS). */
+  crops: Partial<Record<"corn" | "soy" | "wheat", { price_usd_bu: number | null; margin_usd_ac: number | null; cost_usd_ac: number | null }>>;
+}
+
+/** Aptitud del clima (FAO GAEZ v4, 0 a 100): con el clima de 1981–2010 y con el escenario de 2041–2070. No es un pronóstico. */
+export interface OutlookBlock extends Sourced {
+  baseline: string;
+  scenario: string;
+  crops: Partial<
+    Record<
+      "corn" | "soy" | "wheat" | "oats" | "alfalfa",
+      { suit_now: number; suit_future: number; attainable_bu_ac_now?: number; attainable_bu_ac_future?: number }
+    >
+  >;
+}
+
 export interface CountyYear {
   year: number;
   headline: HeadlinePart[];
@@ -66,6 +83,7 @@ export interface CountyYear {
   greenness: GreennessBlock | null;
   weather: WeatherBlock | null;
   soil_water: SoilWaterBlock | null;
+  economics?: EconomicsBlock | null;
 }
 
 export interface RasterInfo extends Sourced {
@@ -89,5 +107,6 @@ export interface County {
   raster: RasterInfo | null;
   years: CountyYear[];
   common_rotations: (Sourced & { items: Transition[] }) | null;
+  outlook?: OutlookBlock | null;
   sources: string[];
 }
