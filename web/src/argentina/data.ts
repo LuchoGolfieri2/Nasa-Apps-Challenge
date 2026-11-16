@@ -60,7 +60,7 @@ export interface ArDept {
   prediction_note: string;
   analogs: { fips: string; name: string; state: string; centroid: [number, number] }[];
   yield_compare: Partial<Record<ArCrop, YieldCompare>> | null;
-  yields: ({ year: number; campaign: string } & Partial<Record<ArCrop, KgBu>>)[];
+  yields: ({ year: number; campaign: string } & Partial<Record<ArCrop, KgBu>>)[] | null;
   climate:
     | {
         year: number;

@@ -42,7 +42,7 @@ function Icon({ children }: { children: ReactNode }) {
   );
 }
 
-const ICON: Record<"corn" | "soy" | "wheat" | "rain" | "heat" | "leaf" | "soil", ReactNode> = {
+export const ICON: Record<"corn" | "soy" | "wheat" | "rain" | "heat" | "leaf" | "soil", ReactNode> = {
   // Choclo: mazorca con granos y una chala
   corn: (
     <Icon>
@@ -114,7 +114,7 @@ interface TileProps {
   prototype?: boolean;
 }
 
-function Tile({ icon, label, value, missing, tag, note, prototype }: TileProps) {
+export function Tile({ icon, label, value, missing, tag, note, prototype }: TileProps) {
   const title = value === null ? `${label}: Missing data${missing ? `. ${cap(missing)}.` : ""}` : note ? `${label}. ${note}` : undefined;
   return (
     <li className={value === null ? "tile tile--missing" : "tile"} title={title}>
@@ -149,7 +149,7 @@ function cap(s: string) {
 
 const decimals = (n: number) => (String(n).split(".")[1] ?? "").length;
 
-function Num({ n, unit }: { n: ReactNode; unit?: string }) {
+export function Num({ n, unit }: { n: ReactNode; unit?: string }) {
   return (
     <>
       <b>{typeof n === "number" ? <CountUp value={n} ms={500} format={(v) => v.toFixed(decimals(n))} /> : n}</b>
