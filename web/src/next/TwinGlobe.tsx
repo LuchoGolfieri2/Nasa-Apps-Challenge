@@ -264,7 +264,8 @@ export const TwinGlobe: React.FC<TwinGlobeProps> = ({origin, twins, highlight, a
             setView(v);
             setSettled(true);
           }
-        : undefined,
+        : // deck llama a esta función en cada rueda o arrastre: con undefined tira "onViewStateChange is not a function"
+          () => null,
       getCursor: ({isHovering, isDragging}) => (isHovering ? 'pointer' : interactive ? (isDragging ? 'grabbing' : 'grab') : 'default'),
     });
   }, [interactive]);
