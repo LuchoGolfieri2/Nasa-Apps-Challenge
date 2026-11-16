@@ -37,16 +37,18 @@ export function SourcesScreen() {
         </ul>
       </section>
 
-      <section className="sources__block" aria-labelledby="ny-title">
-        <h2 id="ny-title">Not loaded yet</h2>
-        <ul className="sources__missing">
-          {NOT_YET.map((n) => (
-            <li key={n.name}>
-              <b>{n.name}.</b> {n.why}
-            </li>
-          ))}
-        </ul>
-      </section>
+      {NOT_YET.length ? (
+        <section className="sources__block" aria-labelledby="ny-title">
+          <h2 id="ny-title">Not loaded yet</h2>
+          <ul className="sources__missing">
+            {NOT_YET.map((n) => (
+              <li key={n.name}>
+                <b>{n.name}.</b> {n.why}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="sources__block" aria-labelledby="lim-title">
         <h2 id="lim-title">Limits</h2>
@@ -54,6 +56,11 @@ export function SourcesScreen() {
           <li>
             <b>County, not field.</b> All numbers are for the whole county. The crop map is drawn square by square, but it
             doesn't give results for a single field.
+          </li>
+          <li>
+            <b>Regional money, not county books.</b> Prices are the state average and costs are the USDA Heartland average.
+            Greenness is a satellite vigor index read at about 1 km, and 2025 is left out because the satellite has no data
+            from July to October. The 2041–2070 climate is a scenario, not a forecast.
           </li>
           <li>
             <b>Associations, not causes.</b> The model learns from county data from 2009 to 2023. Texts say what "tends to"

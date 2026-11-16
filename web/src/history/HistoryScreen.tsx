@@ -5,6 +5,7 @@ import type { County, CountyYear, RasterInfo } from "../data/types";
 import type { CropId } from "../ui/crops";
 import { CROPS, CROP_COLOR, CROP_LABEL, splitChartCrops } from "../ui/crops";
 import { CropIcon } from "../ui/CropIcon";
+import { wipeTo } from "../ui/wipe";
 import { Missing } from "../ui/Missing";
 import { SourceChip } from "../ui/SourceChip";
 import { BarRace } from "./BarRace";
@@ -18,6 +19,7 @@ import { useRasters } from "./useRasters";
 import { YieldHistory } from "./YieldHistory";
 import { SeasonCard, hasSeason } from "./SeasonCard";
 import { YearTiles } from "./YearTiles";
+import { MoneyCard, OutlookCard } from "./MoneyOutlook";
 import "./history.css";
 import "./globe-stage.css";
 
@@ -374,6 +376,7 @@ export function HistoryScreen({
         <a
           className="btn btn--primary history__next"
           href={`#/county/${county.fips}/next`}
+          onClick={(e) => wipeTo(e, "Next season")}
         >
           Options for next season →
         </a>
@@ -384,7 +387,7 @@ export function HistoryScreen({
           {years.length} years in {county.name} County
         </h2>
         {/* Sin CDL las dos tarjetas serían solo faltantes: ya lo dice YieldHistory arriba */}
-        {county.raster ? (
+        {county.raster || county.years.some((y) => y.crops_pct) ? (
           <div className="history__cards">
             <div className="card">
               <h3>
@@ -436,10 +439,15 @@ export function HistoryScreen({
             </div>
           </div>
         ) : null}
+        <div className="history__cards">
+          <MoneyCard county={county} year={year} onYear={pickYear} />
+          <OutlookCard county={county} />
+        </div>
         {/* En pantallas angostas el botón sale de la barra fija, que si no tapa media pantalla. */}
         <a
           className="btn btn--primary history__next history__next--end"
           href={`#/county/${county.fips}/next`}
+          onClick={(e) => wipeTo(e, "Next season")}
         >
           Options for next season →
         </a>

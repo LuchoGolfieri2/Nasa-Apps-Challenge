@@ -1,0 +1,28 @@
+1
+00:00:00,100 --> 00:00:01,300
+We're Team Pepers, from Argentina.
+
+2
+00:00:04,900 --> 00:00:08,500
+11 U.S. states and 5 Argentine provinces. Let's open Story County, Iowa.
+
+3
+00:00:08,500 --> 00:00:12,100
+Field Rewind replays a decade of the county, field by field.
+
+4
+00:00:12,100 --> 00:00:14,600
+NASA and USDA data train a machine-learning model of each county.
+
+5
+00:00:14,600 --> 00:00:18,300
+It suggests a rotation for your priorities, with ranges and income.
+
+6
+00:00:18,300 --> 00:00:22,000
+Twin counties, with the same soil and weather, back it up.
+
+7
+00:00:22,000 --> 00:00:25,400
+Farmers add their own farm: rotation, prices and costs.
+
