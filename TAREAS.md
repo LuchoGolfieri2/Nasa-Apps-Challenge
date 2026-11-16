@@ -150,8 +150,9 @@ Ejemplo:
 ## My Farm (nueva, 15/11)
 
 - [x] ~~**F29** My Farm: perfil del campo (condado, acres, cultivos de los últimos años, costo y precio propios, prioridades) guardado en el navegador; pantalla tipo dashboard con ilustraciones de cultivos, medidor y curva de rinde; Next season usa ese perfil~~ · ✅ Lucho
-- [ ] **F40** My Farm como CRM: tablero estadístico (ingreso con el consejo frente a seguir igual por año de clima, quién ya lo hace en el condado, condados gemelos que lo hicieron y cuánto subieron, rinde del condado, datos faltantes) y botón para exportar un PDF con cada número, su fuente y su método · 🔨 Naim (15/11 21:53)
-
+- [x] ~~**F40** My Farm como CRM: tablero estadístico (ingreso con el consejo frente a seguir igual por año de clima, quién ya lo hace en el condado, condados gemelos que lo hicieron y cuánto subieron, rinde del condado, datos faltantes) y botón para exportar un PDF con cada número, su fuente y su método~~ · ✅ Naim/Claude
+  - Hecho: `#/farm` ahora es un tablero tipo CRM (`web/src/farm/FarmCrm.tsx`, `crm.ts`, `crmCharts.tsx`, `crm.css`): ingreso por año de clima 2009–2023 del consejo contra seguir igual (con el precio y el costo del productor o los del USDA), tres números arriba, quién ya hace esa rotación en el condado (CDL), 5 condados gemelos con su rinde frente a 2015–19, rinde del condado (NASS) y lo que falta. "Export report (PDF)" baja un informe de 5 páginas con cada número, su fuente y su método (`exportPdf.ts`, jsPDF, se carga solo al tocar el botón). `scripts/build_next_json.py` agrega `by_weather` (rinde de cada opción por año de clima) a `next/<fips>.json`. Condados con una sola opción en el modelo (por ejemplo Sumner) muestran esa opción y "Missing data" en la comparación.
+  - Nueva dependencia: `jspdf`. Después de `git pull`, correr `npm install` en `web/`.
 ## Video y entrega
 
 - [ ] **F26** Modo grabación `?take=a|b|c` (A 960×1080, B y C 1920×1080; C con rótulo "Next: Argentina, as data is added") · Libre

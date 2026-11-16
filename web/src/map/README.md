@@ -3,7 +3,7 @@
 - `MapLayer.tsx`: monta el mapa una sola vez y lo oculta cuando se ve otra pantalla.
 - `globe.js`: el globo en deck.gl (`_GlobeView`) con la imagen Blue Marble de la NASA (GIBS, teselas WMTS). `markup.ts`: su HTML. `map.css`: estilos, todos dentro de `.maplayer`.
 - `globe-data.json`: límites de estados y condados (US Census) y `stat` de cada condado (rinde de maíz y si tiene historia), que escribe `scripts/build_front_data.py`.
-- Cuando nadie toca el mapa, el globo gira solo a 3°/s después de 3 s (en la portada, enseguida). Con `prefers-reduced-motion` no gira.
+- El globo no gira solo: se mueve únicamente con los vuelos de cámara o cuando lo arrastra la persona.
 
 ## Rutas
 | Hash | Qué se ve |
@@ -16,7 +16,7 @@
 | `#/county/20191/next` | Next season (pantalla 3) |
 
 Cada vista escribe su hash, así funcionan el "atrás" del navegador, las migas y los botones Back.
-"Go to Story County, IA" vuela directo a Story y abre su tarjeta; desde ahí "See more" abre la historia con `?play=1`.
+Desde la tarjeta de un condado, "See more" abre su historia.
 Grabación: `?take=a` y `?take=c`.
 
 ## Tarjeta del condado
@@ -38,7 +38,7 @@ Los condados parecidos ("Counties like yours") ya no están en el mapa: se ven a
 El clic en un estado solo vuela: ya no hay panel de estado.
 
 ## Transición portada → globo
-La portada es un velo sobre el globo, que gira chico y lejos. Al tocar Start el velo se desvanece y la cámara vuela a EE. UU. en 1,9 s.
+La portada es un velo sobre el globo, quieto, chico y lejos (centrado en EE. UU.). Al tocar Start el velo se desvanece y la cámara vuela a EE. UU. en 1,9 s.
 Con `prefers-reduced-motion` se acorta a casi nada.
 
 ## Datos del mapa
