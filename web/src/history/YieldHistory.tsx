@@ -107,7 +107,7 @@ export function YieldHistory({
       </p>
       <Missing
         inline
-        what="the field-by-field crop map (USDA CDL) for this county; it's loaded for Story (IA), McLean (IL) and Sumner (KS)"
+        what="the field-by-field crop map (USDA CDL) for this county"
       />
     </section>
   );

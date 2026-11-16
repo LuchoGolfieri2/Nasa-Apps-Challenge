@@ -70,6 +70,14 @@ ETIQUETAS = {
     "fallow": "Fallow",
     "other": "Other crops",
 }
+# "Soybeans cover", "Corn covers": el verbo concuerda con la etiqueta
+PLURALES = {"soy", "other"}
+
+
+def verbo_cubre(cultivo: str) -> str:
+    return "cover" if cultivo in PLURALES else "covers"
+
+
 CORTAS = {
     "corn": "corn",
     "soy": "soybeans",
@@ -343,7 +351,7 @@ def titular(anio: int, anios: dict[int, dict], trans: dict[int, list], clima: di
     if anio == primero or cambio_chico:
         top = max(CULTIVOS, key=lambda c: actual[c]["ac"])
         frases.append({
-            "text": f"{ETIQUETAS[top].split(' (')[0]} covers {round(anios[anio]['crops_pct'][top])}% of cropland.",
+            "text": f"{ETIQUETAS[top].split(' (')[0]} {verbo_cubre(top)} {round(anios[anio]['crops_pct'][top])}% of cropland.",
             "source": "USDA CDL",
         })
     else:
@@ -357,7 +365,7 @@ def titular(anio: int, anios: dict[int, dict], trans: dict[int, list], clima: di
             cambio = round(100 * (ahora - antes) / antes)
             txt = f"{nombre} area is {'up' if cambio > 0 else 'down'} {abs(cambio)}% since {primero}."
         else:
-            txt = f"{nombre} now covers {round(anios[anio]['crops_pct'][c])}% of cropland."
+            txt = f"{nombre} now {verbo_cubre(c)} {round(anios[anio]['crops_pct'][c])}% of cropland."
         frases.append({"text": txt, "source": "USDA CDL"})
     if anio in trans and trans[anio]:
         t = trans[anio][0]
