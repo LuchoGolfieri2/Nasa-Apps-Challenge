@@ -26,7 +26,14 @@ const NIGHT: RGB = [15, 42, 29];
 const GLOW: RGB = [142, 208, 129];
 const CREAM: RGB = [246, 241, 228];
 const GOLD: RGB = [233, 185, 73];
-const WORLD = [[[-180, 90], [0, 90], [180, 90], [180, -90], [0, -90], [-180, -90]]];
+/**
+ * El mundo en celdas de 10°: un solo polígono gigante se dibuja como triángulos planos que cortan la esfera (con el
+ * globo entero a la vista se ve una línea recta y media Tierra más oscura). En celdas chicas siguen la curvatura.
+ */
+const WORLD: number[][][] = [];
+for (let lon = -180; lon < 180; lon += 10)
+  for (let lat = -90; lat < 90; lat += 10)
+    WORLD.push([[lon, lat], [lon + 10, lat], [lon + 10, lat + 10], [lon, lat + 10]]);
 const SURFACE = { depthWriteEnabled: false, depthCompare: "always" as const };
 /** Los arcos cruzan medio continente: trazos 20 veces más largos que en Next season (sino son puntitos). */
 const SCALE = 20;
