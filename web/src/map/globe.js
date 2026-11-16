@@ -696,6 +696,14 @@ function drawLabels(c) {
     const w = textWidth(text, l.size);
     return w <= maxW ? l.size : l.size * (maxW / w);
   };
+  // Nombre del estado o la provincia elegida: a escala, ocupa cerca de la mitad del ancho del territorio en la
+  // altura del rótulo. Si el territorio se ve chico, no baja de FOCUS_MIN, aunque se salga del borde: tiene que leerse.
+  const FOCUS_MIN = 13, FOCUS_MAX = 24, FOCUS_SHARE = 0.45;
+  for (const l of LABELS) if (l.focus) {
+    const [cx, cy] = l.state.labelP;
+    const span = Math.abs(viewport.project([cx + l.state.roomX, cy])[0] - viewport.project([cx - l.state.roomX, cy])[0]);
+    l.size = Math.max(FOCUS_MIN, Math.min(FOCUS_MAX, 20 * (span * FOCUS_SHARE) / textWidth(l.text, 20)));
+  }
   const stateLabels = LABELS.filter((l) => l.state && !l.focus);
   const useFull = stateLabels.every((l) => fitState(l, l.text) >= MIN_STATE_PX);
   for (const l of stateLabels) {
