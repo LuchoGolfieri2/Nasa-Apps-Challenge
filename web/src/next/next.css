@@ -604,7 +604,12 @@
 .ns-range-track .span{position:absolute;top:0;bottom:0;border-radius:99px;opacity:.85}
 .ns-range-track .mid{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;border-radius:2px;background:var(--ink)}
 .ns-range-ends{display:flex;justify-content:space-between;margin-top:8px!important;font-size:14px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.ns-range-notes{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:grid;gap:10px}
+.ns-range-note{display:grid;grid-template-columns:18px minmax(0,1fr);gap:9px;align-items:start;font-size:14px;line-height:1.4;color:var(--ink-2)}
+.ns-range-note > svg{margin-top:2px;color:var(--field)}
+.ns-range-note .fr-conf{font-size:14px;margin-right:4px}
 .ns-range-foot{margin-top:20px!important;font-size:14px;color:var(--ink-3)}
+.ns-range-link{margin-top:20px!important}
 
 /* ------------------------------------------------- My Farm: la recomendación vive ahí, no acá */
 .ns-farm{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px;

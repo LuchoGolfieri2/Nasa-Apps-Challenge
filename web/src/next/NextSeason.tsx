@@ -383,7 +383,9 @@ const YieldRange: React.FC<{data: NextData; pred: Prediction}> = ({data, pred}) 
     const plan = data.crops[c];
     if (!plan) return [];
     const o = plan.options.find((x) => x.is_current) ?? plan.options[0];
-    return o?.yield_bu_ac ? [{crop: c, label: plan.label, range: o.yield_bu_ac, source: o.source}] : [];
+    return o?.yield_bu_ac
+      ? [{crop: c, label: plan.label, range: o.yield_bu_ac, driver: o.range_driver, confidence: o.confidence, source: o.source}]
+      : [];
   });
   const first = pred.years[0];
   const last = pred.years[pred.years.length - 1];
@@ -420,6 +422,22 @@ const YieldRange: React.FC<{data: NextData; pred: Prediction}> = ({data, pred}) 
                   <span>Bad year {fmt(r.range.p10)}</span>
                   <span>Good year {fmt(r.range.p90)}</span>
                 </p>
+                <div className="ns-range-notes">
+                  {r.driver ? (
+                    <p className="ns-range-note">
+                      <Icon name="thermo" size={16} />
+                      <span>
+                        {r.driver.text} <SourceChip source={r.driver.source_label ?? 'NASA POWER'} />
+                      </span>
+                    </p>
+                  ) : null}
+                  <p className="ns-range-note">
+                    <Icon name="shield" size={16} />
+                    <span>
+                      <Confidence level={r.confidence.level} /> {r.confidence.reason}
+                    </span>
+                  </p>
+                </div>
               </li>
             );
           })}
@@ -432,6 +450,12 @@ const YieldRange: React.FC<{data: NextData; pred: Prediction}> = ({data, pred}) 
       <p className="ns-range-foot">
         Real single years swing about twice as much as the range above.{' '}
         <SourceChip source={rows[0]?.source || 'Field Rewind model · 2009–2023'} />
+      </p>
+      <p className="ns-range-link">
+        <a className="btn" href={`#/county/${data.fips}`}>
+          See this county year by year
+          <span aria-hidden="true"> →</span>
+        </a>
       </p>
     </section>
   );
