@@ -153,13 +153,12 @@ function findOption(data: NextData, id: string): NextOption | undefined {
   return undefined;
 }
 
-export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
+export const NextSeason: React.FC<NextSeasonProps> = ({data}) => {
   const [twinSel, setTwinSel] = useState<string | null>(null);
   const full = useFullStage();
   const pred = data.prediction ?? null;
   const option = pred ? findOption(data, pred.option_id) : undefined;
   const twinById = useMemo(() => Object.fromEntries(data.twins.map((t) => [t.fips, t])), [data.twins]);
-  const goYear = (year: number) => (onYearClick ? onYearClick(year) : (window.location.hash = `#/county/${data.fips}?year=${year}`));
 
   if (!pred || !option) {
     return (
@@ -276,7 +275,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
 
       <Sources data={data} pred={pred} option={option} twins={twins} />
 
-      <YieldRange data={data} pred={pred} onYear={goYear} />
+      <YieldRange data={data} pred={pred} />
 
       {/* GEMELOS: el detalle de los condados parecidos que se ven en el mapa de arriba */}
       {twins.length ? (
@@ -379,7 +378,7 @@ export const NextSeason: React.FC<NextSeasonProps> = ({data, onYearClick}) => {
  * Lo que puede rendir el condado (16/11): el rango de maíz y de soja con la rotación habitual del condado, y los
  * climas pasados que lo arman. No dice cuál conviene: eso es la recomendación, y vive en My Farm.
  */
-const YieldRange: React.FC<{data: NextData; pred: Prediction; onYear: (y: number) => void}> = ({data, pred, onYear}) => {
+const YieldRange: React.FC<{data: NextData; pred: Prediction}> = ({data, pred}) => {
   const rows = (['corn', 'soy'] as PlanCrop[]).flatMap((c) => {
     const plan = data.crops[c];
     if (!plan) return [];
@@ -430,18 +429,6 @@ const YieldRange: React.FC<{data: NextData; pred: Prediction; onYear: (y: number
           <b className="ns-missing">Missing data:</b> no yield range for this county.
         </p>
       )}
-      <div className="ns-range-years">
-        <ol aria-label={`The ${pred.seasons} seasons behind that range. Each one opens that year in the county history.`}>
-          {pred.years.map((y) => (
-            <li key={y}>
-              <button type="button" className="ns-year" onClick={() => onYear(y)} title={`See ${y} in the county history`}>
-                &rsquo;{String(y).slice(2)}
-                <span className="visually-hidden"> ({y})</span>
-              </button>
-            </li>
-          ))}
-        </ol>
-      </div>
       <p className="ns-range-foot">
         Real single years swing about twice as much as the range above.{' '}
         <SourceChip source={rows[0]?.source || 'Field Rewind model · 2009–2023'} />
