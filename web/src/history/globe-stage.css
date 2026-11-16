@@ -128,7 +128,9 @@
   --wheat-ink: #f6d47e;
 
   position: absolute;
-  z-index: 2;
+  /* por encima de la viñeta del escenario (z-index 3): si no, sombrea los bordes de los cuadros, y sobre la
+     tarjeta clara de "This season" (en celular, de borde a borde) se veía un cuadro oscuro encima */
+  z-index: 4;
   top: 16px;
   right: 16px;
   bottom: 16px;
