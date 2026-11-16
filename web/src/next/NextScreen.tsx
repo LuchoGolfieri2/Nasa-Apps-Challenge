@@ -38,7 +38,7 @@ export function NextScreen({ fips }: { fips: string }) {
     return (
       <main className="fr-next">
         <div className="fr-next-empty">
-          <h1>Options for next season</h1>
+          <h1>Next season: what to expect</h1>
           <Missing what={`the yield model doesn't cover county ${fips} yet (it covers ${MODEL_STATES_TEXT})`} />
           <p>
             <a className="btn" href={`#/county/${fips}`}>
@@ -55,7 +55,7 @@ export function NextScreen({ fips }: { fips: string }) {
   if (!data) {
     return (
       <main className="fr-next" role="status">
-        Loading the options…
+        Loading next season…
       </main>
     );
   }
