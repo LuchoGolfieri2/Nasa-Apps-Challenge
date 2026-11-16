@@ -16,7 +16,7 @@
 | `#/county/20191/next` | Next season (pantalla 3) |
 
 Cada vista escribe su hash, así funcionan el "atrás" del navegador, las migas y los botones Back.
-"Go to Story County, IA" vuela directo a Story y abre su tarjeta; desde ahí "See more" abre la historia con `?play=1`.
+Desde la tarjeta de un condado, "See more" abre su historia.
 Grabación: `?take=a` y `?take=c`.
 
 ## Tarjeta del condado

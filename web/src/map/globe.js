@@ -185,7 +185,7 @@ for (const s of STATES) {
   if (!span) span = [s.bounds[0][0], s.bounds[1][0]];
   s.labelP = [(span[0] + span[1]) / 2, cy]; s.roomX = (span[1] - span[0]) / 2;
 }
-const DEMO = D.demo, START = D.start, HOME = D.home;
+const START = D.start, HOME = D.home;
 const COUNTY_K = 3.2;
 const FAR = {lat: 8, k: 0.55}; // portada: el globo chico y lejos, quieto detrás del velo
 
@@ -551,14 +551,13 @@ function buildLayers(a) {
     for (const s of STATES) if (front(s.centroid))
       LABELS.push({p: s.labelP, text: s.properties.name.toUpperCase(), size, alpha: al, caps: true, state: s});
   }
-  // nombres de condado centrados en su centroide. Prioridad: seleccionado, demo, el resto.
-  // Seleccionado y demo se muestran siempre; el resto solo si entra adentro de su condado.
+  // nombres de condado centrados en su centroide, todos con la misma regla (los demos ya no tienen prioridad).
+  // El seleccionado se muestra siempre; el resto (demos incluidos) solo si entra adentro de su condado.
   if (a > 0.3) {
     const size = R.k > 20 ? 20 : 15, alpha = clamp01((a - 0.3) / 0.3);
     const add = (c, prio) => { if (front(c.centroid)) LABELS.push({p: c.centroid, text: c.properties.name, size, alpha, county: c, prio}); };
     if (selCounty) add(selCounty, 0);
-    for (const id of Object.keys(DEMO)) if (countyById[id] !== selCounty) add(countyById[id], 2);
-    for (const c of COUNTIES) if (c !== selCounty && !DEMO[c.id]) add(c, 3);
+    for (const c of COUNTIES) if (c !== selCounty) add(c, 3);
     LABELS.sort((x, y) => (x.prio ?? -1) - (y.prio ?? -1));
   }
   return layers;
@@ -1021,8 +1020,6 @@ document.addEventListener('pointerdown', (e) => { if (!layersMenu.hidden && !lay
 setMode('yield');
 $('home').addEventListener('click', goHome);
 $('enter').addEventListener('click', () => { location.hash = '#/map'; });
-// Botón de entrada: vuela directo al condado de demo y abre su tarjeta en el mapa
-$('cta').addEventListener('click', () => flyToCounty(START));
 $('c-open').addEventListener('click', openHistory);
 $('c-next').addEventListener('click', () => {
   if (!selCounty || growing) return;

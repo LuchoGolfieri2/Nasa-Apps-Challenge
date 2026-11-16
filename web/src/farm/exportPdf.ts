@@ -6,7 +6,7 @@ import { jsPDF } from "jspdf";
 import type { County, Transition } from "../data/types";
 import { PRIORITY_LABEL, type NextData } from "../next/types";
 import { CROP_LABEL, type CropId } from "../ui/crops";
-import { baseTitle, optionStep, stepPct, type Comparison, type TwinRow } from "./crm";
+import { adviceBasis, basisText, baseTitle, optionStep, stepPct, type Comparison, type TwinRow } from "./crm";
 import { COUNTY_BY_FIPS, FARM_CROP_LABEL, FARM_YEARS, farmIncome, rotationSummary, type Farm } from "./farm";
 
 export interface ReportInput {
@@ -205,10 +205,10 @@ export async function buildReport({ farm, next, hist, cmp, twins, adoption }: Re
   // ---------------------------------------------------------------- 1. resumen
   h2("1. Summary");
   para(
-    `Our advice for your next ${crop.toLowerCase()} season is ${advice.label.toLowerCase()}. ` +
-      (farm.priorities.length
-        ? `It is the option that scores best for what you told us matters: ${farm.priorities.map((p) => PRIORITY_LABEL[p].toLowerCase()).join(", ")}. `
-        : "You did not set priorities, so the advice is the option with the highest typical income. ") +
+    (cmp.planMatches
+      ? `Your plan for next season (${crop.toLowerCase()} after your last crop, ${advice.label.toLowerCase()}) is also our advice. `
+      : `Our advice for your next ${crop.toLowerCase()} season is ${advice.label.toLowerCase()}. `) +
+      `${basisText(adviceBasis(next, farm, advice))} ` +
       `Compared with ${bTitle.toLowerCase().replace(/^if you /, "what happens if you ")} (${base.label.toLowerCase()}), it left more money per acre in ${cmp.wins} of the ${cmp.seasons} past seasons' weather we tested (${cmp.years[0]}-${cmp.years[cmp.years.length - 1]}).`,
     10.5,
   );
@@ -217,7 +217,7 @@ export async function buildReport({ farm, next, hist, cmp, twins, adoption }: Re
   kpi(
     M,
     kw,
-    "Expected income · our advice",
+    cmp.planMatches ? "Expected income · your plan, our advice" : "Expected income · our advice",
     `${money(cmp.adviceMedian)}/ac`,
     aInc ? `Bad year ${money(aInc.p10)} · good year ${money(aInc.p90)}` : "Missing data",
     FIELD,

@@ -10,13 +10,15 @@
 import { loadCounty } from "../data/load";
 import type { County, CountyYear, Transition } from "../data/types";
 import { suggest } from "../next/suggest";
-import type { NextData, NextOption, PlanCrop, RotationKind } from "../next/types";
+import { PRIORITY_LABEL, type NextData, type NextOption, type PlanCrop, type Priority, type RotationKind } from "../next/types";
 import { FARM_CROP_LABEL, farmIncome, farmOption, priceCost, type Farm, type PriceCost } from "./farm";
 
 export interface Series {
   option: NextOption;
   /** $/acre por año de clima; null = el modelo no tiene ese año */
   income: Array<number | null>;
+  /** bu/acre del modelo por año de clima; null = el modelo no tiene ese año */
+  yield: Array<number | null>;
 }
 
 export interface Comparison {
@@ -25,6 +27,8 @@ export interface Comparison {
   base: Series;
   /** por qué la base es esa */
   baseWhy: "yours" | "usual" | "repeat";
+  /** lo que planea (su cultivo después del de la última campaña) ya es lo que se aconseja */
+  planMatches: boolean;
   pc: PriceCost;
   /** años de clima en que el consejo deja más que la base */
   wins: number;
@@ -62,14 +66,18 @@ export function compare(data: NextData, farm: Farm): Comparison | null {
   if (!plan || !bw || !pc) return null;
   const advice = pickAdvice(data, farm);
   if (!advice) return null;
-  const base = pickBase(plan.options, advice, farmOption(data, farm));
+  const mine = farmOption(data, farm);
+  const base = pickBase(plan.options, advice, mine);
   if (!base) return null;
-  const inc = (o: NextOption) =>
-    (bw.yield_bu_ac[key(o)] ?? bw.years.map(() => null)).map((y) =>
-      y == null ? null : Math.round(y * pc.price - pc.cost),
-    );
-  const a = inc(advice);
-  const b = inc(base.option);
+  const raw = (o: NextOption) => bw.yield_bu_ac[key(o)] ?? bw.years.map(() => null);
+  const yld = (ys: Array<number | null>) => ys.map((y) => (y == null ? null : Math.round(y * 10) / 10));
+  const inc = (ys: Array<number | null>) => ys.map((y) => (y == null ? null : Math.round(y * pc.price - pc.cost)));
+  const ra = raw(advice);
+  const rb = raw(base.option);
+  const ya = yld(ra);
+  const yb = yld(rb);
+  const a = inc(ra);
+  const b = inc(rb);
   let wins = 0;
   let seasons = 0;
   a.forEach((v, i) => {
@@ -81,9 +89,11 @@ export function compare(data: NextData, farm: Farm): Comparison | null {
   if (!seasons) return null;
   return {
     years: bw.years,
-    advice: { option: advice, income: a },
-    base: { option: base.option, income: b },
+    advice: { option: advice, income: a, yield: ya },
+    base: { option: base.option, income: b, yield: yb },
     baseWhy: base.why,
+    // solo si cargó la última campaña con maíz o soja: si no, "lo suyo" es el mix del condado por descarte
+    planMatches: !!mine && mine.id === advice.id && mine.rotation !== "actual",
     pc,
     wins,
     seasons,
@@ -101,6 +111,101 @@ export function baseTitle(c: Comparison, farm: Farm): string {
     : c.base.option.rotation === "actual"
       ? "If you keep the usual mix"
       : `If you keep ${c.base.option.label.toLowerCase()}`;
+}
+
+
+// ------------------------------------------------------------------ en qué se basa el consejo
+
+export interface AdviceBasis {
+  /** prioridades marcadas que sí tienen dato y decidieron el consejo */
+  used: Priority[];
+  /** prioridades marcadas sin dato en este condado (quedaron afuera) */
+  unscored: Priority[];
+  /** true = ninguna prioridad usable: el consejo es la opción con más ingreso típico */
+  byIncome: boolean;
+  /** true = en este condado todas las prioridades con dato eligen la misma opción */
+  sameForAll: boolean;
+}
+
+export function adviceBasis(data: NextData, farm: Farm, advice: NextOption | null): AdviceBasis | null {
+  const plan = data.crops[farm.plan];
+  if (!plan || !advice) return null;
+  const s = suggest(plan.options, farm.priorities);
+  const singles = (["risk", "income", "soil", "water"] as Priority[])
+    .map((p) => suggest(plan.options, [p]).winner?.id)
+    .filter((id): id is string => !!id);
+  return {
+    used: farm.priorities.filter((p) => !s.unscored.includes(p)),
+    unscored: s.unscored,
+    byIncome: !s.winner,
+    sameForAll: singles.length > 1 && singles.every((id) => id === advice.id),
+  };
+}
+
+/** La frase que explica por qué ese es el consejo (tablero y PDF) */
+export function basisText(b: AdviceBasis | null): string {
+  if (!b) return "";
+  const list = (ps: Priority[]) => ps.map((p) => PRIORITY_LABEL[p].toLowerCase()).join(", ");
+  const left = b.unscored.length ? ` No data separates the options on ${list(b.unscored)}, so it was left out.` : "";
+  if (b.byIncome) return `${left} Advice is the option with the highest typical income.`.trim();
+  const same = b.sameForAll ? " In this county every priority points to this same option." : "";
+  return `Advice picked for: ${list(b.used)}.${left}${same}`;
+}
+
+export interface CropWinner {
+  option: NextOption;
+  /** años de clima en que esa opción dejó más que las otras cinco */
+  wins: number;
+  seasons: number;
+  /** años en que ganó alguna opción del cultivo que planea el productor */
+  planWins: number;
+  /** precio y costo de cada cultivo: del productor si los cargó, si no del USDA */
+  from: Record<PlanCrop, "you" | "usda">;
+}
+
+/** Maíz o soja: qué opción de las seis deja más por acre en cada año de clima, con los precios del productor */
+export function cropWinner(data: NextData, farm: Farm): CropWinner | null {
+  const bw = data.by_weather;
+  if (!bw) return null;
+  const crops: PlanCrop[] = ["corn", "soy"];
+  const pcs = Object.fromEntries(crops.map((c) => [c, priceCost(farm, c)])) as Record<PlanCrop, PriceCost | null>;
+  if (crops.some((c) => !pcs[c] || !data.crops[c])) return null;
+  const opts = crops.flatMap((c) => data.crops[c].options);
+  const wins = new Map<string, number>();
+  let seasons = 0;
+  bw.years.forEach((_, i) => {
+    let best: NextOption | null = null;
+    let bestV = -Infinity;
+    for (const o of opts) {
+      const y = bw.yield_bu_ac[key(o)]?.[i];
+      if (y == null) continue;
+      const v = y * pcs[o.crop]!.price - pcs[o.crop]!.cost;
+      if (v > bestV) {
+        bestV = v;
+        best = o;
+      }
+    }
+    if (!best) return;
+    seasons++;
+    wins.set(best.id, (wins.get(best.id) ?? 0) + 1);
+  });
+  if (!seasons) return null;
+  const top = [...wins.entries()].sort((a, b) => b[1] - a[1])[0];
+  const option = opts.find((o) => o.id === top[0])!;
+  const planWins = [...wins.entries()]
+    .filter(([id]) => opts.find((o) => o.id === id)?.crop === farm.plan)
+    .reduce((n, [, w]) => n + w, 0);
+  return {
+    option,
+    wins: top[1],
+    seasons,
+    planWins,
+    from: { corn: pcs.corn!.priceFrom === "you" || pcs.corn!.costFrom === "you" ? "you" : "usda", soy: pcs.soy!.priceFrom === "you" || pcs.soy!.costFrom === "you" ? "you" : "usda" },
+  };
+}
+
+export function optionName(data: NextData, o: NextOption) {
+  return o.is_current ? `${data.crops[o.crop].label.toLowerCase()} in your county's usual mix` : o.label.toLowerCase();
 }
 
 // ------------------------------------------------------------------ quién ya lo hace
@@ -144,6 +249,9 @@ export interface TwinRow {
   pct: number | null;
   pctLabel: string;
   year: number | null;
+  /** año del mapa de cultivos (CDL) del que sale pct */
+  pctYear: number | null;
+  /** meses desde la cosecha del año de pct (o del rinde, si no hay mapa) */
   monthsAgo: number | null;
   baseAvg: number | null;
   latest: number | null;
@@ -197,7 +305,8 @@ export async function loadTwins(data: NextData, advice: NextOption): Promise<Twi
         pct,
         pctLabel: step ? `${CROP_WORD[step.to]} after ${CROP_WORD[step.from]}` : `${CROP_WORD[crop]}`,
         year: latest?.year ?? year,
-        monthsAgo: latest ? monthsSince(latest.year) : null,
+        pctYear: year,
+        monthsAgo: year != null ? monthsSince(year) : latest ? monthsSince(latest.year) : null,
         baseAvg,
         latest: latest?.value ?? null,
         change: baseAvg && latest ? ((latest.value - baseAvg) / baseAvg) * 100 : null,
